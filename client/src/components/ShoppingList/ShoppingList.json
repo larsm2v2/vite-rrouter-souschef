@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "item": "All-purpose flour",
+    "quantity": 500,
+    "unit": "grams"
+  },
+  {
+    "id": 2,
+    "item": "Granulated sugar",
+    "quantity": 200,
+    "unit": "grams"
+  },
+  {
+    "id": 3,
+    "item": "Large eggs",
+    "quantity": 4,
+    "unit": "pieces"
+  },
+  {
+    "id": 4,
+    "item": "Unsalted butter",
+    "quantity": 250,
+    "unit": "grams"
+  },
+  {
+    "id": 5,
+    "item": "Whole milk",
+    "quantity": 1,
+    "unit": "liter"
+  }
+]
