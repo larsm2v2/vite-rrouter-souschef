@@ -1,0 +1,25 @@
+.shopping-list-sidebar {
+    position: fixed;
+    top: 7%;
+    right: 0;
+    padding-top: 2%;
+    height: 100%;
+    width: 0; /* Initially closed */
+    background-color: var(--secondary-text-color); 
+    transition: width 0.3s ease-in-out; /* Smooth transition */
+    z-index: 100; /* Ensure it's on top */
+    overflow-x: hidden;
+  }
+  
+  .shopping-list-sidebar.open {
+    width: 50%; /* Open width */
+    position: fixed;
+  }
+  
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #ccc; /* Optional styling */
+  }

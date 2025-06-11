@@ -1,0 +1,220 @@
+/* General Styles */
+.souschef-prompt {
+  width: 100%; /* Take full width on all screens */
+  padding: 0rem 0rem;  /* More spacing for smaller screens */
+  margin: 0;          /* Remove margin */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.souschef-prompt-initial {
+  display: flex;
+  flex-direction: row; /* Horizontal on larger screens */
+  align-items: center;
+  gap: 1rem;
+}
+
+.initialMessage {
+  overflow: hidden;
+  border-right: .15em solid var(--secondary-text-color);
+  white-space: nowrap;
+  margin: 0 auto;
+  letter-spacing: .04em; /* Adjust as needed */
+  animation : blink-caret .75s step-end infinite;
+  max-width: 90%;
+}
+
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: var(--secondary-text-color)}
+}
+
+.input-mode-toggle{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+  .input-mode-toggle button{
+    border: none;
+    padding: 8px 16px;
+    border-radius: 15px;
+}
+
+.input-mode-toggle button:hover{
+  text-decoration: underline;
+  cursor: pointer;
+  
+}
+
+.input-mode-toggle button:active{
+  background-color: var(--primary-hover-color);
+  color: var(--primary-background-color);
+}
+
+/* Highlight Toggled Button */
+  .highlighted{
+    background-color: var(--primary-color);
+    color: var(--tertiary-background-color)
+  }
+
+  .unhighlighted{
+    background-color: var(--tertiary-background-color);
+    color: var(--primary-color);
+  }
+
+.surprise {
+  background-color: var(--secondary-color);
+  border-radius: 15px;
+  font-weight: 700;
+  padding: 4px 12px;
+  margin: 0 0 2px 5px;
+  border: none;
+}
+  
+  p {
+    font-weight: 200;
+    font-size: 14px;
+    margin:  1rem 0rem
+  }
+  
+  .search-result {
+    min-width: 50%;
+    min-height: 25%;
+    margin-top: 10px;
+    
+  }
+  
+  .askAwayPrompt,
+  .specificPrompt {
+    width: 90%;         /* Maximum width for larger screens */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 1rem;        /* Add spacing between elements */
+  }
+
+.specificSequence{
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+}
+.specificSequence input{
+  width:100%;
+}
+
+  .askAwayPrompt surprise {
+    height: 10%; /* Adjust height as needed */
+}
+
+  .askAwayContainer, 
+  .inputSequence,
+  .specificContainer {
+    width: 100%;      /* Full width on smaller screens */
+    border-radius: 15px;
+    border: none;
+  }
+  .askAwayContainer input{
+    border: none;
+    padding: 13px 14px;
+    box-sizing: border-box;
+    border-radius: 15px;
+    font-size: 15px;
+    outline: none;
+    width: 100%;
+    font-weight: 200;
+  }
+
+  .askAwayContainer button{
+    font-weight:bold;
+    background-color: var(--secondary-color);
+    border-radius: 15px;
+    height: 100%;
+    border: none;
+
+  }
+.spacer{
+  height:3vh;
+
+}
+  .inputSequence {
+    width: 40vw;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    border-radius: 15px;
+    box-shadow: #072733 0 2px 4px;
+    overflow: hidden;
+    height: auto;
+    font-size: auto;
+  }
+
+  .specificContainer input {
+    width: 100%;       /* Take full width of parent */
+    font-size: 1rem;   /* Adjust font size as needed */
+  }
+
+
+/* Media Queries for Different Screen Sizes */
+@media (min-width: 768px) { /* Adjust breakpoint as needed */
+  .souschef-prompt {
+    padding: 0rem 0rem; /* More padding on larger screens */
+  }
+
+  .askAwayPrompt,
+  .specificPrompt {
+    width: 70%;   
+    flex-wrap: nowrap; /* Prevent wrapping on larger screens */
+  }
+
+  .askAwayContainer,
+  .inputSequence {
+    width: 45%;    /* Adjust width for side-by-side on larger screens */
+  }
+
+  .specificContainer {
+    width: auto;  
+    font-size: 1.1rem;
+  }
+
+  .specificContainer input {
+    width: 100%;  
+  }
+  .askAwayPrompt surprise {
+    height: 20%;
+  }
+}
+
+@media (max-width: 480px) {
+  .askAwayPrompt,
+  .specificPrompt {
+    width: 100%; /* Full width on smaller screens */
+  }
+
+  .askAwayContainer,
+  .inputSequence {
+    width: 100%; /* Full width on smaller screens */
+  }
+
+  .specificSequence{
+    width: 70%;
+  }
+  .specificContainer {
+    width: 100%; /* Full width on smaller screens */
+  }
+
+  .specificContainer input {
+    width: 100%; /* Full width on smaller screens */
+  }
+  .askAwayPrompt surprise {
+    height: 10%;
+  }
+}

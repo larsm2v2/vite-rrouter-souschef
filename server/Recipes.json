@@ -1,0 +1,2234 @@
+[
+  {
+    "name": "Arroz con Pollo",
+    "unique id": 12039284995,
+    "id": "arroz-con-pollo",
+    "cuisine": "Latin",
+    "meal type": "dinner",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "30 minutes",
+      "total time": "45 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Chicken",
+          "quantity": 1,
+          "unit": "pound"
+        },
+        {
+          "id": 2,
+          "name": "Rice",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 3,
+          "name": "Onion",
+          "quantity": 1
+        },
+        {
+          "id": 4,
+          "name": "Green pepper",
+          "quantity": 1
+        },
+        {
+          "id": 5,
+          "name": "Red pepper",
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "cloves"
+        },
+        {
+          "id": 7,
+          "name": "Tomato sauce",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 8,
+          "name": "Chicken broth",
+          "quantity": 2,
+          "unit": "cups"
+        },
+        {
+          "id": 9,
+          "name": "Salt",
+          "quantity": 0
+        },
+        {
+          "id": 10,
+          "name": "Black pepper",
+          "quantity": 0
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a large saucepan, brown the chicken over medium heat. Remove the chicken from the pan and set aside."
+      },
+      {
+        "number": 2,
+        "text": "Add the onion, green pepper, and red pepper to the pan and cook until softened. Add the garlic and cook for 1 minute more."
+      },
+      {
+        "number": 3,
+        "text": "Stir in the tomato sauce and chicken broth. Bring to a boil, then reduce heat and simmer for 15 minutes."
+      },
+      {
+        "number": 4,
+        "text": "Return the chicken to the pan and cook for 15 minutes more, or until the chicken is cooked through."
+      },
+      {
+        "number": 5,
+        "text": "Serve the arroz con pollo."
+      }
+    ],
+    "notes": [],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": "350",
+      "carbohydrates": "50g",
+      "protein": "30g",
+      "fat": "10g",
+      "saturated fat": "5g",
+      "fiber": "5g",
+      "sugar": "10g"
+    }
+  },
+  {
+    "name": "Guyanese Fried Rice",
+    "unique id": 1659646487898,
+    "id": "guyanese-fried-rice",
+    "cuisine": "Guyanese",
+    "meal type": "lunch",
+    "dietary restrictions and designations": [
+      "gluten-free",
+      "halal",
+      "kosher"
+    ],
+    "serving info": {
+      "prep time": "20 min",
+      "cook time": "15 min",
+      "total time": "35 min",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Rice",
+          "quantity": 2,
+          "unit": "cups"
+        },
+        {
+          "id": 2,
+          "name": "Chicken",
+          "quantity": 1,
+          "unit": "pound"
+        },
+        {
+          "id": 3,
+          "name": "Shrimp",
+          "quantity": 0.5,
+          "unit": "pound"
+        },
+        {
+          "id": 4,
+          "name": "Eggs",
+          "quantity": 2
+        },
+        {
+          "id": 5,
+          "name": "Onion",
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "Red Bell Pepper",
+          "quantity": 1
+        },
+        {
+          "id": 7,
+          "name": "Green Bell Pepper",
+          "quantity": 1
+        },
+        {
+          "id": 8,
+          "name": "Carrots",
+          "quantity": 1
+        },
+        {
+          "id": 9,
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "cloves"
+        },
+        {
+          "id": 10,
+          "name": "Ginger",
+          "quantity": 1,
+          "unit": "inch"
+        },
+        {
+          "id": 11,
+          "name": "Soy Sauce",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 12,
+          "name": "Sesame Oil",
+          "quantity": 1,
+          "unit": "Tbsp"
+        },
+        {
+          "id": 13,
+          "name": "Salt",
+          "quantity": 0
+        },
+        {
+          "id": 14,
+          "name": "Black Pepper",
+          "quantity": 0
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Cook the rice according to the package directions."
+      },
+      {
+        "number": 2,
+        "text": "While the rice is cooking, cook the chicken and shrimp in a separate pan. Once cooked, set aside."
+      },
+      {
+        "number": 3,
+        "text": "In a large skillet or wok, heat the sesame oil over medium heat. Add the eggs and scramble them. Once cooked, remove from the skillet and set aside."
+      },
+      {
+        "number": 4,
+        "text": "Add the onion, bell peppers, carrots, garlic, and ginger to the skillet. Cook until softened."
+      },
+      {
+        "number": 5,
+        "text": "Add the chicken, shrimp, eggs, rice, soy sauce, and salt and pepper to taste. Cook until the rice is heated through."
+      },
+      {
+        "number": 6,
+        "text": "Serve immediately."
+      }
+    ],
+    "notes": [],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": "500",
+      "carbohydrates": "50g",
+      "protein": "30g",
+      "fat": "20g",
+      "saturated fat": "5g",
+      "fiber": "5g",
+      "sugar": "10g"
+    }
+  },
+  {
+    "name": "Bruschetta with Tomato and Basil",
+    "unique id": 1668905801785,
+    "id": "bruschetta-with-tomato-and-basil",
+    "cuisine": "Italian",
+    "meal type": "appetizer",
+    "dietary restrictions and designations": [
+      "vegetarian",
+      "quick and easy"
+    ],
+    "serving info": {
+      "prep time": "10 mins",
+      "cook time": "5 mins",
+      "total time": "15 mins",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "baguette",
+          "quantity": 1,
+          "unit": "loaf"
+        },
+        {
+          "id": 2,
+          "name": "tomatoes",
+          "quantity": 2
+        },
+        {
+          "id": 3,
+          "name": "basil",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 4,
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": 5,
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "cloves"
+        },
+        {
+          "id": 6,
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "id": 7,
+          "name": "pepper",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Preheat the oven to 375 degrees F (190 degrees C)."
+      },
+      {
+        "number": 2,
+        "text": "Slice the baguette into 1-inch thick slices."
+      },
+      {
+        "number": 3,
+        "text": "In a medium bowl, combine the tomatoes, basil, olive oil, garlic, salt, and pepper."
+      },
+      {
+        "number": 4,
+        "text": "Spread the tomato mixture evenly over the baguette slices."
+      },
+      {
+        "number": 5,
+        "text": "Bake for 5-7 minutes, or until the bread is golden brown and the tomatoes are softened."
+      },
+      {
+        "number": 6,
+        "text": "Serve immediately."
+      }
+    ],
+    "notes": [],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": "150",
+      "carbohydrates": "20g",
+      "protein": "5g",
+      "fat": "5g",
+      "saturated fat": "1g",
+      "fiber": "2g",
+      "sugar": "5g"
+    },
+    "grocery list": [
+      "baguette",
+      "tomatoes",
+      "basil",
+      "olive oil",
+      "garlic",
+      "salt",
+      "pepper"
+    ]
+  },
+  {
+    "name": "Pan-Roasted Chicken with Green Chile-Mustard Sauce",
+    "unique id": 1647700156413,
+    "id": "pan-roasted-chicken-with-green-chile-mustard-sauce",
+    "cuisine": "Latin",
+    "meal type": "dinner",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "",
+      "cook time": "35 to 45 minutes",
+      "total time": "",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "garlic",
+          "quantity": 6,
+          "unit": "cloves"
+        },
+        {
+          "id": 2,
+          "name": "soy sauce",
+          "quantity": 3,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 3,
+          "name": "aji amarillo paste",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 4,
+          "name": "lime juice",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 5,
+          "name": "aji panca paste",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 6,
+          "name": "pasilla chile powder",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 7,
+          "name": "Dijon mustard",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 8,
+          "name": "ground cumin",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 9,
+          "name": "black pepper",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 10,
+          "name": "fine sea salt",
+          "quantity": 5,
+          "unit": "teaspoons"
+        },
+        {
+          "id": 11,
+          "name": "chicken",
+          "quantity": 3,
+          "unit": "lbs"
+        }
+      ],
+      "sauce": [
+        {
+          "id": 1,
+          "name": "cilantro leaves",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 2,
+          "name": "jalapenos",
+          "quantity": 3
+        },
+        {
+          "id": 3,
+          "name": "feta cheese",
+          "quantity": 1,
+          "unit": "ounce"
+        },
+        {
+          "id": 4,
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove"
+        },
+        {
+          "id": 5,
+          "name": "lime juice",
+          "quantity": 1.5,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 6,
+          "name": "oregano or basil",
+          "quantity": 2,
+          "unit": "teaspoons"
+        },
+        {
+          "id": 7,
+          "name": "fine sea salt",
+          "quantity": 0.5,
+          "unit": "teaspoons"
+        },
+        {
+          "id": 8,
+          "name": "Dijon mustard",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 9,
+          "name": "aji amarillo paste",
+          "quantity": 0.5,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 10,
+          "name": "honey",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 11,
+          "name": "ground cumin",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 12,
+          "name": "olive oil",
+          "quantity": 0.5,
+          "unit": "cup"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "For the marinade: In a large bowl, whisk together garlic, soy sauce, aji amarillo paste, lime juice, aji panca paste, mustard, cumin, pepper and salt."
+      },
+      {
+        "number": 2,
+        "text": "Add chicken halves, turning to coat them all over with marinade. Cover and refrigerate at least 2 hours and up to 12 hours."
+      },
+      {
+        "number": 3,
+        "text": "Heat the oven to 450 degrees. Remove chicken from marinade and pat dry with paper towels. Arrange skin-side up on a rimmed baking sheet and drizzle with oil."
+      },
+      {
+        "number": 4,
+        "text": "Roast until skin is golden and chicken is cooked through, 35 to 45 minutes (if using chicken parts, remove the breasts after 25 to 35 minutes). Remove from oven and let sit, loosely covered with foil, for 10 minutes before serving."
+      },
+      {
+        "number": 5,
+        "text": "While chicken is roasting, make the sauce. In a blender, blend cilantro, jalapenos, feta, garlic, lime juice, oregano, salt, mustard, aji amarillo paste, honey, and cumin until smooth. With the motor running, slowly drizzle in oil until mixture is emulsified. Taste and adjust the seasonings with salt or lime juice or both."
+      },
+      {
+        "number": 6,
+        "text": "Carve the chicken and serve with the sauce and lime wedges on the side."
+      }
+    ],
+    "notes": [],
+    "nutrition": {},
+    "grocery list": [
+      "garlic",
+      "soy sauce",
+      "aji amarillo paste",
+      "lime juice",
+      "aji panca paste or pasilla chile powder",
+      "pasilla chile powder",
+      "Dijon mustard",
+      "ground cumin",
+      "black pepper",
+      "fine sea salt",
+      "chicken",
+      "olive oil",
+      "cilantro leaves",
+      "jalapenos",
+      "feta cheese",
+      "lime wedges"
+    ]
+  },
+  {
+    "name": "Bacalhau à Gomes de Sá",
+    "unique id": 1696042488143,
+    "id": "bacalhau-a-gomes-de-sa",
+    "cuisine": "Portuguese",
+    "meal type": "dinner",
+    "dietary restrictions and designations": [
+      "dairy-free",
+      "gluten-free"
+    ],
+    "serving info": {
+      "prep time": "30 minutes",
+      "cook time": "30 minutes",
+      "total time": "1 hour",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Dried cod",
+          "quantity": 1,
+          "unit": "pound"
+        },
+        {
+          "id": 2,
+          "name": "Potatoes",
+          "quantity": 4,
+          "unit": "medium"
+        },
+        {
+          "id": 3,
+          "name": "Onions",
+          "quantity": 2,
+          "unit": "medium"
+        },
+        {
+          "id": 4,
+          "name": "Garlic cloves",
+          "quantity": 2
+        },
+        {
+          "id": 5,
+          "name": "Hard-boiled eggs",
+          "quantity": 6
+        },
+        {
+          "id": 6,
+          "name": "Black olives",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 7,
+          "name": "Olive oil",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 8,
+          "name": "Salt and pepper",
+          "quantity": 0,
+          "unit": "to taste"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Soak the dried cod in cold water for 24 hours, changing the water several times."
+      },
+      {
+        "number": 2,
+        "text": "Peel and slice the potatoes and onions."
+      },
+      {
+        "number": 3,
+        "text": "In a large skillet, heat the olive oil over medium heat."
+      },
+      {
+        "number": 4,
+        "text": "Add the sliced onions and cook until softened."
+      },
+      {
+        "number": 5,
+        "text": "Add the sliced potatoes and cook until browned."
+      },
+      {
+        "number": 6,
+        "text": "Drain the cod and add it to the skillet."
+      },
+      {
+        "number": 7,
+        "text": "Simmer for 15-20 minutes, or until the cod is cooked through."
+      },
+      {
+        "number": 8,
+        "text": "Season with salt and pepper to taste."
+      },
+      {
+        "number": 9,
+        "text": "Serve with hard-boiled eggs and black olives."
+      }
+    ],
+    "notes": [
+      "This dish is typically served with rice or bread."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 400,
+      "carbohydrates": 50,
+      "protein": 30,
+      "fat": 15,
+      "saturated fat": 5,
+      "fiber": 5,
+      "sugar": 5
+    }
+  },
+  {
+    "name": "Cucumber, Tomato, and Onion Salad",
+    "unique id": 1696042498415,
+    "id": "cucumber-tomato-and-onion-salad",
+    "cuisine": "American",
+    "meal type": "lunch",
+    "dietary restrictions and designations": [
+      "vegan",
+      "gluten-free"
+    ],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "0 minutes",
+      "total time": "15 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Cucumber",
+          "quantity": 1,
+          "unit": "large"
+        },
+        {
+          "id": 2,
+          "name": "Tomato",
+          "quantity": 1,
+          "unit": "large"
+        },
+        {
+          "id": 3,
+          "name": "Onion",
+          "quantity": 1,
+          "unit": "medium"
+        }
+      ],
+      "dressing": [
+        {
+          "id": 4,
+          "name": "Olive oil",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 5,
+          "name": "Vinegar",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 6,
+          "name": "Salt",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 7,
+          "name": "Black pepper",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Dice the cucumber, tomato, and onion."
+      },
+      {
+        "number": 2,
+        "text": "Combine the olive oil, vinegar, salt, and black pepper in a bowl."
+      },
+      {
+        "number": 3,
+        "text": "Add the diced vegetables to the bowl and toss to coat."
+      },
+      {
+        "number": 4,
+        "text": "Serve immediately or refrigerate for later."
+      }
+    ],
+    "notes": [],
+    "nutrition": {}
+  },
+  {
+    "name": "Tteokbokki Tteok (Spicy Rice Cakes)",
+    "unique id": 1696050187667,
+    "id": "tteokbokki-tteok-spicy-rice-cakes",
+    "cuisine": "Korean",
+    "meal type": "dessert",
+    "dietary restrictions and designations": [
+      "vegetarian"
+    ],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "10 minutes",
+      "total time": "25 minutes",
+      "number of people served": 2
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Rice cakes (garaetteok)",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "id": 2,
+          "name": "Gochujang (Korean chili paste)",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 3,
+          "name": "Gochugaru (Korean chili flakes)",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 4,
+          "name": "Sugar",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 5,
+          "name": "Soy sauce",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 6,
+          "name": "Water",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 7,
+          "name": "Green onions",
+          "quantity": 2,
+          "unit": "stalks"
+        },
+        {
+          "id": 8,
+          "name": "Sesame seeds",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a large bowl, soak the rice cakes in cold water for 10-15 minutes to soften them."
+      },
+      {
+        "number": 2,
+        "text": "While the rice cakes are soaking, prepare the sauce. In a separate bowl, combine the gochujang, gochugaru, sugar, and soy sauce. Mix well until all the ingredients are combined."
+      },
+      {
+        "number": 3,
+        "text": "Heat a large pan or skillet over medium heat. Add the sauce mixture and water to the pan and bring to a simmer."
+      },
+      {
+        "number": 4,
+        "text": "Add the soaked rice cakes to the simmering sauce. Stir well to coat the rice cakes evenly."
+      },
+      {
+        "number": 5,
+        "text": "Cook the rice cakes for 8-10 minutes, or until they are soft and chewy. Stir occasionally to prevent sticking."
+      },
+      {
+        "number": 6,
+        "text": "While the rice cakes are cooking, thinly slice the green onions."
+      },
+      {
+        "number": 7,
+        "text": "Once the rice cakes are cooked, remove from heat and garnish with the sliced green onions and sesame seeds."
+      },
+      {
+        "number": 8,
+        "text": "Serve the tteokbokki immediately while hot."
+      }
+    ],
+    "notes": [
+      "Adjust the amount of gochujang and gochugaru to your preferred level of spiciness.",
+      "You can add other ingredients to your tteokbokki, such as fish cakes, boiled eggs, or vegetables.",
+      "Tteokbokki is best served immediately after cooking."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 350,
+      "carbohydrates": 70,
+      "protein": 10,
+      "fat": 5,
+      "saturated fat": 1,
+      "fiber": 5,
+      "sugar": 10
+    }
+  },
+  {
+    "name": "Crème Brûlée",
+    "unique id": 1701887255627,
+    "id": "crème-brûlée",
+    "cuisine": "French",
+    "meal type": "dessert",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "50 minutes",
+      "total time": "1 hour 5 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "heavy cream",
+          "quantity": 2,
+          "unit": "cups"
+        },
+        {
+          "id": 2,
+          "name": "granulated sugar",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 3,
+          "name": "vanilla bean",
+          "quantity": 1
+        },
+        {
+          "id": 4,
+          "name": "egg yolks",
+          "quantity": 4,
+          "unit": "large"
+        },
+        {
+          "id": 5,
+          "name": "salt",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 6,
+          "name": "granulated sugar (for topping)",
+          "quantity": 0.25,
+          "unit": "cup"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Preheat oven to 325 degrees F (165 degrees C)."
+      },
+      {
+        "number": 2,
+        "text": "In a saucepan, combine heavy cream and 1/2 cup sugar. Split the vanilla bean lengthwise and scrape the seeds into the cream mixture. Add the bean pod to the saucepan."
+      },
+      {
+        "number": 3,
+        "text": "Heat the cream mixture over medium heat, stirring occasionally, until it just comes to a simmer. Remove from heat and let stand for 15 minutes to allow the vanilla to infuse."
+      },
+      {
+        "number": 4,
+        "text": "In a medium bowl, whisk together the egg yolks and salt until light and frothy."
+      },
+      {
+        "number": 5,
+        "text": "Gradually whisk about 1 cup of the hot cream mixture into the egg yolks to temper them. Pour the tempered egg yolk mixture back into the saucepan with the remaining cream."
+      },
+      {
+        "number": 6,
+        "text": "Strain the custard through a fine-mesh sieve into a large measuring cup or bowl. Discard the vanilla bean pod."
+      },
+      {
+        "number": 7,
+        "text": "Divide the custard evenly among four ramekins (6-8 ounce capacity). Place the ramekins in a large baking dish and pour enough hot water into the baking dish to come halfway up the sides of the ramekins."
+      },
+      {
+        "number": 8,
+        "text": "Bake in the preheated oven for 40-50 minutes, or until the custards are just set around the edges but still slightly jiggly in the center."
+      },
+      {
+        "number": 9,
+        "text": "Carefully remove the ramekins from the water bath and let cool completely at room temperature. Once cool, cover and refrigerate for at least 4 hours, or preferably overnight."
+      },
+      {
+        "number": 10,
+        "text": "Just before serving, sprinkle each crème brûlée evenly with about 1 tablespoon of granulated sugar. Using a kitchen torch, carefully caramelize the sugar until it forms a crisp, golden brown crust. Let the sugar crust cool slightly before serving."
+      }
+    ],
+    "notes": [
+      "For a smoother custard, strain the mixture through a fine-mesh sieve after blending.",
+      "If you don't have a kitchen torch, you can caramelize the sugar topping under the broiler. However, watch carefully to prevent burning."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 320,
+      "carbohydrates": 22,
+      "protein": 6,
+      "fat": 24,
+      "saturated fat": 14,
+      "fiber": 0,
+      "sugar": 20
+    }
+  },
+  {
+    "name": "Korean Rice Cake Skewers (Garaetteok Ggochi)",
+    "unique id": 1701818285756,
+    "id": "korean-rice-cake-skewers-garaetteok-ggochi",
+    "cuisine": "Korean",
+    "meal type": "dessert",
+    "dietary restrictions and designations": [
+      "vegetarian"
+    ],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "10 minutes",
+      "total time": "25 minutes",
+      "number of people served": 2
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "cylindrical garaetteok (Korean rice cakes)",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "id": 2,
+          "name": "wooden skewers",
+          "quantity": 6
+        }
+      ],
+      "sauce": [
+        {
+          "id": 1,
+          "name": "gochujang (Korean chili paste)",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": 2,
+          "name": "gochugaru (Korean chili flakes)",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": 3,
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": 4,
+          "name": "rice syrup",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "id": 5,
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "id": 6,
+          "name": "minced garlic",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "id": 7,
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Soak the wooden skewers in water for at least 30 minutes to prevent them from burning during grilling."
+      },
+      {
+        "number": 2,
+        "text": "While the skewers are soaking, prepare the sauce. In a small bowl, combine gochujang, gochugaru, soy sauce, rice syrup, sesame oil, minced garlic, and sesame seeds. Mix well and set aside."
+      },
+      {
+        "number": 3,
+        "text": "Cut the garaetteok into bite-sized pieces, about 2-3 cm long."
+      },
+      {
+        "number": 4,
+        "text": "Thread the garaetteok pieces onto the soaked skewers, leaving some space between each piece."
+      },
+      {
+        "number": 5,
+        "text": "Heat a non-stick pan over medium heat. Place the skewers in the pan and cook, turning occasionally, until they are golden brown and slightly puffed up, about 5-7 minutes."
+      },
+      {
+        "number": 6,
+        "text": "Brush the sauce generously over the grilled garaetteok skewers."
+      },
+      {
+        "number": 7,
+        "text": "Serve the garaetteok ggochi immediately, hot and crispy."
+      }
+    ],
+    "notes": [
+      "You can adjust the spiciness of the sauce by adding more or less gochujang or gochugaru.",
+      "If you don't have rice syrup, you can substitute it with honey or corn syrup.",
+      "For a more savory flavor, you can add a pinch of salt to the sauce."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 350,
+      "carbohydrates": 70,
+      "protein": 5,
+      "fat": 8,
+      "saturated fat": 1,
+      "fiber": 2,
+      "sugar": 15
+    }
+  },
+  {
+    "name": "Classic Chicken Noodle Soup",
+    "unique id": 1696043268877,
+    "id": "classic-chicken-noodle-soup",
+    "cuisine": "American",
+    "meal type": "dinner",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "1 hour",
+      "total time": "1 hour 15 minutes",
+      "number of people served": 6
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "boneless, skinless chicken breasts",
+          "quantity": 2,
+          "unit": "pounds"
+        },
+        {
+          "id": 2,
+          "name": "water",
+          "quantity": 8,
+          "unit": "cups"
+        },
+        {
+          "id": 3,
+          "name": "salt",
+          "quantity": 2,
+          "unit": "teaspoons"
+        },
+        {
+          "id": 4,
+          "name": "black pepper",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 5,
+          "name": "onion",
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "carrots",
+          "quantity": 2
+        },
+        {
+          "id": 7,
+          "name": "celery stalks",
+          "quantity": 2
+        },
+        {
+          "id": 8,
+          "name": "dried egg noodles",
+          "quantity": 2,
+          "unit": "cups"
+        },
+        {
+          "id": 9,
+          "name": "fresh parsley",
+          "quantity": 2,
+          "unit": "tablespoons"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a large stockpot or Dutch oven, combine the chicken breasts, water, salt, and pepper. Bring to a boil over medium-high heat, then reduce heat to low, cover, and simmer for 30 minutes."
+      },
+      {
+        "number": 2,
+        "text": "Remove the chicken breasts from the pot and set aside to cool slightly. Once cool enough to handle, shred the chicken using two forks and set aside."
+      },
+      {
+        "number": 3,
+        "text": "While the chicken is simmering, prepare the vegetables. Dice the onion, chop the carrots into 1/4-inch thick slices, and dice the celery."
+      },
+      {
+        "number": 4,
+        "text": "Add the onion, carrots, and celery to the pot with the chicken broth. Bring to a boil, then reduce heat to low, cover, and simmer for 15 minutes, or until the vegetables are tender."
+      },
+      {
+        "number": 5,
+        "text": "Stir in the egg noodles and cook for 8-10 minutes, or until the noodles are tender."
+      },
+      {
+        "number": 6,
+        "text": "Return the shredded chicken to the pot and stir to combine. Heat through for an additional 2-3 minutes."
+      },
+      {
+        "number": 7,
+        "text": "Stir in the fresh parsley before serving."
+      }
+    ],
+    "notes": [
+      "For a richer flavor, use chicken broth instead of water.",
+      "Add other vegetables to your liking, such as peas, corn, or green beans.",
+      "Serve with crackers or crusty bread for a complete meal."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 250,
+      "carbohydrates": 25,
+      "protein": 25,
+      "fat": 7,
+      "saturated fat": 2,
+      "fiber": 2,
+      "sugar": 2
+    }
+  },
+  {
+    "name": "Chicken Tikka Masala",
+    "unique id": 1701827715728,
+    "id": "chicken-tikka-masala",
+    "cuisine": "Indian",
+    "meal type": "dinner",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "25 minutes",
+      "cook time": "30 minutes",
+      "total time": "55 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "marinade": [
+        {
+          "id": 1,
+          "name": "plain yogurt",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 2,
+          "name": "lemon juice",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 3,
+          "name": "garlic",
+          "quantity": 4,
+          "unit": "cloves, minced"
+        },
+        {
+          "id": 4,
+          "name": "ginger",
+          "quantity": 1,
+          "unit": "tablespoon, minced"
+        },
+        {
+          "id": 5,
+          "name": "garam masala",
+          "quantity": 2,
+          "unit": "teaspoons"
+        },
+        {
+          "id": 6,
+          "name": "turmeric powder",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 7,
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 8,
+          "name": "salt",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 9,
+          "name": "black pepper",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 10,
+          "name": "cayenne pepper",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        }
+      ],
+      "chicken": [
+        {
+          "id": 11,
+          "name": "boneless, skinless chicken breasts",
+          "quantity": 1.5,
+          "unit": "pounds, cut into 1-inch cubes"
+        }
+      ],
+      "sauce": [
+        {
+          "id": 12,
+          "name": "butter",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 13,
+          "name": "onion",
+          "quantity": 1,
+          "unit": "medium, finely chopped"
+        },
+        {
+          "id": 14,
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "cloves, minced"
+        },
+        {
+          "id": 15,
+          "name": "ginger",
+          "quantity": 1,
+          "unit": "teaspoon, minced"
+        },
+        {
+          "id": 16,
+          "name": "tomato paste",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 17,
+          "name": "crushed tomatoes",
+          "quantity": 1,
+          "unit": "can (28 ounces)"
+        },
+        {
+          "id": 18,
+          "name": "heavy cream",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 19,
+          "name": "garam masala",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 20,
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 21,
+          "name": "black pepper",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a large bowl, whisk together the yogurt, lemon juice, garlic, ginger, garam masala, turmeric powder, paprika, salt, black pepper, and cayenne pepper."
+      },
+      {
+        "number": 2,
+        "text": "Add the chicken cubes to the marinade and coat well. Cover and refrigerate for at least 4 hours, or preferably overnight."
+      },
+      {
+        "number": 3,
+        "text": "Preheat oven to 400 degrees F (200 degrees C)."
+      },
+      {
+        "number": 4,
+        "text": "Thread the marinated chicken onto skewers and place them on a baking sheet lined with parchment paper."
+      },
+      {
+        "number": 5,
+        "text": "Bake for 20-25 minutes, or until the chicken is cooked through."
+      },
+      {
+        "number": 6,
+        "text": "While the chicken is baking, prepare the sauce. In a large saucepan or Dutch oven, melt the butter over medium heat."
+      },
+      {
+        "number": 7,
+        "text": "Add the onion and cook until softened, about 5 minutes."
+      },
+      {
+        "number": 8,
+        "text": "Stir in the garlic and ginger and cook for 1 minute more."
+      },
+      {
+        "number": 9,
+        "text": "Add the tomato paste and cook for 2 minutes, stirring constantly."
+      },
+      {
+        "number": 10,
+        "text": "Pour in the crushed tomatoes, heavy cream, garam masala, salt, and black pepper. Bring to a simmer and cook for 15 minutes, or until the sauce has thickened."
+      },
+      {
+        "number": 11,
+        "text": "Remove the chicken from the oven and add it to the sauce. Stir to coat."
+      },
+      {
+        "number": 12,
+        "text": "Serve hot with rice or naan bread."
+      }
+    ],
+    "notes": [
+      "For a spicier dish, add more cayenne pepper to the marinade.",
+      "If you don't have skewers, you can grill or pan-fry the chicken instead.",
+      "Garnish with fresh cilantro before serving."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 550,
+      "carbohydrates": 30,
+      "protein": 45,
+      "fat": 30,
+      "saturated fat": 15,
+      "fiber": 5,
+      "sugar": 10
+    }
+  },
+  {
+    "name": "Tteokbokki Rice Cake Balls",
+    "unique id": 1701830578547,
+    "id": "tteokbokki-rice-cake-balls",
+    "cuisine": "Korean",
+    "meal type": "dessert",
+    "dietary restrictions and designations": [
+      "vegetarian"
+    ],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "10 minutes",
+      "total time": "25 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dough": [
+        {
+          "id": 1,
+          "name": "Glutinous rice flour",
+          "quantity": 2,
+          "unit": "cups"
+        },
+        {
+          "id": 2,
+          "name": "Sugar",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 3,
+          "name": "Salt",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 4,
+          "name": "Hot water",
+          "quantity": 0.75,
+          "unit": "cup"
+        }
+      ],
+      "coating": [
+        {
+          "id": 5,
+          "name": "Sesame seeds",
+          "quantity": 0.25,
+          "unit": "cup"
+        }
+      ],
+      "syrup": [
+        {
+          "id": 6,
+          "name": "Water",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 7,
+          "name": "Brown sugar",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 8,
+          "name": "Honey",
+          "quantity": 1,
+          "unit": "tablespoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a large bowl, combine glutinous rice flour, sugar, and salt."
+      },
+      {
+        "number": 2,
+        "text": "Gradually add hot water to the flour mixture, mixing with a wooden spoon until a dough forms."
+      },
+      {
+        "number": 3,
+        "text": "Transfer the dough onto a lightly floured surface and knead for 5-7 minutes, or until smooth and elastic."
+      },
+      {
+        "number": 4,
+        "text": "Divide the dough into 12 equal portions. Roll each portion into a ball."
+      },
+      {
+        "number": 5,
+        "text": "Fill a large pot with water and bring to a boil. Gently drop the rice cake balls into the boiling water."
+      },
+      {
+        "number": 6,
+        "text": "Cook for 8-10 minutes, or until the rice cake balls float to the surface."
+      },
+      {
+        "number": 7,
+        "text": "While the rice cake balls are cooking, prepare the syrup. In a small saucepan, combine water, brown sugar, and honey."
+      },
+      {
+        "number": 8,
+        "text": "Bring the syrup mixture to a boil over medium heat, stirring constantly until the sugar dissolves."
+      },
+      {
+        "number": 9,
+        "text": "Reduce the heat to low and simmer for 5 minutes, or until the syrup thickens slightly."
+      },
+      {
+        "number": 10,
+        "text": "Remove the cooked rice cake balls from the boiling water with a slotted spoon and transfer them to the syrup."
+      },
+      {
+        "number": 11,
+        "text": "Gently toss the rice cake balls in the syrup until they are evenly coated."
+      },
+      {
+        "number": 12,
+        "text": "Spread the sesame seeds on a plate. Roll each syrup-coated rice cake ball in the sesame seeds until fully covered."
+      },
+      {
+        "number": 13,
+        "text": "Serve the tteokbokki rice cake balls immediately."
+      }
+    ],
+    "notes": [
+      "For a chewier texture, you can soak the glutinous rice flour in water for 30 minutes before making the dough.",
+      "Feel free to adjust the amount of sugar in the dough and syrup to your liking.",
+      "These rice cake balls are best served warm, but you can also enjoy them at room temperature."
+    ],
+    "nutrition": {
+      "serving": "1 serving (2 rice cake balls)",
+      "calories": 250,
+      "carbohydrates": 50,
+      "protein": 4,
+      "fat": 3,
+      "saturated fat": 1,
+      "fiber": 2,
+      "sugar": 20
+    }
+  },
+  {
+    "name": "Classic Greek Salad (Horiatiki)",
+    "unique id": 1696043028266,
+    "id": "classic-greek-salad-horiatiki",
+    "cuisine": "Greek",
+    "meal type": "lunch",
+    "dietary restrictions and designations": [
+      "vegetarian",
+      "gluten-free"
+    ],
+    "serving info": {
+      "prep time": "15 minutes",
+      "cook time": "0 minutes",
+      "total time": "15 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Ripe tomatoes",
+          "quantity": 4,
+          "unit": "medium, chopped"
+        },
+        {
+          "id": 2,
+          "name": "Cucumber",
+          "quantity": 1,
+          "unit": "medium, sliced"
+        },
+        {
+          "id": 3,
+          "name": "Red onion",
+          "quantity": 0.5,
+          "unit": "medium, thinly sliced"
+        },
+        {
+          "id": 4,
+          "name": "Green bell pepper",
+          "quantity": 0.5,
+          "unit": "medium, sliced"
+        },
+        {
+          "id": 5,
+          "name": "Kalamata olives",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 6,
+          "name": "Feta cheese",
+          "quantity": 200,
+          "unit": "grams, cut into cubes"
+        },
+        {
+          "id": 7,
+          "name": "Extra virgin olive oil",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 8,
+          "name": "Dried oregano",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 9,
+          "name": "Salt",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 10,
+          "name": "Freshly ground black pepper",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a large bowl, combine the chopped tomatoes, sliced cucumber, red onion, green bell pepper, and Kalamata olives."
+      },
+      {
+        "number": 2,
+        "text": "Gently toss the vegetables with the extra virgin olive oil, dried oregano, salt, and black pepper."
+      },
+      {
+        "number": 3,
+        "text": "Add the feta cheese cubes to the salad and gently toss to combine."
+      },
+      {
+        "number": 4,
+        "text": "Serve immediately or chill for later. Enjoy!"
+      }
+    ],
+    "notes": [
+      "For a more authentic Greek salad, use high-quality Greek feta cheese.",
+      "You can add other ingredients to your liking, such as capers, fresh parsley, or a squeeze of lemon juice."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 350,
+      "carbohydrates": 12,
+      "protein": 15,
+      "fat": 28,
+      "saturated fat": 6,
+      "fiber": 4,
+      "sugar": 6
+    }
+  },
+  {
+    "name": "Rabanadas (Portuguese French Toast)",
+    "unique id": 1701827257587,
+    "id": "rabanadas-portuguese-french-toast",
+    "cuisine": "Portuguese",
+    "meal type": "breakfast",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "20 minutes",
+      "cook time": "10 minutes",
+      "total time": "30 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "day-old Portuguese bread (or challah)",
+          "quantity": 1,
+          "unit": "loaf, sliced 1-inch thick"
+        },
+        {
+          "id": 2,
+          "name": "whole milk",
+          "quantity": 1.5,
+          "unit": "cups"
+        },
+        {
+          "id": 3,
+          "name": "eggs",
+          "quantity": 3
+        },
+        {
+          "id": 4,
+          "name": "granulated sugar",
+          "quantity": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "id": 5,
+          "name": "ground cinnamon",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 6,
+          "name": "salt",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 7,
+          "name": "vegetable oil",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 8,
+          "name": "honey or maple syrup",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 9,
+          "name": "ground cinnamon",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "In a shallow dish, whisk together the milk, eggs, 2 tablespoons sugar, 1 teaspoon cinnamon, and salt."
+      },
+      {
+        "number": 2,
+        "text": "Heat the vegetable oil in a large skillet over medium heat."
+      },
+      {
+        "number": 3,
+        "text": "Dip each slice of bread into the milk mixture, allowing it to soak for about 30 seconds per side."
+      },
+      {
+        "number": 4,
+        "text": "Carefully place the soaked bread slices in the hot oil and cook for 2-3 minutes per side, or until golden brown."
+      },
+      {
+        "number": 5,
+        "text": "Remove the rabanadas from the skillet and place them on a wire rack to drain any excess oil."
+      },
+      {
+        "number": 6,
+        "text": "In a small bowl, combine the honey (or maple syrup) and remaining 1/2 teaspoon cinnamon."
+      },
+      {
+        "number": 7,
+        "text": "Drizzle the honey-cinnamon mixture over the warm rabanadas and serve immediately."
+      }
+    ],
+    "notes": [
+      "Rabanadas are best served warm and fresh.",
+      "For a richer flavor, use half-and-half instead of milk.",
+      "You can adjust the amount of sugar and cinnamon to your liking."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 350,
+      "carbohydrates": 45,
+      "protein": 10,
+      "fat": 15,
+      "saturated fat": 5,
+      "fiber": 3,
+      "sugar": 20
+    }
+  },
+  {
+    "name": "Indonesian Breakfast Porridge",
+    "unique id": 1696044134764,
+    "id": "indonesian-breakfast-porridge",
+    "cuisine": "Indonesian",
+    "meal type": "breakfast",
+    "dietary restrictions and designations": [],
+    "serving info": {
+      "prep time": "5 minutes",
+      "cook time": "15 minutes",
+      "total time": "20 minutes",
+      "number of people served": 2
+    },
+    "ingredients": {
+      "porridge": [
+        {
+          "id": 1,
+          "name": "Jasmine rice",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 2,
+          "name": "Water",
+          "quantity": 2.5,
+          "unit": "cups"
+        },
+        {
+          "id": 3,
+          "name": "Salt",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 4,
+          "name": "Pandan leaf",
+          "quantity": 1
+        }
+      ],
+      "sauce": [
+        {
+          "id": 5,
+          "name": "Palm sugar",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "id": 6,
+          "name": "Water",
+          "quantity": 0.25,
+          "unit": "cup"
+        },
+        {
+          "id": 7,
+          "name": "Ginger",
+          "quantity": 1,
+          "unit": "inch"
+        }
+      ],
+      "garnish": [
+        {
+          "id": 8,
+          "name": "Coconut milk",
+          "quantity": 0.25,
+          "unit": "cup"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Rinse the rice under cold water until the water runs clear."
+      },
+      {
+        "number": 2,
+        "text": "In a saucepan, combine the rinsed rice, water, salt, and pandan leaf. Tie the pandan leaf into a knot for easier removal later."
+      },
+      {
+        "number": 3,
+        "text": "Bring the mixture to a boil over medium heat. Once boiling, reduce the heat to low, cover the saucepan, and simmer for 15 minutes, or until the rice is very soft and the porridge has thickened."
+      },
+      {
+        "number": 4,
+        "text": "While the porridge is simmering, prepare the palm sugar sauce. In a small saucepan, combine the palm sugar, water, and grated ginger."
+      },
+      {
+        "number": 5,
+        "text": "Cook the sauce over medium heat, stirring constantly, until the palm sugar has dissolved and the sauce has slightly thickened. This should take about 5 minutes."
+      },
+      {
+        "number": 6,
+        "text": "Once the porridge is cooked, remove and discard the pandan leaf."
+      },
+      {
+        "number": 7,
+        "text": "To serve, divide the porridge into bowls. Drizzle generously with the palm sugar sauce and top with a splash of coconut milk."
+      }
+    ],
+    "notes": [
+      "Adjust the amount of palm sugar to your liking.",
+      "For a richer flavor, use coconut milk instead of water for cooking the porridge.",
+      "You can add other toppings such as chopped nuts, toasted sesame seeds, or fresh fruit."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 350,
+      "carbohydrates": 70,
+      "protein": 5,
+      "fat": 10,
+      "saturated fat": 5,
+      "fiber": 2,
+      "sugar": 20
+    }
+  },
+  {
+    "name": "One Pan Tandoori Chicken with Spiced Coconut Rice",
+    "unique id": 1696044234578,
+    "id": "one-pan-tandoori-chicken-with-spiced-coconut-rice",
+    "cuisine": "Indian",
+    "meal type": "dinner",
+    "dietary restrictions and designations": [
+      "gluten-free"
+    ],
+    "serving info": {
+      "prep time": "1 hour",
+      "cook time": "35 minutes",
+      "total time": "1 hour 35 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "marinade": [
+        {
+          "id": 1,
+          "name": "boneless skinless chicken thighs",
+          "quantity": 1.5,
+          "unit": "pounds"
+        },
+        {
+          "id": 2,
+          "name": "coriander",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 3,
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 4,
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 5,
+          "name": "ground turmeric",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 6,
+          "name": "cayenne pepper",
+          "quantity": 1,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 7,
+          "name": "garam masala",
+          "quantity": 0.5,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 8,
+          "name": "nonfat plain greek yogurt",
+          "quantity": 0.75,
+          "unit": "cup"
+        },
+        {
+          "id": 9,
+          "name": "lemon juice",
+          "quantity": 1,
+          "unit": "small lemon, juiced"
+        },
+        {
+          "id": 10,
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "cloves, minced"
+        },
+        {
+          "id": 11,
+          "name": "freshly grated ginger",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 12,
+          "name": "salt",
+          "quantity": 0.75,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 13,
+          "name": "freshly ground black pepper",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        }
+      ],
+      "dish": [
+        {
+          "id": 14,
+          "name": "olive oil or coconut oil",
+          "quantity": 1,
+          "unit": "tablespoon"
+        },
+        {
+          "id": 15,
+          "name": "lite coconut milk",
+          "quantity": 1,
+          "unit": "15 ounce can"
+        },
+        {
+          "id": 16,
+          "name": "red pepper flakes",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 17,
+          "name": "turmeric",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 18,
+          "name": "cumin",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 19,
+          "name": "coriander",
+          "quantity": 0.125,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 20,
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 21,
+          "name": "freshly ground black pepper",
+          "quantity": 0.25,
+          "unit": "teaspoon"
+        },
+        {
+          "id": 22,
+          "name": "uncooked basmati white rice",
+          "quantity": 1,
+          "unit": "cup"
+        },
+        {
+          "id": 23,
+          "name": "frozen green peas",
+          "quantity": 0.75,
+          "unit": "cup"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Add chicken, coriander, cumin, paprika, turmeric, cayenne pepper, garam masala, greek yogurt, lemon juice, garlic, ginger, salt and pepper to a large bowl; mix with a spoon to combine and coat the chicken and then cover with plastic wrap and place in fridge for anywhere from 1-8 hours to marinate the chicken."
+      },
+      {
+        "number": 2,
+        "text": "Place a large deep 10 inch skillet over medium high heat. (If you do not have a skillet a large pot will also work very well!) Add in oil; once hot, add in chicken and season generously with freshly ground salt and pepper. Cook until browned 4-5 minutes, then flip and and cook an additional 2 minutes. Remove from pan and transfer to a plate."
+      },
+      {
+        "number": 3,
+        "text": "In the same skillet, add in coconut milk, red pepper flakes, turmeric, cumin, coriander and salt and pepper. Bring to a simmer, then fold in the uncooked rice and peas, making sure it is evenly distributed."
+      },
+      {
+        "number": 4,
+        "text": "Add browned chicken on top."
+      },
+      {
+        "number": 5,
+        "text": "Reduce heat to low, cover the skillet immediately and cook for 20-25 minutes. After 20-25 minutes, most of the liquid should be absorbed and rice should be cooked. Serve immediately. Garnish with cilantro and serve with extra yogurt if you'd like."
+      }
+    ],
+    "notes": [
+      "Do not use brown rice. It takes a lot longer to cook and I would NOT recommend.",
+      "Cauliflower rice works well in this recipe!",
+      "If you are looking for an alternative, I would recommend subbing about 2/3 cup quinoa. The cooking time will stay the same.",
+      "To meal prep: This meal serves four. Place rice in a meal prep containers and top with 1 chicken thigh. Garnish with cilantro and green onions."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 528,
+      "carbohydrates": 45.1,
+      "protein": 42.5,
+      "fat": 18.4,
+      "saturated fat": 7.7,
+      "fiber": 3.3,
+      "sugar": 5.4
+    }
+  },
+  {
+    "name": "Kheer (Indian Rice Pudding)",
+    "unique id": 1701827718682,
+    "id": "kheer-indian-rice-pudding",
+    "cuisine": "Indian",
+    "meal type": "dessert",
+    "dietary restrictions and designations": [
+      "vegetarian"
+    ],
+    "serving info": {
+      "prep time": "10 minutes",
+      "cook time": "25 minutes",
+      "total time": "35 minutes",
+      "number of people served": 4
+    },
+    "ingredients": {
+      "dish": [
+        {
+          "id": 1,
+          "name": "Basmati rice",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 2,
+          "name": "Milk",
+          "quantity": 4,
+          "unit": "cups"
+        },
+        {
+          "id": 3,
+          "name": "Sugar",
+          "quantity": 0.5,
+          "unit": "cup"
+        },
+        {
+          "id": 4,
+          "name": "Green cardamom pods",
+          "quantity": 3,
+          "unit": "pieces"
+        },
+        {
+          "id": 5,
+          "name": "Almonds",
+          "quantity": 10,
+          "unit": "pieces"
+        },
+        {
+          "id": 6,
+          "name": "Cashews",
+          "quantity": 10,
+          "unit": "pieces"
+        },
+        {
+          "id": 7,
+          "name": "Raisins",
+          "quantity": 15,
+          "unit": "pieces"
+        },
+        {
+          "id": 8,
+          "name": "Ghee (clarified butter)",
+          "quantity": 1,
+          "unit": "tablespoon"
+        }
+      ]
+    },
+    "instructions": [
+      {
+        "number": 1,
+        "text": "Rinse the basmati rice under cold water until the water runs clear. Soak the rice in water for about 30 minutes. This will help the rice cook faster and more evenly."
+      },
+      {
+        "number": 2,
+        "text": "While the rice is soaking, lightly crush the green cardamom pods to release their aroma."
+      },
+      {
+        "number": 3,
+        "text": "In a large saucepan or pot, heat the ghee over medium heat. Add the almonds and cashews and sauté for a few minutes until they turn light golden brown. Remove the nuts from the pan and set them aside."
+      },
+      {
+        "number": 4,
+        "text": "Add the raisins to the same pan and sauté for a minute until they plump up. Remove the raisins and set them aside with the nuts."
+      },
+      {
+        "number": 5,
+        "text": "Add the drained rice and crushed cardamom pods to the pan. Sauté for a couple of minutes while stirring constantly. This will help remove any excess starch from the rice."
+      },
+      {
+        "number": 6,
+        "text": "Pour the milk into the pan with the rice and cardamom pods. Bring the mixture to a boil over medium heat, then reduce the heat to low and simmer for about 20-25 minutes, or until the rice is cooked through and the kheer has thickened slightly. Stir occasionally to prevent the rice from sticking to the bottom of the pan."
+      },
+      {
+        "number": 7,
+        "text": "Add the sugar to the kheer and stir until it dissolves completely. Continue to simmer for another 5 minutes, allowing the flavors to meld."
+      },
+      {
+        "number": 8,
+        "text": "Remove the pan from the heat and stir in the roasted almonds, cashews, and raisins. You can reserve some of the nuts and raisins for garnishing."
+      },
+      {
+        "number": 9,
+        "text": "Let the kheer cool slightly before serving. It can be served warm or chilled. Garnish with the remaining nuts and raisins before serving."
+      }
+    ],
+    "notes": [
+      "You can adjust the amount of sugar to your liking. For a less sweet kheer, use less sugar.",
+      "To enhance the flavor, you can add a pinch of saffron strands to the milk while simmering.",
+      "Kheer can be stored in the refrigerator for up to 3 days. Reheat gently before serving."
+    ],
+    "nutrition": {
+      "serving": "1 serving",
+      "calories": 350,
+      "carbohydrates": 60,
+      "protein": 10,
+      "fat": 10,
+      "saturated fat": 5,
+      "fiber": 2,
+      "sugar": 30
+    }
+  }
+]
