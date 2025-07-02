@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { preprompt } from "../Models/Prompts";
 import axios from "axios";
 import "./RecipeGenerator.css";
+import FormInput from "../FormInputs/FormInput"
 
 const RecipeGenerator: React.FC = () => {
   const [cuisine, setCuisine] = useState("");
@@ -33,12 +34,12 @@ const RecipeGenerator: React.FC = () => {
       });
 
       // Extract JSON from the response text
-      const jsonMatch = response.data.match(/```json\s*([\s\S]*?)\s*```/);
+      const jsonMatch = (response.data as string).match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch && jsonMatch[1]) {
         try {
           const jsonData = JSON.parse(jsonMatch[1].trim());
           setGeneratedRecipe(jsonData);
-        } catch (parseError) {
+        } catch {
           setError("Error parsing the recipe JSON. Please try again.");
         }
       } else {
@@ -75,52 +76,45 @@ const RecipeGenerator: React.FC = () => {
     <div className="recipe-generator">
       <h2>Recipe Generator</h2>
 
-      <div className="form-group">
-        <label>Cuisine (optional)</label>
-        <input
-          type="text"
-          value={cuisine}
-          onChange={(e) => setCuisine(e.target.value)}
-          placeholder="e.g., Italian, Mexican, Chinese"
-        />
-      </div>
+      <FormInput
+      label="Cuisine"
+      value={cuisine}
+      onChange={(e) => setCuisine(e.target.value)}
+      placeholder="e.g., Italian, Mexican, Chinese"
+      />
 
-      <div className="form-group">
-        <label>Dietary Restrictions (optional)</label>
-        <input
-          type="text"
-          value={dietaryRestrictions}
-          onChange={(e) => setDietaryRestrictions(e.target.value)}
-          placeholder="e.g., vegetarian, gluten-free, dairy-free"
-        />
-      </div>
+      <FormInput
+      label="Dietary Restrictions"
+      value={dietaryRestrictions}
+      onChange={(e) => setDietaryRestrictions(e.target.value)}
+      placeholder="e.g., vegetarian, gluten-free, dairy-free"
+      type="textarea"
+      />
 
-      <div className="form-group">
-        <label>Include These Ingredients</label>
-        <textarea
-          value={knownIngredients}
-          onChange={(e) => setKnownIngredients(e.target.value)}
-          placeholder="e.g., chicken, rice, garlic"
-        />
-      </div>
+            <FormInput
+      label="Include These Ingredients"
+      value={knownIngredients}
+      onChange={(e) => setKnownIngredients(e.target.value)}
+      placeholder="e.g., chicken, rice, garlic"
+      type="textarea"
+      />
 
-      <div className="form-group">
-        <label>Avoid These Ingredients</label>
-        <textarea
-          value={avoidIngredients}
-          onChange={(e) => setAvoidIngredients(e.target.value)}
-          placeholder="e.g., peanuts, shellfish"
-        />
-      </div>
+             <FormInput
+      label="Avoid These Ingredients"
+      value={avoidIngredients}
+      onChange={(e) => setAvoidIngredients(e.target.value)}
+      placeholder="e.g., peanuts, shellfish"
+      type="textarea"
+      />
 
-      <div className="form-group">
-        <label>Additional Information (optional)</label>
-        <textarea
-          value={otherInfo}
-          onChange={(e) => setOtherInfo(e.target.value)}
-          placeholder="e.g., quick meal, holiday dish, high protein"
-        />
-      </div>
+             <FormInput
+      label="Additional Information (optional)"
+      value={otherInfo}
+      onChange={(e) => setOtherInfo(e.target.value)}
+      placeholder="e.g., quick meal, holiday dish, high protein"
+      type="textarea"
+      />
+
 
       <div className="form-actions">
         <button

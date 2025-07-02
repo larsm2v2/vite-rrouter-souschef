@@ -102,12 +102,7 @@ export function configurePassport() {
           const googleId = profile.id;
 
           // Check for existing user
-          const userResult = await dbPool.query<{
-            id: number;
-            google_sub: string;
-            email: string;
-            display_name: string;
-          }>(
+          const userResult = await dbPool.query(
             `SELECT id, google_sub, email, display_name 
            FROM users 
            WHERE google_sub = $1`,
@@ -135,7 +130,7 @@ export function configurePassport() {
             const tokenExpiry = new Date();
             tokenExpiry.setHours(tokenExpiry.getHours() + 1);
 
-            const insertResult = await dbPool.query<{ id: number }>(
+            const insertResult = await dbPool.query(
               `INSERT INTO users (
               google_sub, 
               email, 
@@ -248,16 +243,12 @@ passport.serializeUser<number>((user: Express.User, done) => {
 
 passport.deserializeUser<number>(async (id: number, done) => {
   try {
-    console.log("deserializeUser called with id:", id);
-    console.log("Attempting to query user with id:", id);
-    const result = await dbPool.query<Express.User>(
+    const result = await pool.query(
       `SELECT id, email, display_name 
        FROM users 
        WHERE id = $1`,
       [id]
     );
-    console.log("User query result:", result.rows[0]);
-    console.log("Calling done with:", result.rows[0] || false);
     done(null, result.rows[0] || false);
   } catch (err) {
     console.error("Deserialization error:", err);

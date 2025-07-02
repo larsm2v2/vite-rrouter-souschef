@@ -30,10 +30,11 @@ async function createTables() {
       );
     `);
 
-    // Recipe Information
+    // Recipes table
     await client.query(`
-      CREATE TABLE recipes (
+      CREATE TABLE IF NOT EXISTS recipes (
         id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         unique_id BIGINT UNIQUE NOT NULL,
         name TEXT NOT NULL,
         slug TEXT NOT NULL UNIQUE,
@@ -42,10 +43,12 @@ async function createTables() {
         dietary_restrictions TEXT[],
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
-      );  
+      );
     `);
+
+    // Recipe-related tables
     await client.query(`
-      CREATE TABLE recipe_serving_info (
+      CREATE TABLE IF NOT EXISTS recipe_serving_info (
         recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
         prep_time TEXT,
         cook_time TEXT,
@@ -56,42 +59,53 @@ async function createTables() {
     `);
 
     await client.query(`
-      CREATE TABLE recipe_ingredients (
+      CREATE TABLE IF NOT EXISTS recipe_ingredients (
         recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
-        category TEXT NOT NULL,  -- 'dish', 'sauce', 'marinade', etc.
+        category TEXT NOT NULL,
         ingredients JSONB NOT NULL,
         PRIMARY KEY (recipe_id, category)
       );
     `);
+
     await client.query(`
-      CREATE TABLE recipe_instructions (
-    recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
-    step_number INTEGER NOT NULL,
-    instruction TEXT NOT NULL,
-    PRIMARY KEY (recipe_id, step_number)
+      CREATE TABLE IF NOT EXISTS recipe_instructions (
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        step_number INTEGER NOT NULL,
+        instruction TEXT NOT NULL,
+        PRIMARY KEY (recipe_id, step_number)
       );
     `);
+
     await client.query(`
-      CREATE TABLE recipe_notes (
-    id SERIAL PRIMARY KEY,
-    recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
-    note TEXT NOT NULL
+      CREATE TABLE IF NOT EXISTS recipe_notes (
+        id SERIAL PRIMARY KEY,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        note TEXT NOT NULL
       );
     `);
+
     await client.query(`
-    CREATE TABLE recipe_nutrition (
-    recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
-    nutrition_data JSONB NOT NULL,
-    PRIMARY KEY (recipe_id)
+      CREATE TABLE IF NOT EXISTS recipe_nutrition (
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        nutrition_data JSONB NOT NULL,
+        PRIMARY KEY (recipe_id)
       );
     `);
+
     await client.query(`
-      CREATE TABLE IF NOT EXISTS schema_version (
-        version INT PRIMARY KEY,
-        applied_at TIMESTAMP DEFAULT NOW()
+      CREATE TABLE IF NOT EXISTS grocery_list (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        item_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        unit TEXT,
+        is_checked BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
-    // Audit log
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS audit_log (
         id SERIAL PRIMARY KEY,
@@ -106,20 +120,6 @@ async function createTables() {
       );
     `);
 
-    // Create indexes
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub);
-      CREATE INDEX IF NOT EXISTS idx_recipe_ingredients ON recipe_ingredients(recipe_id, category);
-      CREATE INDEX IF NOT EXISTS idx_recipes_unique_id ON recipes(unique_id);
-      CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp DESC);
-      CREATE INDEX IF NOT EXISTS idx_audit_log_user_action ON audit_log(user_id, action);
-    `);
-
-    // Comments
-    await client.query(`
-      COMMENT ON COLUMN users.google_sub IS 'Google OAuth subject identifier';
-      `);
-
     await client.query("COMMIT");
     console.log("✅ Tables created successfully");
   } catch (err) {
@@ -133,33 +133,29 @@ async function createTables() {
 
 export async function initializeDatabase() {
   try {
-    // Return existing promise if already initializing
     if (isInitializing) {
       return initializationPromise;
     }
 
-    // Set lock
     isInitializing = true;
 
-    // Create new initialization promise
     initializationPromise = createTables()
       .catch((err) => {
         console.error("Database initialization error:", err);
         throw err;
       })
       .finally(() => {
-        // Release lock
         isInitializing = false;
       });
 
-    // Then migrate recipe tables
-    await migrateRecipeTables();
-
-    console.log("Database schema initialization completed successfully");
+    await initializationPromise; // Ensure the promise is awaited
+    console.log("✅ Database schema initialization completed successfully");
   } catch (error) {
-    console.error("Error initializing database schema:", error);
+    console.error("❌ Error initializing database schema:", error);
     throw error;
   }
 }
 
-export default pool;
+// export default pool;
+// Instead export the initialize function as the default if needed
+export default initializeDatabase;

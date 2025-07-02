@@ -1,11 +1,18 @@
-import pool from '../config/database';
+import pool from "../config/database";
 
-describe('Database Schema', () => {
+describe("Database Schema", () => {
   beforeAll(async () => {
     // Drop tables in correct order to handle dependencies
-    await pool.query('DROP TABLE IF EXISTS audit_log');
-    await pool.query('DROP TABLE IF EXISTS game_stats');
-    await pool.query('DROP TABLE IF EXISTS users');
+    // First, drop tables that depend on other tables
+    await pool.query("DROP TABLE IF EXISTS audit_log CASCADE");
+    await pool.query("DROP TABLE IF EXISTS grocery_list CASCADE");
+    await pool.query("DROP TABLE IF EXISTS recipe_notes CASCADE");
+    await pool.query("DROP TABLE IF EXISTS recipe_nutrition CASCADE");
+    await pool.query("DROP TABLE IF EXISTS recipe_ingredients CASCADE");
+    await pool.query("DROP TABLE IF EXISTS recipe_instructions CASCADE");
+    await pool.query("DROP TABLE IF EXISTS recipe_serving_info CASCADE");
+    await pool.query("DROP TABLE IF EXISTS recipes CASCADE");
+    await pool.query("DROP TABLE IF EXISTS users CASCADE");
 
     // Create tables in correct order
     await pool.query(`
@@ -32,7 +39,7 @@ describe('Database Schema', () => {
     `);
   });
 
-  it('should allow null user_id in audit_log', async () => {
+  it("should allow null user_id in audit_log", async () => {
     // Test inserting a record with null user_id
     const result = await pool.query(`
       INSERT INTO audit_log (
@@ -43,17 +50,18 @@ describe('Database Schema', () => {
         'test-agent', 200, '{"test": true}'
       ) RETURNING id;
     `);
-    
+
     expect(result.rows[0].id).toBeDefined();
-    
+
     // Clean up
-    await pool.query('DELETE FROM audit_log WHERE id = $1', [result.rows[0].id]);
+    await pool.query("DELETE FROM audit_log WHERE id = $1", [
+      result.rows[0].id,
+    ]);
   });
 
   afterAll(async () => {
     // Drop tables in correct order
-    await pool.query('DROP TABLE IF EXISTS audit_log');
-    await pool.query('DROP TABLE IF EXISTS users');
-    await pool.end();
+    await pool.query("DROP TABLE IF EXISTS audit_log CASCADE");
+    await pool.query("DROP TABLE IF EXISTS users CASCADE");
   });
-}); 
+});

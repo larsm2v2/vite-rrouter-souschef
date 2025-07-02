@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-import pool from '../config/database';
+import express, { Request, Response } from "express";
+import pool from "../config/database";
 
 const router = express.Router();
 
@@ -7,9 +7,9 @@ const router = express.Router();
  * POST /profile/reset-stats
  * Reset current_level to 1, clear best_combination and saved_maps for the logged-in user
  */
-router.post('/reset-stats', async (req: Request, res: Response) => {
+router.post("/reset-stats", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
   const userId = (req.user as any).id;
   try {
@@ -22,8 +22,8 @@ router.post('/reset-stats', async (req: Request, res: Response) => {
     );
     res.json({ success: true });
   } catch (err) {
-    console.error('Error resetting game stats:', err);
-    res.status(500).json({ error: 'Failed to reset game stats' });
+    console.error("Error resetting game stats:", err);
+    res.status(500).json({ error: "Failed to reset game stats" });
   }
 });
 
@@ -31,13 +31,13 @@ router.post('/reset-stats', async (req: Request, res: Response) => {
  * DELETE /profile/saved-maps/:level
  * Delete a custom saved puzzle pattern for the logged-in user
  */
-router.delete('/saved-maps/:level', async (req: Request, res: Response) => {
+router.delete("/saved-maps/:level", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
   const level = parseInt(req.params.level, 10);
   if (isNaN(level)) {
-    return res.status(400).json({ error: 'Invalid level parameter' });
+    return res.status(400).json({ error: "Invalid level parameter" });
   }
 
   try {
@@ -57,8 +57,28 @@ router.delete('/saved-maps/:level', async (req: Request, res: Response) => {
     const updatedMaps: any[] = rows[0]?.saved_maps || [];
     res.json({ success: true, saved_maps: updatedMaps });
   } catch (err) {
-    console.error('Error deleting saved map:', err);
-    res.status(500).json({ error: 'Failed to delete saved map' });
+    console.error("Error deleting saved map:", err);
+    res.status(500).json({ error: "Failed to delete saved map" });
+  }
+});
+
+router.get("/profile", async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const userId = (req.user as any).id;
+  try {
+    const result = await pool.query(
+      `SELECT id, email, display_name, avatar 
+       FROM users 
+       WHERE id = $1`,
+      [userId]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error retrieving profile:", err);
+    res.status(500).json({ error: "Failed to retrieve profile" });
   }
 });
 

@@ -16,7 +16,7 @@ import rateLimit from "express-rate-limit";
 import { param } from "express-validator";
 import profileRoutes from "./routes/profile";
 import recipeRoutes from "./routes/recipes.routes";
-import GoogleGenerativeAI from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -182,25 +182,14 @@ app.get("/profile", async (req, res) => {
        FROM users WHERE id = $1`,
       [req.user.id]
     );
-
-    // Get userSavedInfo
-    const userSavedInfo = await pool.query(
-      `SELECT current_level, best_combination, saved_maps
-       FROM game_stats WHERE user_id = $1`,
-      [req.user.id]
-    );
-
-    res.json({
-      user: userResult.rows[0],
-      // Replace with recipe setup
-      stats: {
-        ...baseStats,
-        min_moves: minMovesMap,
-      },
-    });
   } catch (err) {
-    console.error("Profile error:", err);
-    res.status(500).json({ error: "Database error" });
+    // Only log errors in non-test environment
+    if (process.env.NODE_ENV !== "test") {
+      console.error(
+        "User Profile Retrieval failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+    }
   }
 });
 
@@ -381,11 +370,14 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // Initialize database for tests
 if (process.env.NODE_ENV === "test") {
-  initializeDatabase()
-    .then(() => console.log("✅ Test database initialized"))
-    .catch((err) =>
-      console.error("❌ Test database initialization failed:", err)
-    );
+  (async () => {
+    try {
+      await initializeDatabase();
+      console.log("✅ Test database initialized");
+    } catch (err) {
+      console.error("❌ Test database initialization failed:", err);
+    }
+  })();
 }
 
 // Test routes - only available in test environment

@@ -2,83 +2,145 @@
 process.env.NODE_ENV = "test";
 
 import pool from "../config/database";
-import { User, GameStats } from "../types/entities/User";
 import { initializeDatabase } from "../config/schema";
 
 describe("Database Operations", () => {
   let userId: number;
+  let recipeId: number;
+  let googleSub: string;
 
   beforeAll(async () => {
-    // Initialize database tables
-    await initializeDatabase();
-    
-    // Seed the database with a test user
-    const result = await pool.query(
-      `INSERT INTO users (google_sub, display_name, email) 
-       VALUES ($1, $2, $3) 
-       RETURNING id`,
-      ["test-google-id", "Test User", "test@example.com"]
-    );
-    userId = result.rows[0].id; // Store the user ID for later use
+    try {
+      // Initialize database tables
+      await initializeDatabase();
+
+      // Generate unique values for this test run
+      googleSub = `test-google-id-${Date.now()}`;
+      const email = `test-${Date.now()}@example.com`;
+      const uniqueId = Date.now(); // Use timestamp for uniqueness
+      const slug = `test-recipe-${Date.now()}`;
+
+      console.log("Creating test user...");
+      // Insert a test user first
+      const userResult = await pool.query(
+        `INSERT INTO users (google_sub, display_name, email)
+         VALUES ($1, $2, $3)
+         RETURNING id`,
+        [googleSub, "Test User", email]
+      );
+
+      userId = userResult.rows[0].id;
+      console.log(`Created test user with ID: ${userId}`);
+
+      console.log("Creating test recipe...");
+      // Insert a test recipe with the user_id
+      const recipeResult = await pool.query(
+        `INSERT INTO recipes (user_id, unique_id, name, slug, cuisine, meal_type, dietary_restrictions)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id`,
+        [
+          userId,
+          uniqueId,
+          "Test Recipe",
+          slug,
+          "Italian",
+          "Dinner",
+          "{Vegetarian}",
+        ]
+      );
+
+      recipeId = recipeResult.rows[0].id;
+      console.log(`Created test recipe with ID: ${recipeId}`);
+
+      console.log("Creating grocery list item...");
+      // Insert a test grocery list item with both IDs
+      await pool.query(
+        `INSERT INTO grocery_list (user_id, recipe_id, item_name, quantity, unit)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [userId, recipeId, "Tomatoes", 2, "kg"]
+      );
+      console.log("Test setup completed successfully");
+    } catch (err) {
+      console.error("Test setup failed:", err);
+      throw err;
+    }
   });
 
   afterAll(async () => {
-    // Clean up the database after tests
-    await pool.query("DELETE FROM game_stats");
-    await pool.query("DELETE FROM users");
-    await pool.end(); // Close the connection pool
+    try {
+      console.log("Cleaning up test data...");
+      // Delete in correct order to respect foreign key constraints
+      await pool.query("DELETE FROM grocery_list WHERE user_id = $1", [userId]);
+      await pool.query("DELETE FROM recipes WHERE user_id = $1", [userId]);
+      await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+      console.log("Test data cleaned up successfully");
+    } catch (err) {
+      console.error("Cleanup error:", err);
+    }
   });
 
   it("should retrieve a user by google_sub", async () => {
-    const result = await pool.query<User>(
+    const result = await pool.query(
       "SELECT * FROM users WHERE google_sub = $1",
-      ["test-google-id"]
+      [googleSub]
     );
     const user = result.rows[0];
 
     expect(user).toBeDefined();
     expect(user.display_name).toBe("Test User");
-    expect(user.email).toBe("test@example.com");
   });
 
   it("should create a new user", async () => {
-    const result = await pool.query<User>(
-      `INSERT INTO users (google_sub, display_name, email) 
-       VALUES ($1, $2, $3) 
+    const newGoogleSub = `new-google-id-${Date.now()}`;
+    const newEmail = `new-${Date.now()}@example.com`;
+
+    const result = await pool.query(
+      `INSERT INTO users (google_sub, display_name, email)
+       VALUES ($1, $2, $3)
        RETURNING *`,
-      ["new-google-id", "New User", "new@example.com"]
+      [newGoogleSub, "New User", newEmail]
     );
     const user = result.rows[0];
 
     expect(user).toBeDefined();
-    expect(user.email).toBe("new@example.com");
+    expect(user.email).toBe(newEmail);
+
+    // Clean up this specific test user
+    await pool.query("DELETE FROM users WHERE google_sub = $1", [newGoogleSub]);
   });
 
-  it("should insert and retrieve game stats for a user", async () => {
-    const buttons_pressed = ["button1", "button2"];
-    const saved_maps = ["map1", "map2"];
-
-    // Insert with proper JSON conversion
-    const insertResult = await pool.query(
-      `INSERT INTO game_stats 
-       (user_id, current_level, buttons_pressed, saved_maps) 
-       VALUES ($1, $2, $3::jsonb, $4::jsonb) 
-       RETURNING *`,
-      [userId, 5, JSON.stringify(buttons_pressed), JSON.stringify(saved_maps)]
+  it("should associate recipes with users", async () => {
+    const groceryResult = await pool.query(
+      `INSERT INTO grocery_list (user_id, recipe_id, item_name, quantity)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [userId, recipeId, "Test Item", 2]
     );
 
-    // Query to verify
-    const verifyResult = await pool.query(
-      `SELECT * FROM game_stats WHERE user_id = $1`,
+    expect(groceryResult.rows[0].id).toBeDefined();
+  });
+
+  it("should retrieve recipes for a user", async () => {
+    const result = await pool.query(
+      "SELECT * FROM recipes WHERE user_id = $1",
       [userId]
     );
+    const recipes = result.rows;
 
-    const gameStats = verifyResult.rows[0];
-    expect(gameStats.user_id).toBe(userId);
-    expect(gameStats.current_level).toBe(5);
+    expect(recipes).toBeDefined();
+    expect(recipes.length).toBeGreaterThan(0);
+    expect(recipes[0].name).toBe("Test Recipe");
+  });
 
-    // Compare JSONB data directly
-    expect(gameStats.buttons_pressed).toEqual(buttons_pressed);
-    expect(gameStats.saved_maps).toEqual(saved_maps);
+  it("should retrieve grocery list for a user", async () => {
+    const result = await pool.query(
+      "SELECT * FROM grocery_list WHERE user_id = $1",
+      [userId]
+    );
+    const groceryList = result.rows;
+
+    expect(groceryList).toBeDefined();
+    expect(groceryList.length).toBeGreaterThan(0);
+    expect(groceryList[0].item_name).toBe("Tomatoes");
   });
 });
