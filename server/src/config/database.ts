@@ -57,7 +57,6 @@ async function ensureDatabaseExists() {
     console.error("❌ Error ensuring database exists:", err);
     throw err;
   } finally {
-    // Close admin connection
     await adminPool.end();
   }
 }
@@ -132,15 +131,15 @@ async function createPool() {
 // Create and export a promise that resolves to the pool
 const poolPromise = createPool();
 // Export a singleton pool instance
-let pool: Pool;
+let pool: Pool | null;
 
 // Default export is the pool instance
 export default {
-  query: async (...args: any[]) => {
+  query: async (text: string, params?: any[]) => {
     if (!pool) {
       pool = await poolPromise;
     }
-    return pool.query(...args);
+    return pool.query(text, params);
   },
   connect: async () => {
     if (!pool) {
@@ -148,5 +147,15 @@ export default {
     }
     return pool.connect();
   },
-  // Add other methods you need from the pool
+  end: async () => {
+    if (pool) {
+      console.log("Closing database pool connections...");
+      const result = await pool.end();
+      // Reset the pool so it can be recreated if needed
+      pool = null;
+      console.log("Database pool connections closed");
+      return result;
+    }
+    return null;
+  },
 };

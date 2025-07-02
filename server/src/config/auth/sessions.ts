@@ -1,12 +1,12 @@
 import session from "express-session";
 import pgSession from "connect-pg-simple";
-import pool from "../database";
 import { Pool } from "pg";
+import pool from "../database"; // Ensure this is an instance of pg.Pool
 
 const PgSession = pgSession(session);
 
 // Create a separate test pool if in test mode
-const sessionPool =
+const sessionPool: Pool =
   process.env.NODE_ENV === "test"
     ? new Pool({
         user: process.env.PG_USER,
@@ -15,7 +15,7 @@ const sessionPool =
         password: process.env.PG_PASSWORD,
         port: parseInt(process.env.PG_PORT || "5432"),
       })
-    : pool;
+    : (pool as Pool);
 
 // Use memory store for tests to avoid database session issues
 const MemoryStore = session.MemoryStore;

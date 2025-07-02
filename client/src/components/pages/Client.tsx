@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from "axios";
+import axios, { AxiosResponse, AxiosInstance, AxiosError } from "axios";
 
 export interface ApiResponse<T> {
   data: T;
@@ -54,7 +54,7 @@ apiClient.interceptors.response.use(
       config: response.config,
     };
   },
-  (error) => {
+  (error: AxiosError) => {
     // Don't log cancellation errors (they're intentional and not actual errors)
     if (axios.isCancel(error)) {
       // Simply pass it through without logging for cancellation errors
@@ -102,3 +102,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+

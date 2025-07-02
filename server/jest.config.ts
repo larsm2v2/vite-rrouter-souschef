@@ -22,7 +22,8 @@ const config: Config.InitialOptions = {
   globalSetup: "./jest.global-setup.ts",
   globalTeardown: "./jest.global-teardown.ts",
   detectOpenHandles: true,
+  testTimeout: 30000,
+  forceExit: true,
 };
 
 export default config;
-

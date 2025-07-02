@@ -43,7 +43,7 @@ export async function migrateRecipeTables() {
     // Create tables using the schema we defined
     await client.query(`
       -- Main recipes table
-      CREATE TABLE recipes (
+      CREATE TABLE IF NOT EXISTS recipes (
           id SERIAL PRIMARY KEY,
           unique_id BIGINT UNIQUE NOT NULL,
           name TEXT NOT NULL,
@@ -56,7 +56,7 @@ export async function migrateRecipeTables() {
       );
       
       -- Serving information
-      CREATE TABLE recipe_serving_info (
+      CREATE TABLE IF NOT EXISTS recipe_serving_info (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           prep_time TEXT,
           cook_time TEXT,
@@ -66,7 +66,7 @@ export async function migrateRecipeTables() {
       );
       
       -- Ingredients stored as JSONB for flexibility
-      CREATE TABLE recipe_ingredients (
+      CREATE TABLE IF NOT EXISTS recipe_ingredients (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           category TEXT NOT NULL,
           ingredients JSONB NOT NULL,
@@ -74,7 +74,7 @@ export async function migrateRecipeTables() {
       );
       
       -- Instructions as ordered steps
-      CREATE TABLE recipe_instructions (
+      CREATE TABLE IF NOT EXISTS recipe_instructions (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           step_number INTEGER NOT NULL,
           instruction TEXT NOT NULL,
@@ -82,14 +82,14 @@ export async function migrateRecipeTables() {
       );
       
       -- Notes table
-      CREATE TABLE recipe_notes (
+      CREATE TABLE IF NOT EXISTS recipe_notes (
           id SERIAL PRIMARY KEY,
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           note TEXT NOT NULL
       );
       
       -- Nutrition information as JSONB
-      CREATE TABLE recipe_nutrition (
+      CREATE TABLE IF NOT EXISTS recipe_nutrition (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           nutrition_data JSONB NOT NULL,
           PRIMARY KEY (recipe_id)
@@ -111,6 +111,40 @@ export async function migrateRecipeTables() {
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("❌ Error creating recipe tables:", err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateRecipeTables() {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Add user_id to recipes table
+    await client.query(`
+      ALTER TABLE recipes
+      ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+    `);
+
+    // Add recipe_id to grocery_list table
+    await client.query(`
+      ALTER TABLE grocery_list
+      ADD COLUMN IF NOT EXISTS recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE;
+    `);
+
+    // Create composite indexes
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_grocery_list_user_recipe ON grocery_list(user_id, recipe_id);
+      CREATE INDEX IF NOT EXISTS idx_recipes_user_id ON recipes(user_id);
+    `);
+
+    await client.query("COMMIT");
+    console.log("✅ Recipe tables updated successfully");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("❌ Error updating recipe tables:", err);
     throw err;
   } finally {
     client.release();

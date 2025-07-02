@@ -14,7 +14,7 @@ describe("Authentication Routes", () => {
   beforeAll(async () => {
     // Initialize database
     await initializeDatabase();
-    
+
     // Seed the database with test data
     const result = await pool.query(
       `INSERT INTO users (google_sub, display_name, email) 
@@ -37,7 +37,6 @@ describe("Authentication Routes", () => {
   afterAll(async () => {
     // Clean up the database after tests
     await pool.query("DELETE FROM users");
-    await pool.end(); // Close the connection pool
   });
 
   describe("GET /auth/google", () => {
@@ -58,16 +57,16 @@ describe("Authentication Routes", () => {
           next();
         };
       });
-      
+
       // Apply the mock to passport.authenticate
       const originalAuthenticate = passport.authenticate;
       passport.authenticate = authenticateMock;
-      
+
       try {
         const res = await request(app)
           .get("/auth/google/callback")
           .query({ code: "mock_code", state: "mock_state" });
-        
+
         expect(res.status).toBe(302);
         // Just check that we're redirected somewhere (don't be too specific)
         expect(res.header.location).toBeTruthy();
@@ -83,7 +82,7 @@ describe("Authentication Routes", () => {
       const res = await request(app)
         .get("/auth/google/callback")
         .query({ error: "access_denied" });
-      
+
       expect(res.status).toBe(302); // Redirect status
     });
   });
