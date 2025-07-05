@@ -1,12 +1,13 @@
-// src/types/entities/User.ts
 import { EntitySchema } from "typeorm";
 
 export interface User {
   id: number;
   googleSub?: string;
   email: string;
-  display_name: string;
+  displayName: string;
   avatar?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const UserSchema = new EntitySchema<User>({
@@ -25,12 +26,20 @@ export const UserSchema = new EntitySchema<User>({
       type: String,
       unique: true,
     },
-    display_name: {
+    displayName: {
       type: String,
     },
     avatar: {
       type: String,
       nullable: true,
+    },
+    createdAt: {
+      type: Date,
+      createDate: true,
+    },
+    updatedAt: {
+      type: Date,
+      updateDate: true,
     },
   },
 });

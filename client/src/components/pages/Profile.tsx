@@ -10,13 +10,6 @@ interface User {
   avatar?: string;
 }
 
-interface GameStats {
-  current_level: number;
-  best_combination: number[];
-  saved_maps: string[];
-  min_moves?: { [level: number]: number };
-}
-
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<GameStats | null>(null);
@@ -35,19 +28,19 @@ const Profile = () => {
         setLoading(true);
         const response = await apiClient.get("/profile", {
           withCredentials: true,
-          signal: controller.signal
+          signal: controller.signal,
         });
-        
+
         // Only update state if component is still mounted
         if (isActive) {
           // Log the actual response to help with debugging
           console.log("Profile response:", response.data);
-          
+
           // Match the server response structure
           if (response.data.user) {
             setUser(response.data.user);
           }
-          
+
           if (response.data.stats) {
             // Ensure current_level is at least the number of completed levels
             const fetchedStats = response.data.stats;
@@ -57,12 +50,16 @@ const Profile = () => {
             }
             setStats(fetchedStats);
           }
-          
+
           setLoading(false);
         }
       } catch (error: any) {
         // Only handle errors if component is still mounted and error isn't from cancellation
-        if (isActive && error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+        if (
+          isActive &&
+          error.name !== "CanceledError" &&
+          error.code !== "ERR_CANCELED"
+        ) {
           console.error("Failed to fetch profile:", error);
           navigate("/login");
         }
@@ -107,19 +104,19 @@ const Profile = () => {
   // Get the last 5 completed levels based on best_combination
   const getLastFiveCompletedLevels = () => {
     if (!stats?.best_combination) return [];
-    
+
     // Filter out levels with no completion data
     const completedLevels = stats.best_combination
       .map((moves, index) => ({ level: index + 1, moves }))
-      .filter(item => item.moves !== null && item.moves > 0);
-    
+      .filter((item) => item.moves !== null && item.moves > 0);
+
     // Return the last 5 levels
     return completedLevels.slice(-5);
   };
 
   // Calculate progress percent with base and bonuses
   const calculateProgress = (): string => {
-    if (!stats) return '0%';
+    if (!stats) return "0%";
     const bestComb = stats.best_combination ?? [];
     // Fallback to original level-based if no min_moves data or no best_combination
     if (!stats.min_moves || bestComb.length === 0) {
@@ -155,7 +152,10 @@ const Profile = () => {
   // Compute pagination slices
   const totalPages = Math.ceil(totalLevels / levelsPerPage);
   const levelsArray = Array.from({ length: totalLevels }, (_, i) => i + 1);
-  const levelsToShow = levelsArray.slice(page * levelsPerPage, (page + 1) * levelsPerPage);
+  const levelsToShow = levelsArray.slice(
+    page * levelsPerPage,
+    (page + 1) * levelsPerPage
+  );
   const gridSize = Math.sqrt(totalLevels);
 
   return (
@@ -177,35 +177,52 @@ const Profile = () => {
           <div className="stats-grid">
             <StatCard
               title="Highest Completed Level"
-              value={stats?.current_level - 1|| 1}
+              value={stats?.current_level - 1 || 1}
               icon="🏆"
             />
             <div className="level-grid-container">
               <h3>Classic Levels (5x5)</h3>
               <div className="pagination-controls">
-                <button className="pagination-button" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</button>
-                <span>Page {page + 1}/{totalPages}</span>
-                <button className="pagination-button" disabled={page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Next</button>
+                <button
+                  className="pagination-button"
+                  disabled={page === 0}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Prev
+                </button>
+                <span>
+                  Page {page + 1}/{totalPages}
+                </span>
+                <button
+                  className="pagination-button"
+                  disabled={page + 1 >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </button>
               </div>
               <div
                 className="levels-grid"
                 style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
               >
-                {levelsToShow.map(level => {
+                {levelsToShow.map((level) => {
                   const idx = level - 1;
                   const moves = bestComb[idx];
                   const minMove = minMovesMap[level];
 
                   // Determine the next level after last finished, default to 1
-                  const currentToPlay = stats.current_level != null ? stats.current_level : 1;
+                  const currentToPlay =
+                    stats.current_level != null ? stats.current_level : 1;
                   // Determine status: locked, completed, perfect, or next
-                  let levelStatus: 'locked' | 'completed' | 'perfect' | 'next' = 'locked';
-                  if (moves != null && moves > 0) levelStatus = 'completed';
+                  let levelStatus: "locked" | "completed" | "perfect" | "next" =
+                    "locked";
+                  if (moves != null && moves > 0) levelStatus = "completed";
                   if (moves != null && minMove != null && moves === minMove) {
-                    levelStatus = 'perfect';
+                    levelStatus = "perfect";
                   }
-                  if (levelStatus === 'locked' && level === currentToPlay) levelStatus = 'next';
-                  const clickable = levelStatus !== 'locked';
+                  if (levelStatus === "locked" && level === currentToPlay)
+                    levelStatus = "next";
+                  const clickable = levelStatus !== "locked";
                   return (
                     <button
                       key={level}
@@ -213,7 +230,8 @@ const Profile = () => {
                       disabled={!clickable}
                       onClick={
                         clickable
-                          ? () => navigate(`/game/${level}`, { state: { level } })
+                          ? () =>
+                              navigate(`/game/${level}`, { state: { level } })
                           : undefined
                       }
                     >
@@ -225,37 +243,32 @@ const Profile = () => {
             </div>
             <button
               className="stat-card saved-maps-button"
-              onClick={() => navigate('/saved-maps')}
+              onClick={() => navigate("/saved-maps")}
             >
               <div className="stat-icon">🗺️</div>
               <h3>Saved Maps</h3>
               <p>{stats?.saved_maps?.length || 0}</p>
             </button>
-            <StatCard
-              title="Progress"
-              value={calculateProgress()}
-              icon="📈"
-            />
+            <StatCard title="Progress" value={calculateProgress()} icon="📈" />
           </div>
         </div>
         <div className="game-actions">
-          <button 
-            className="action-button primary" 
-            onClick={() => navigate(`/game/${stats?.current_level || 1}`, { 
-              state: { level: stats?.current_level || 1 }
-            })}
+          <button
+            className="action-button primary"
+            onClick={() =>
+              navigate(`/game/${stats?.current_level || 1}`, {
+                state: { level: stats?.current_level || 1 },
+              })
+            }
           >
             Continue Game
           </button>
-          <button 
-            className="action-button secondary"
-            onClick={handleNewGame}
-          >
+          <button className="action-button secondary" onClick={handleNewGame}>
             New Game
           </button>
-          <button 
+          <button
             className="action-button create"
-            onClick={() => navigate('/create-puzzle')}
+            onClick={() => navigate("/create-puzzle")}
           >
             Create Puzzle
           </button>
@@ -274,7 +287,7 @@ const Profile = () => {
                   <div className="level-cell">Level {levelData.level}</div>
                   <div className="level-cell">{levelData.moves} moves</div>
                   <div className="level-cell">
-                    <button 
+                    <button
                       className="level-action-button"
                       onClick={() => navigate(`/game/${levelData.level}`)}
                     >
@@ -285,7 +298,9 @@ const Profile = () => {
               ))}
             </div>
           ) : (
-            <p className="no-data">No completed levels yet. Start playing to see your stats!</p>
+            <p className="no-data">
+              No completed levels yet. Start playing to see your stats!
+            </p>
           )}
         </div>
 
@@ -305,8 +320,6 @@ const Profile = () => {
             <p>No saved maps yet.</p>
           )}
         </div> */}
-
-
       </div>
     </div>
   );

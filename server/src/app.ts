@@ -17,6 +17,15 @@ import { param } from "express-validator";
 import profileRoutes from "./routes/profile";
 import recipeRoutes from "./routes/recipes.routes";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { LogAudit, CheckAuthentication, GetUserProfile } from "./02_use_cases";
+import { UserRepository } from "./03_adapters/repositories";
+import { container } from "tsyringe";
+import {
+  createGetUserProfile,
+  createCheckAuthentication,
+  createLogAudit,
+  createLogoutUser,
+} from "./04_factories";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -114,43 +123,33 @@ const GOOGLE_OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
 ];
 //Audit Log
+const logAudit = createLogAudit();
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
 
-  // Hook into response finish to log the outcome
   res.on("finish", async () => {
     try {
-      // Skip audit logging for test routes
       if (process.env.NODE_ENV === "test" && req.path.startsWith("/test/")) {
         return;
       }
 
-      await pool.query(
-        `INSERT INTO audit_log (
-          user_id, action, endpoint, ip_address, 
-          user_agent, status_code, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          req.user?.id || null,
-          req.method,
-          req.originalUrl,
-          req.ip,
-          req.headers["user-agent"],
-          res.statusCode,
-          JSON.stringify({
-            params: req.params,
-            query: req.query,
-            durationMs: Date.now() - startTime,
-          }),
-        ]
-      );
+      await logAudit.execute({
+        userId: req.user?.id,
+        action: req.method,
+        endpoint: req.originalUrl,
+        ipAddress: req.ip ?? "",
+        userAgent: req.headers["user-agent"],
+        statusCode: res.statusCode,
+        metadata: {
+          params: req.params,
+          query: req.query,
+          durationMs: Date.now() - startTime,
+        },
+      });
     } catch (err) {
-      // Only log errors in non-test environment
       if (process.env.NODE_ENV !== "test") {
-        console.error(
-          "Audit log failed:",
-          err instanceof Error ? err.message : String(err)
-        );
+        console.error("Audit log failed:", err);
       }
     }
   });
@@ -163,51 +162,29 @@ app.get("/", (req: Request, res: Response) => {
 
 // Protected routes
 app.get("/profile", async (req, res) => {
-  // For tests, add debug logging
-  if (process.env.NODE_ENV === "test") {
-    console.log("Profile request:", {
-      hasUser: !!req.user,
-      user: req.user,
-      sessionID: req.sessionID,
-      hasSession: !!req.session,
-    });
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
   try {
-    // Get user profile
-    const userResult = await pool.query(
-      `SELECT id, email, display_name, avatar 
-       FROM users WHERE id = $1`,
-      [req.user.id]
-    );
-  } catch (err) {
-    // Only log errors in non-test environment
-    if (process.env.NODE_ENV !== "test") {
-      console.error(
-        "User Profile Retrieval failed:",
-        err instanceof Error ? err.message : String(err)
-      );
+    const getUserProfile = createGetUserProfile();
+    const userProfile = await getUserProfile.execute(req.user.id);
+
+    if (!userProfile) {
+      return res.status(404).json({ error: "User not found" });
     }
+
+    res.json(userProfile);
+  } catch (err) {
+    console.error("Error retrieving profile:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.get("/auth/check", (req, res) => {
-  // res.json({ authenticated: !!req.user });
-  if (!req.user) {
-    return res.status(200).json({ authenticated: false });
-  }
-
-  // Return minimal user data for frontend
-  res.json({
-    authenticated: true,
-    user: {
-      id: req.user.id,
-      email: req.user.email,
-      display_name: req.user.display_name,
-    },
-  });
+app.get("/auth/check", async (req, res) => {
+  const checkAuthentication = createCheckAuthentication();
+  const authStatus = await checkAuthentication.execute(req.user);
+  res.json(authStatus);
 });
 
 app.get("/user", (req, res) => {
@@ -217,37 +194,6 @@ app.get("/user", (req, res) => {
   res.json(req.user);
 });
 
-// Stats endpoint with validation
-app.get(
-  "/stats/:userId",
-  param("userId").isInt().toInt(),
-  async (req: Request, res: Response) => {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-    try {
-      const stats = await pool.query(
-        `SELECT 
-          current_level AS "current_level",
-          least_moves AS "leastMoves", 
-          custom_levels AS "customLevels"
-         FROM game_stats 
-         WHERE user_id = $1`,
-        [req.params.userId]
-      );
-
-      res.json(
-        stats.rows[0] || {
-          current_level: 1,
-          leastMoves: [],
-          customLevels: [],
-        }
-      );
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Database error" });
-    }
-  }
-);
 // Logout Route
 app.get("/logout", (req, res) => {
   req.logout(() => {
@@ -255,87 +201,17 @@ app.get("/logout", (req, res) => {
   });
 });
 
-app.get("/sample-stats", (req, res) => {
-  if (!req.user) res.status(401).json({ error: "Unauthorized" });
-
-  res.json({
-    current_level: 5,
-    leastMoves: 18,
-  });
-});
-
 // Enhanced logout
-app.post("/auth/logout", (req: Request, res: Response) => {
-  req.logout(() => {
-    req.session?.destroy(() => {
-      res.clearCookie("connect.sid");
-      res.json({ success: true });
-    });
-  });
-});
-
-app.post("/game/progress", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+app.post("/auth/logout", async (req, res) => {
+  const logoutUser = createLogoutUser();
 
   try {
-    const { level, moves, completed } = req.body;
-
-    // Validate input
-    if (!level || typeof level !== "number") {
-      return res.status(400).json({ error: "Invalid level" });
-    }
-
-    // First, get the current level
-    const userStatsResult = await pool.query(
-      `SELECT current_level, best_combination 
-       FROM game_stats WHERE user_id = $1`,
-      [req.user.id]
-    );
-
-    const userStats = userStatsResult.rows[0];
-    const currentLevel = userStats?.current_level || 1;
-
-    // Only update level if the completed level is the current one
-    // and we're moving to the next level
-    let newLevel = currentLevel;
-    if (completed && level === currentLevel) {
-      newLevel = currentLevel + 1;
-    }
-
-    // Store the moves as best combination if better than current
-    // or if no best combination exists for this level
-    let bestCombination = userStats?.best_combination || [];
-    if (Array.isArray(bestCombination)) {
-      // If this level doesn't have a best combination yet or new moves is better
-      if (!bestCombination[level - 1] || moves < bestCombination[level - 1]) {
-        // Create a copy of the array with the right length
-        const newBestCombination = [...bestCombination];
-        // Make sure the array is long enough
-        while (newBestCombination.length < level) {
-          newBestCombination.push(null);
-        }
-        // Set the new best for this level
-        newBestCombination[level - 1] = moves;
-        bestCombination = newBestCombination;
-      }
-    }
-
-    // Update the database
-    await pool.query(
-      `UPDATE game_stats
-       SET current_level = $1, best_combination = $2
-       WHERE user_id = $3`,
-      [newLevel, JSON.stringify(bestCombination), req.user.id]
-    );
-
-    res.json({
-      success: true,
-      current_level: newLevel,
-      best_combination: bestCombination,
-    });
+    await logoutUser.execute(req);
+    res.clearCookie("connect.sid");
+    res.json({ success: true });
   } catch (err) {
-    console.error("Game progress update error:", err);
-    res.status(500).json({ error: "Database error" });
+    console.error("Error during logout:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
