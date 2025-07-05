@@ -34,10 +34,3 @@ export const UserSchema = new EntitySchema<User>({
     },
   },
 });
-
-export interface GameStats {
-  id: number;
-  current_level: number;
-  best_combination: string;
-  saved_maps: string;
-}

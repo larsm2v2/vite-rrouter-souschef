@@ -3,6 +3,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
+    "newDev": "ts-node src/06_app/main.ts",
     "check-env": "ts-node check-env.ts",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
     "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
@@ -25,6 +26,7 @@
     "pg": "^8.14.1",
     "superagent": "^9.0.0",
     "ts-node": "^10.9.2",
+    "tsyringe": "^4.10.0",
     "typeorm": "^0.3.22",
     "typescript": "^5.3.3"
   },
