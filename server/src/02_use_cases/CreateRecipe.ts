@@ -1,85 +1,27 @@
 import { Recipe } from "../01_entities";
 import { RecipeRepository } from "../03_adapters/repositories/RecipeRepository";
+import { cleanRecipe as remoteClean } from "../05_frameworks/cleanRecipe/client";
 
 export class CreateRecipe {
   constructor(private recipeRepository: RecipeRepository) {}
 
   /**
-   * Clean and validate recipe data
+   * Execute create recipe flow using the (optional) microservice for cleaning.
+   * Falls back to local cleaning when the microservice is not configured or
+   * unavailable. Post-process to ensure the entity shape expected by the
+   * repository/use-case (e.g. `uniqueId`, `slug`, `dietaryRestrictions`).
    */
-  private cleanRecipe(recipe: Partial<Recipe>): Partial<Recipe> {
-    if (!recipe.name) {
+  async execute(recipeData: Partial<Recipe>): Promise<Recipe> {
+    // Preserve original validation behavior: name is required
+    if (!recipeData || !recipeData.name) {
       throw new Error("Recipe name is required");
     }
 
-    // Ensure unique ID exists
-    if (!recipe.uniqueId) {
-      recipe.uniqueId = Date.now();
-    }
-
-    // Ensure slug exists
-    if (!recipe.slug && recipe.name) {
-      recipe.slug = recipe.name.toLowerCase().replace(/\s+/g, "-");
-    }
-
-    // Ensure dietary restrictions is an array
-    if (!recipe.dietaryRestrictions) {
-      recipe.dietaryRestrictions = [];
-    }
-
-    // Ensure serving info exists
-    if (!recipe.servingInfo) {
-      recipe.servingInfo = {
-        prepTime: "",
-        cookTime: "",
-        totalTime: "",
-        servings: 0,
-      };
-    }
-
-    // Ensure ingredients exist
-    if (!recipe.ingredients) {
-      recipe.ingredients = {};
-    } else if (recipe.ingredients) {
-      Object.keys(recipe.ingredients).forEach((category) => {
-        if (Array.isArray(recipe.ingredients![category])) {
-          recipe.ingredients![category] = recipe.ingredients![category].map(
-            (item) => ({
-              ...item,
-              quantity: typeof item.quantity === "number" ? item.quantity : 0,
-            })
-          );
-        } else {
-          recipe.ingredients![category] = [];
-        }
-      });
-    }
-
-    // Ensure instructions exist
-    if (!recipe.instructions) {
-      recipe.instructions = [];
-    } else {
-      recipe.instructions = recipe.instructions.map((instruction, index) => ({
-        ...instruction,
-        stepNumber: instruction.stepNumber || index + 1,
-      }));
-    }
-
-    // Ensure notes is an array
-    if (!recipe.notes) {
-      recipe.notes = [];
-    }
-
-    // Ensure nutrition exists
-    if (!recipe.nutrition) {
-      recipe.nutrition = {};
-    }
-
-    return recipe;
-  }
-
-  async execute(recipeData: Partial<Recipe>): Promise<Recipe> {
-    const cleanedRecipe = this.cleanRecipe(recipeData);
-    return this.recipeRepository.create(cleanedRecipe);
+    // Call the async wrapper which may use the microservice or local cleaner.
+    // The wrapper now returns canonical camelCase fields (uniqueId, slug,
+    // dietaryRestrictions, servingInfo, instructions.stepNumber); we forward
+    // the cleaned payload directly to the repository.
+    const cleaned: any = await remoteClean(recipeData as any);
+    return this.recipeRepository.create(cleaned as Recipe);
   }
 }

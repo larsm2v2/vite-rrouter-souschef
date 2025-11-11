@@ -4,15 +4,15 @@ dotenv.config();
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import session from "express-session";
-import passport, { configurePassport } from "./config/auth/passport"; // Ensure this is correctly configured
-import { sessionConfig } from "./config/auth/sessions";
+import passport, { configurePassport } from "./05_frameworks/auth/passport"; // Ensure this is correctly configured
+import { sessionConfig } from "./05_frameworks/auth/sessions";
 import * as crypto from "crypto";
 import type { User } from "./types/entities/User"; // Import the User interface
-import pool from "./config/database";
-import { initializeDatabase } from "./config/schema";
+import pool from "./05_frameworks/database/connection";
+import { initializeDatabase } from "./05_frameworks/database/schema";
 import helmet from "helmet";
-import authRoutes from "./routes/auth.routes";
 import rateLimit from "express-rate-limit";
+import frameworkRoutes from "./05_frameworks/myexpress/routes";
 import { param } from "express-validator";
 import profileRoutes from "./routes/profile";
 import recipeRoutes from "./routes/recipes.routes";
@@ -105,14 +105,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount auth routes
-app.use("/auth", authRoutes);
-
-// Mount recipe routes
-app.use("/recipes", recipeRoutes);
-
-// Mount profile routes
-app.use("/profile", profileRoutes);
+// Mount consolidated framework routes
+app.use(frameworkRoutes);
 
 // Google OAuth Configuration
 const GOOGLE_OAUTH_URL = process.env.GOOGLE_OAUTH_URL;

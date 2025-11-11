@@ -1,6 +1,5 @@
-// src/tests/test-utils.ts
-import pool from "../config/database";
-import { User } from "../types/entities/User";
+import db from "../05_frameworks/database/connection";
+import { User } from "../01_entities";
 
 let testUserIds: number[] = [];
 let poolClient: any = null;
@@ -11,7 +10,7 @@ export async function createTestUser(): Promise<User> {
 
   // Get a single client for all operations
   if (!poolClient) {
-    poolClient = await pool.connect();
+    poolClient = await db.connect();
   }
 
   try {
@@ -35,7 +34,7 @@ export async function cleanupTestData() {
     // Only delete specific test users we've created
     if (testUserIds.length > 0) {
       if (!poolClient) {
-        poolClient = await pool.connect();
+        poolClient = await db.connect();
       }
 
       await poolClient.query("BEGIN");
@@ -77,7 +76,7 @@ afterAll(async () => {
 
   // Close the pool connection after all tests
   try {
-    await pool.end();
+    await db.end();
     console.log("Pool closed after tests");
   } catch (err) {
     console.error("Error closing pool after tests:", err);

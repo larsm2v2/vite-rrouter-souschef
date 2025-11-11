@@ -1,0 +1,49 @@
+# Deployment Guide (server)
+
+This document lists environment variables and basic deployment steps to run the server and the `clean-recipe-service` microservice in production-like environments.
+
+## Required environment variables
+
+- NODE_ENV — set to `production` in production.
+- PORT — port the server listens on (default often: 3000 or set in `src/06_app/main.ts`).
+- CLEAN_RECIPE_SERVICE_URL — full URL to the clean-recipe microservice (optional). If unset, the server uses the local cleaner.
+- DATABASE_URL or Postgres-specific envs:
+  - PGHOST
+  - PGUSER
+  - PGPASSWORD
+  - PGDATABASE
+  - PGPORT
+  - Alternatively a single `DATABASE_URL` (postgres://user:pw@host:port/db)
+- SESSION_SECRET — secret for session cookies (if sessions used).
+- JWT_SECRET — secret for JWT signing (if JWTs used).
+
+## Production checklist
+
+1. Configure database and run migrations/schema initialization.
+2. Configure environment variables securely (secrets manager or CI/CD secret store).
+3. Start the clean-recipe-service (if using microservice): run compiled JS (node dist/index.js) behind a process manager (systemd, PM2, Docker).
+4. Start the server behind a reverse proxy (nginx) or a process manager. Set `CLEAN_RECIPE_SERVICE_URL` to the running microservice URL.
+5. Health checks: ensure `/health` or a lightweight endpoint responds (implement if missing).
+
+## Running in Docker (suggested)
+
+- Build microservice and server images separately and run them in the same network.
+- Example docker-compose service snippet (conceptual):
+
+```yaml
+services:
+  clean-recipe-service:
+    image: myorg/clean-recipe-service:latest
+    environment:
+      - PORT=6000
+
+  server:
+    image: myorg/souschef-server:latest
+    environment:
+      - CLEAN_RECIPE_SERVICE_URL=http://clean-recipe-service:6000
+      - DATABASE_URL=${DATABASE_URL}
+```
+
+## Notes on CI
+
+- The repository contains a CI workflow that starts the microservice with `ts-node` for tests. For production CI pipelines, prefer building artifacts (TypeScript → JavaScript) and running `node dist/index.js` or container images.

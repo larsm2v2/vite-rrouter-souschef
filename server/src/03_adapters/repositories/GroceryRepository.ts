@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { GetGroceryList } from "../../02_use_cases/GetGroceryList";
-import pool from "../../config/database";
+import pool from "../../05_frameworks/database/connection";
 import { GroceryItem } from "../../01_entities/GroceryItem";
 
 export class GroceryRepository {
-  constructor(private getGroceryList: GetGroceryList) {}
+  constructor(private getGroceryList?: GetGroceryList) {}
 
   async getList(req: Request, res: Response): Promise<void> {
     const userId = req.user?.id;
@@ -14,7 +14,14 @@ export class GroceryRepository {
       return;
     }
 
-    const groceryList = await this.getGroceryList.execute(userId);
+    // If a GetGroceryList use case was injected, use it; otherwise fall back to repository query
+    if (this.getGroceryList) {
+      const groceryList = await this.getGroceryList.execute(userId);
+      res.status(200).json(groceryList);
+      return;
+    }
+
+    const groceryList = await this.findByUserId(userId);
     res.status(200).json(groceryList);
   }
 

@@ -1,4 +1,4 @@
-import pool from "../../config/database";
+import pool from "../../05_frameworks/database/connection";
 import { User } from "../../01_entities/User";
 
 export class UserRepository {

@@ -1,6 +1,6 @@
 // jest.setup.ts
-import { initializeDatabase } from "./src/config/schema";
-import pool from "./src/config/database";
+import { initializeDatabase } from "./src/05_frameworks/database/schema";
+import pool from "./src/05_frameworks/database/connection";
 
 export default async function setup() {
   // Set test environment

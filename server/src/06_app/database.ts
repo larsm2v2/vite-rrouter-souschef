@@ -1,5 +1,5 @@
-import pool from "../config/database";
-import { initializeDatabase } from "../config/schema";
+import pool from "../05_frameworks/database/connection";
+import { initializeDatabase } from "../05_frameworks/database/schema";
 
 export async function ensureDatabaseInitialized() {
   try {

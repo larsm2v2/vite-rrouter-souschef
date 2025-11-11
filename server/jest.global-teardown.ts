@@ -1,5 +1,5 @@
 // jest.global-teardown.ts
-import pool from "./src/config/database";
+import pool from "./src/05_frameworks/database/connection";
 
 export default async () => {
   try {

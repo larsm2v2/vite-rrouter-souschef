@@ -1,4 +1,4 @@
-import pool from "../../config/database";
+import pool from "../../05_frameworks/database/connection";
 import { Recipe } from "../../01_entities/Recipe";
 
 export class RecipeRepository {
