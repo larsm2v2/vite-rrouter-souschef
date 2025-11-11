@@ -1,0 +1,19 @@
+src/
+├── tests/
+│   ├── entities/
+│   │   ├── User.test.ts
+│   │   ├── Recipe.test.ts
+│   │   └── GroceryItem.test.ts
+│   ├── use_cases/
+│   │   ├── GetUserProfile.test.ts
+│   │   ├── CreateRecipe.test.ts
+│   │   └── UpdateRecipe.test.ts
+│   ├── adapters/
+│   │   ├── UserController.test.ts
+│   │   ├── RecipeController.test.ts
+│   │   └── GroceryController.test.ts
+│   ├── frameworks/
+│   │   ├── database.test.ts
+│   │   ├── middleware.test.ts
+│   │   └── auth.test.ts
+│   └── app.test.ts

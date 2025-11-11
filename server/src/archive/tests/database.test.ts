@@ -1,4 +1,3 @@
-// tests/database.test.ts
 process.env.NODE_ENV = "test";
 
 import pool from "../config/database";

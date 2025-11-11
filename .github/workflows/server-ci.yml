@@ -1,0 +1,64 @@
+name: Server CI (with clean-recipe-service)
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        env:
+            NODE_OPTIONS: "--max-old-space-size=4096"
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install server dependencies
+              run: npm ci
+              working-directory: server
+
+            - name: Install microservice dependencies
+              run: npm ci
+              working-directory: clean-recipe-service
+
+            - name: Build clean-recipe-service
+              run: npx tsc -p .
+              working-directory: clean-recipe-service
+
+            - name: Start clean-recipe-service (background) from dist
+              run: |
+                  PORT=6000 nohup node dist/index.js > /tmp/clean-service.log 2>&1 &
+                  echo $! > /tmp/clean-service.pid
+              working-directory: clean-recipe-service
+
+            - name: Wait for microservice
+              run: |
+                  for i in $(seq 1 40); do
+                    code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://127.0.0.1:6000/clean-recipe -H 'Content-Type: application/json' -d '{"name":"x"}' || true)
+                    if [ "$code" = "200" ]; then
+                      echo "service ready"
+                      break
+                    fi
+                    echo "waiting... ($i)"
+                    sleep 1
+                  done
+              working-directory: clean-recipe-service
+
+            - name: Run server tests
+              run: |
+                  export CLEAN_RECIPE_SERVICE_URL="http://127.0.0.1:6000"
+                  npm test --prefix server
+              working-directory: .
+
+            - name: Stop clean-recipe-service
+              if: always()
+              run: |
+                  if [ -f /tmp/clean-service.pid ]; then
+                    kill $(cat /tmp/clean-service.pid) || true
+                  fi

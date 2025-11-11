@@ -1,4 +1,3 @@
-// tests/profile.test.ts
 import request from "supertest";
 import app from "../app";
 import { User } from "../types/entities/User";

@@ -1,4 +1,3 @@
-// tests/auth.test.ts
 process.env.NODE_ENV = "test"; // Set environment to "test"
 import request from "supertest";
 import pool from "../config/database";
@@ -60,7 +59,7 @@ describe("Authentication Routes", () => {
 
       // Apply the mock to passport.authenticate
       const originalAuthenticate = passport.authenticate;
-      passport.authenticate = authenticateMock;
+      passport.authenticate = authenticateMock as any;
 
       try {
         const res = await request(app)

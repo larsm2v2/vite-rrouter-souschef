@@ -34,80 +34,70 @@ interface RecipeModel {
 /**
  * Clean and validate recipe data
  */
-export function cleanRecipe(recipe: RecipeModel): RecipeModel {
-  if (!recipe) {
-    throw new Error("Recipe data is required");
+export function cleanRecipe(recipe: any): any {
+  if (!recipe) throw new Error("Recipe data is required");
+
+  const out: any = { ...recipe };
+
+  // uniqueId canonical
+  if (!out.uniqueId) {
+    if (out["unique id"]) out.uniqueId = out["unique id"];
+    else out.uniqueId = Date.now();
   }
 
-  // Ensure unique id exists
-  if (!recipe["unique id"]) {
-    recipe["unique id"] = Date.now();
+  // slug
+  if (!out.slug) {
+    out.slug = String(out.name || "").toLowerCase().trim().replace(/\s+/g, "-");
   }
 
-  // Ensure id exists (slug)
-  if (!recipe.id && recipe.name) {
-    recipe.id = recipe.name.toLowerCase().replace(/\s+/g, "-");
+  // dietaryRestrictions
+  if (!out.dietaryRestrictions) {
+    if (Array.isArray(out["dietary restrictions and designations"])) {
+      out.dietaryRestrictions = out["dietary restrictions and designations"];
+    } else {
+      out.dietaryRestrictions = [];
+    }
   }
 
-  // Ensure dietary restrictions is an array
-  if (!recipe["dietary restrictions and designations"]) {
-    recipe["dietary restrictions and designations"] = [];
-  }
-
-  // Ensure serving info exists
-  if (!recipe["serving info"]) {
-    recipe["serving info"] = {
-      "prep time": "",
-      "cook time": "",
-      "total time": "",
-      "number of people served": 0,
-    };
-  }
-
-  // Ensure ingredients exist
-  if (!recipe.ingredients) {
-    recipe.ingredients = { dish: [] };
-  } else {
-    // Ensure all ingredients have numeric quantities
-    Object.keys(recipe.ingredients).forEach((category) => {
-      if (Array.isArray(recipe.ingredients[category])) {
-        recipe.ingredients[category] = recipe.ingredients[category].map(
-          (item: any) => {
-            return {
-              ...item,
-              quantity: typeof item.quantity === "number" ? item.quantity : 0,
-            };
-          }
-        );
-      } else {
-        recipe.ingredients[category] = [];
-      }
-    });
-  }
-
-  // Ensure instructions exist and have number property
-  if (!recipe.instructions) {
-    recipe.instructions = [];
-  } else {
-    recipe.instructions = recipe.instructions.map((instruction, index) => {
-      return {
-        ...instruction,
-        number: instruction.number || index + 1,
+  // servingInfo (map variants)
+  if (!out.servingInfo) {
+    if (out["serving info"]) {
+      const si = out["serving info"];
+      out.servingInfo = {
+        prepTime: si["prep time"] || "",
+        cookTime: si["cook time"] || "",
+        totalTime: si["total time"] || "",
+        servings: si["number of people served"] || 0,
       };
-    });
+    } else {
+      out.servingInfo = { prepTime: "", cookTime: "", totalTime: "", servings: 0 };
+    }
   }
 
-  // Ensure notes is an array
-  if (!recipe.notes) {
-    recipe.notes = [];
-  }
+  // ingredients
+  if (!out.ingredients || typeof out.ingredients !== "object") out.ingredients = { dish: [] };
+  Object.keys(out.ingredients).forEach((category) => {
+    if (Array.isArray(out.ingredients[category])) {
+      out.ingredients[category] = out.ingredients[category].map((item: any) => ({
+        ...item,
+        quantity: typeof item.quantity === "number" ? item.quantity : 0,
+      }));
+    } else {
+      out.ingredients[category] = [];
+    }
+  });
 
-  // Ensure nutrition exists
-  if (!recipe.nutrition) {
-    recipe.nutrition = {};
-  }
+  // instructions
+  if (!Array.isArray(out.instructions)) out.instructions = [];
+  out.instructions = out.instructions.map((instruction: any, index: number) => ({
+    ...instruction,
+    stepNumber: instruction.stepNumber || instruction.number || index + 1,
+  }));
 
-  return recipe;
+  if (!Array.isArray(out.notes)) out.notes = [];
+  if (!out.nutrition || typeof out.nutrition !== "object") out.nutrition = {};
+
+  return out;
 }
 
 export default {

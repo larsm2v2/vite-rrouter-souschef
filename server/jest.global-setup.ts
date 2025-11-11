@@ -1,6 +1,6 @@
 // jest.global-setup.ts
-import { initializeDatabase } from "./src/config/schema";
-import { testPool } from "./src/config/test-config";
+import { initializeDatabase } from "./src/05_frameworks/database/schema";
+import { testPool } from "./src/07_tests/test-config";
 import { Pool } from "pg";
 
 export default async () => {

@@ -1,0 +1,123 @@
+import express, { Request, Response, NextFunction } from "express";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import db from "../../database/connection";
+
+const router = express.Router();
+
+// Initialize Google Generative AI
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  console.warn("WARNING: API_KEY environment variable not found!");
+}
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+
+// Get all recipes
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+    const result = await db.query(`
+      SELECT 
+        r.*,
+        rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
+        json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) AS ingredients,
+        json_agg(DISTINCT jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) AS instructions,
+        json_agg(DISTINCT rn.note) FILTER (WHERE rn.note IS NOT NULL) AS notes,
+        rnut.nutrition_data
+      FROM recipes r
+      LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
+      LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
+      LEFT JOIN recipe_instructions inst ON r.id = inst.recipe_id
+      LEFT JOIN recipe_notes rn ON r.id = rn.recipe_id
+      LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
+      GROUP BY r.id, rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings, rnut.nutrition_data
+      ORDER BY r.created_at DESC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get a specific recipe by ID
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+    const result = await db.query(
+      `
+      SELECT 
+        r.*,
+        rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
+        json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) AS ingredients,
+        json_agg(DISTINCT jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) AS instructions,
+        json_agg(DISTINCT rn.note) FILTER (WHERE rn.note IS NOT NULL) AS notes,
+        rnut.nutrition_data
+      FROM recipes r
+      LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
+      LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
+      LEFT JOIN recipe_instructions inst ON r.id = inst.recipe_id
+      LEFT JOIN recipe_notes rn ON r.id = rn.recipe_id
+      LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
+      WHERE r.id = $1
+      GROUP BY r.id, rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings, rnut.nutrition_data
+    `,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Recipe not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Generate a recipe with Gemini AI
+router.post(
+  "/generate",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      if (!genAI)
+        return res.status(503).json({ error: "AI service not available" });
+
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+      const chat = model.startChat({
+        history: req.body.history || [],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.2,
+        },
+      });
+
+      const msg = req.body.message;
+      const result = await chat.sendMessageStream(msg);
+      const response = await result.response;
+      const text = response.text();
+
+      res.send(text);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Save a recipe to the database (delegate to controller)
+import { createRecipeController } from "../../../04_factories/RecipeControllerFactory";
+
+const recipeController = createRecipeController();
+
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await recipeController.create(req, res);
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

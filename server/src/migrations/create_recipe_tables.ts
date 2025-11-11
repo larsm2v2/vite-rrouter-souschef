@@ -1,4 +1,4 @@
-import pool from "../config/database";
+import pool from "../05_frameworks/database/connection";
 
 export async function migrateRecipeTables() {
   const client = await pool.connect();
