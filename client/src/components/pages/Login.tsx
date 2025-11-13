@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import apiClient from "./Client";
 import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [authChecked, setAuthChecked] = useState(false);
+  const { login, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,6 +20,54 @@ const Login = () => {
   const API_URL =
     import.meta.env.VITE_API_URL ??
     (import.meta.env.DEV ? "http://localhost:8000" : window.location.origin);
+
+  // Handle OAuth callback (extract tokens from URL fragment)
+  useEffect(() => {
+    const handleOAuth = async () => {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+
+      const accessToken = params.get("access_token");
+      const userStr = params.get("user");
+
+      if (accessToken && userStr) {
+        try {
+          const user = JSON.parse(decodeURIComponent(userStr));
+          login(accessToken, user);
+          // Clear hash from URL
+          window.history.replaceState(null, "", window.location.pathname);
+          navigate("/profile", { replace: true });
+        } catch (err) {
+          console.error("Failed to parse OAuth response:", err);
+          setError("Authentication failed. Please try again.");
+        }
+      } else if (accessToken && !userStr) {
+        // If server returned tokens but not user data, try to fetch the user profile
+        try {
+          // Persist the access token immediately so apiClient will include it
+          localStorage.setItem("accessToken", accessToken);
+
+          const resp = await apiClient.get<{
+            authenticated: boolean;
+            user?: { id: string; email: string; display_name: string };
+          }>("/auth/check");
+
+          if (resp.data && resp.data.authenticated && resp.data.user) {
+            login(accessToken, resp.data.user);
+            window.history.replaceState(null, "", window.location.pathname);
+            navigate("/profile", { replace: true });
+          } else {
+            setError("Authentication failed. Please try again.");
+          }
+        } catch (err) {
+          console.error("Failed to fetch user after OAuth:", err);
+          setError("Authentication failed. Please try again.");
+        }
+      }
+    };
+
+    handleOAuth();
+  }, [login, navigate]);
 
   // Check URL parameters for error
   useEffect(() => {
@@ -35,69 +84,11 @@ const Login = () => {
 
   // Check if user is already authenticated
   useEffect(() => {
-    // Don't create a new controller on every render
-    const controller = new AbortController();
-    let isActive = true; // Flag to track if effect is still active
-
-    const checkAuth = async () => {
-      if (!isActive) return; // Don't proceed if no longer active
-
-      try {
-        setLoading(true);
-        setError(null); // Clear previous errors
-
-        const { data } = await apiClient.get("/auth/check", {
-          signal: controller.signal,
-          withCredentials: true,
-          // Add a shorter timeout just for the auth check
-          timeout: 5000,
-        });
-
-        // Only update state if component is still mounted
-        if (isActive) {
-          if (data.authenticated) {
-            navigate("/profile", { replace: true });
-          }
-          setLoading(false);
-          setAuthChecked(true);
-        }
-      } catch (error: any) {
-        // Only update state if component is still mounted and error isn't from cancellation
-        if (
-          isActive &&
-          error.name !== "CanceledError" &&
-          error.code !== "ERR_CANCELED"
-        ) {
-          console.error("Auth check failed:", error);
-
-          // Handle connection errors specially
-          if (error.isConnectionError) {
-            setError(
-              "Cannot connect to server. Please ensure the server is running at http://localhost:8000"
-            );
-          } else {
-            // Handle other errors
-            setError(
-              "Failed to check authentication status. Please try again later."
-            );
-          }
-          setLoading(false);
-          setAuthChecked(true);
-        }
-      }
-    };
-
-    // Only check auth if not already checked
-    if (!authChecked) {
-      checkAuth();
+    if (isAuthenticated) {
+      navigate("/profile", { replace: true });
     }
-
-    // Cleanup function
-    return () => {
-      isActive = false; // Mark effect as inactive
-      controller.abort(); // Abort any in-flight requests
-    };
-  }, [navigate, authChecked]);
+    setLoading(false);
+  }, [isAuthenticated, navigate]);
 
   const handleGoogleLogin = () => {
     setLoading(true);
@@ -128,25 +119,40 @@ const Login = () => {
       });
 
       if (response.status === 200) {
+        const { accessToken, user } = response.data as {
+          accessToken: string;
+          user: { id: string; email: string; display_name: string };
+        };
+        login(accessToken, user);
         navigate("/profile");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login failed:", error);
 
+      const axiosError = error as {
+        response?: {
+          data?: { message?: string };
+          status?: number;
+          headers?: unknown;
+        };
+        request?: unknown;
+        message?: string;
+      };
+
       // More detailed error reporting
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        console.error("Response headers:", error.response.headers);
+      if (axiosError.response) {
+        console.error("Response data:", axiosError.response.data);
+        console.error("Response status:", axiosError.response.status);
+        console.error("Response headers:", axiosError.response.headers);
         setFormError(
-          error.response.data.message ||
+          axiosError.response.data?.message ||
             "Login failed. Please check your credentials."
         );
-      } else if (error.request) {
-        console.error("No response received:", error.request);
+      } else if (axiosError.request) {
+        console.error("No response received:", axiosError.request);
         setFormError("No response from server. Please try again later.");
       } else {
-        console.error("Error during request setup:", error.message);
+        console.error("Error during request setup:", axiosError.message);
         setFormError("Error setting up request. Please try again.");
       }
     } finally {
@@ -191,26 +197,40 @@ const Login = () => {
       console.log("Registration response:", response);
 
       if (response.status === 201) {
-        // No need to login separately - server already logs us in
+        const { accessToken, user } = response.data as {
+          accessToken: string;
+          user: { id: string; email: string; display_name: string };
+        };
+        login(accessToken, user);
         navigate("/profile");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration failed:", error);
 
+      const axiosError = error as {
+        response?: {
+          data?: { message?: string };
+          status?: number;
+          headers?: unknown;
+        };
+        request?: unknown;
+        message?: string;
+      };
+
       // More detailed error reporting
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-        console.error("Response headers:", error.response.headers);
+      if (axiosError.response) {
+        console.error("Response data:", axiosError.response.data);
+        console.error("Response status:", axiosError.response.status);
+        console.error("Response headers:", axiosError.response.headers);
         setFormError(
-          error.response.data.message ||
+          axiosError.response.data?.message ||
             "Registration failed. Please try again."
         );
-      } else if (error.request) {
-        console.error("No response received:", error.request);
+      } else if (axiosError.request) {
+        console.error("No response received:", axiosError.request);
         setFormError("No response from server. Please try again later.");
       } else {
-        console.error("Error during request setup:", error.message);
+        console.error("Error during request setup:", axiosError.message);
         setFormError("Error setting up request. Please try again.");
       }
     } finally {
@@ -222,11 +242,11 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="logo-container">
-          <h1>LightsOut</h1>
+          <h1>Souschef</h1>
         </div>
 
         <div className="header">
-          <h2>Welcome back</h2>
+          <h2>Welcome!</h2>
           <p className="subtext">Please sign in to continue</p>
         </div>
 

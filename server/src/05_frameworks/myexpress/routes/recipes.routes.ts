@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import db from "../../database/connection";
+import { authenticateJWT } from "../jwtAuth";
 
 const router = express.Router();
 
@@ -12,11 +13,12 @@ if (!apiKey) {
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 // Get all recipes
-router.get("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-    const result = await db.query(`
+router.get(
+  "/",
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await db.query(`
       SELECT 
         r.*,
         rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
@@ -34,19 +36,21 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       ORDER BY r.created_at DESC
     `);
 
-    res.json(result.rows);
-  } catch (error) {
-    next(error);
+      res.json(result.rows);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // Get a specific recipe by ID
-router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-    const result = await db.query(
-      `
+router.get(
+  "/:id",
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await db.query(
+        `
       SELECT 
         r.*,
         rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
@@ -63,25 +67,26 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
       WHERE r.id = $1
       GROUP BY r.id, rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings, rnut.nutrition_data
     `,
-      [req.params.id]
-    );
+        [req.params.id]
+      );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Recipe not found" });
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Recipe not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      next(error);
     }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 // Generate a recipe with Gemini AI
 router.post(
   "/generate",
+  authenticateJWT,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       if (!genAI)
         return res.status(503).json({ error: "AI service not available" });
 
@@ -108,16 +113,22 @@ router.post(
 );
 
 // Save a recipe to the database (delegate to controller)
-import { createRecipeController } from "../../../04_factories/RecipeControllerFactory";
+import "../../../04_factories/di";
+import { container } from "tsyringe";
+import { RecipeController } from "../../../03_adapters/controllers/RecipeController";
 
-const recipeController = createRecipeController();
+const recipeController = container.resolve(RecipeController);
 
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await recipeController.create(req, res);
-  } catch (err) {
-    next(err);
+router.post(
+  "/",
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await recipeController.create(req, res);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 export default router;

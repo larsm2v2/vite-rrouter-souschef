@@ -1,11 +1,14 @@
 import express from "express";
-import { createUserController } from "../../../04_factories/UserControllerFactory";
+import { authenticateJWT } from "../jwtAuth";
+import "../../../04_factories/di";
+import { container } from "tsyringe";
+import { UserController } from "../../../03_adapters/controllers/UserController";
 
 const router = express.Router();
 
-const userController = createUserController();
+const userController = container.resolve(UserController);
 
-router.get("/profile", async (req, res) => {
+router.get("/profile", authenticateJWT, async (req, res) => {
   await userController.getProfile(req, res);
 });
 

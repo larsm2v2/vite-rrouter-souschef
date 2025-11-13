@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { GetUserProfile } from "../../02_use_cases/GetUserProfile";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class UserController {
-  constructor(private getUserProfile: GetUserProfile) {}
+  constructor(@inject(GetUserProfile) private getUserProfile: GetUserProfile) {}
 
   async getProfile(req: Request, res: Response): Promise<void> {
     if (!req.user) {

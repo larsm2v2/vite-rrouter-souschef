@@ -45,21 +45,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("reflect-metadata"); // required by tsyringe
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const express_session_1 = __importDefault(require("express-session"));
-const passport_1 = __importStar(require("./config/auth/passport")); // Ensure this is correctly configured
-const sessions_1 = require("./config/auth/sessions");
-const database_1 = __importDefault(require("./config/database"));
-const schema_1 = require("./config/schema");
+const express_session_1 = __importDefault(require("express-session")); // kept for test environment only
+const passport_1 = __importStar(require("./05_frameworks/auth/passport")); // Ensure this is correctly configured
+const sessions_1 = require("./05_frameworks/auth/sessions");
+const connection_1 = __importDefault(require("./05_frameworks/database/connection"));
+const schema_1 = require("./05_frameworks/database/schema");
 const helmet_1 = __importDefault(require("helmet"));
-const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-const express_validator_1 = require("express-validator");
-const profile_1 = __importDefault(require("./routes/profile"));
-const recipes_routes_1 = __importDefault(require("./routes/recipes.routes"));
+const routes_1 = __importDefault(require("./05_frameworks/myexpress/routes"));
+const generative_ai_1 = require("@google/generative-ai");
+const _02_use_cases_1 = require("./02_use_cases");
+const tsyringe_1 = require("tsyringe");
+require("./04_factories/di"); // initialize DI container and reflect-metadata
 const app = (0, express_1.default)();
 app.set("trust proxy", 1);
 const requiredEnvVars = [
@@ -74,6 +76,12 @@ requiredEnvVars.forEach((varName) => {
         throw new Error(`${varName} is not defined in .env`);
     }
 });
+// In app.ts (near other env config)
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+    console.warn("API_KEY environment variable not found! AI features will be disabled.");
+}
+const genAI = apiKey ? new generative_ai_1.GoogleGenerativeAI(apiKey) : null;
 // Configure Passport
 (0, passport_1.configurePassport)();
 // Middleware
@@ -96,7 +104,8 @@ app.use((0, cors_1.default)({
             callback(null, false);
         }
     },
-    credentials: true, // Required for cookies/sessions
+    // Only enable credentials (cookies/sessions) during test runs to preserve legacy test flows.
+    credentials: process.env.NODE_ENV === "test",
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
     exposedHeaders: ["Content-Type", "Authorization", "X-RateLimit-Reset"],
 }));
@@ -111,21 +120,21 @@ app.use((0, express_rate_limit_1.default)({
 app.use(express_1.default.json());
 // Add URL-encoded middleware to handle form data
 app.use(express_1.default.urlencoded({ extended: true }));
-app.use((0, express_session_1.default)(sessions_1.sessionConfig));
+// Initialize passport. Only mount session middleware in test environment to keep
+// the legacy test helpers (mock-login) working. Production and newDev should use `src/06_app`.
 app.use(passport_1.default.initialize());
-app.use(passport_1.default.session());
+if (process.env.NODE_ENV === "test") {
+    app.use((0, express_session_1.default)(sessions_1.sessionConfig));
+    app.use(passport_1.default.session());
+}
 // Add request logger middleware
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
     console.log("Headers:", req.headers);
     next();
 });
-// Mount auth routes
-app.use("/auth", auth_routes_1.default);
-// Mount recipe routes
-app.use("/api/recipes", recipes_routes_1.default);
-// Mount profile routes
-app.use("/profile", profile_1.default);
+// Mount consolidated framework routes
+app.use(routes_1.default);
 // Google OAuth Configuration
 const GOOGLE_OAUTH_URL = process.env.GOOGLE_OAUTH_URL;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -134,38 +143,33 @@ const GOOGLE_OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
 ];
-//Audit Log
+// Audit Log (resolve from DI)
+const logAudit = tsyringe_1.container.resolve(_02_use_cases_1.LogAudit);
 app.use((req, res, next) => {
     const startTime = Date.now();
-    // Hook into response finish to log the outcome
     res.on("finish", () => __awaiter(void 0, void 0, void 0, function* () {
-        var _a;
+        var _a, _b;
         try {
-            // Skip audit logging for test routes
             if (process.env.NODE_ENV === "test" && req.path.startsWith("/test/")) {
                 return;
             }
-            yield database_1.default.query(`INSERT INTO audit_log (
-          user_id, action, endpoint, ip_address, 
-          user_agent, status_code, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [
-                ((_a = req.user) === null || _a === void 0 ? void 0 : _a.id) || null,
-                req.method,
-                req.originalUrl,
-                req.ip,
-                req.headers["user-agent"],
-                res.statusCode,
-                JSON.stringify({
+            yield logAudit.execute({
+                userId: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id,
+                action: req.method,
+                endpoint: req.originalUrl,
+                ipAddress: (_b = req.ip) !== null && _b !== void 0 ? _b : "",
+                userAgent: req.headers["user-agent"],
+                statusCode: res.statusCode,
+                metadata: {
                     params: req.params,
                     query: req.query,
                     durationMs: Date.now() - startTime,
-                }),
-            ]);
+                },
+            });
         }
         catch (err) {
-            // Only log errors in non-test environment
             if (process.env.NODE_ENV !== "test") {
-                console.error("Audit log failed:", err instanceof Error ? err.message : String(err));
+                console.error("Audit log failed:", err);
             }
         }
     }));
@@ -176,163 +180,50 @@ app.get("/", (req, res) => {
 });
 // Protected routes
 app.get("/profile", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // For tests, add debug logging
-    if (process.env.NODE_ENV === "test") {
-        console.log("Profile request:", {
-            hasUser: !!req.user,
-            user: req.user,
-            sessionID: req.sessionID,
-            hasSession: !!req.session,
-        });
-    }
-    if (!req.user)
+    if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
+    }
     try {
-        // Get user profile
-        const userResult = yield database_1.default.query(`SELECT id, email, display_name, avatar 
-       FROM users WHERE id = $1`, [req.user.id]);
-        // Get game stats
-        const statsResult = yield database_1.default.query(`SELECT current_level, best_combination, saved_maps
-       FROM game_stats WHERE user_id = $1`, [req.user.id]);
-        // Base stats (ensure defaults)
-        const baseStats = statsResult.rows[0] || {
-            current_level: 1,
-            best_combination: [],
-            saved_maps: [],
-        };
-        // Fetch minimum moves for all classic levels
-        const { rows: minMovesRows } = yield database_1.default.query(`SELECT level, min_moves FROM classic_puzzles WHERE difficulty = '' OR difficulty = 'classic'`);
-        const minMovesMap = {};
-        minMovesRows.forEach((row) => {
-            minMovesMap[row.level] = row.min_moves;
-        });
-        res.json({
-            user: userResult.rows[0],
-            stats: Object.assign(Object.assign({}, baseStats), { min_moves: minMovesMap }),
-        });
+        const getUserProfile = tsyringe_1.container.resolve(_02_use_cases_1.GetUserProfile);
+        const userProfile = yield getUserProfile.execute(req.user.id);
+        if (!userProfile) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.json(userProfile);
     }
     catch (err) {
-        console.error("Profile error:", err);
-        res.status(500).json({ error: "Database error" });
+        console.error("Error retrieving profile:", err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 }));
-app.get("/auth/check", (req, res) => {
-    // res.json({ authenticated: !!req.user });
-    if (!req.user) {
-        return res.status(200).json({ authenticated: false });
-    }
-    // Return minimal user data for frontend
-    res.json({
-        authenticated: true,
-        user: {
-            id: req.user.id,
-            email: req.user.email,
-            display_name: req.user.display_name,
-        },
-    });
-});
+app.get("/auth/check", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const checkAuthentication = tsyringe_1.container.resolve(_02_use_cases_1.CheckAuthentication);
+    const authStatus = yield checkAuthentication.execute(req.user);
+    res.json(authStatus);
+}));
 app.get("/user", (req, res) => {
     if (!req.user) {
         res.status(401).json({ error: "Unauthorized" });
     }
     res.json(req.user);
 });
-// Stats endpoint with validation
-app.get("/stats/:userId", (0, express_validator_1.param)("userId").isInt().toInt(), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.user)
-        return res.status(401).json({ error: "Unauthorized" });
-    try {
-        const stats = yield database_1.default.query(`SELECT 
-          current_level AS "current_level",
-          least_moves AS "leastMoves", 
-          custom_levels AS "customLevels"
-         FROM game_stats 
-         WHERE user_id = $1`, [req.params.userId]);
-        res.json(stats.rows[0] || {
-            current_level: 1,
-            leastMoves: [],
-            customLevels: [],
-        });
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Database error" });
-    }
-}));
 // Logout Route
 app.get("/logout", (req, res) => {
     req.logout(() => {
         res.redirect("/");
     });
 });
-app.get("/sample-stats", (req, res) => {
-    if (!req.user)
-        res.status(401).json({ error: "Unauthorized" });
-    res.json({
-        current_level: 5,
-        leastMoves: 18,
-    });
-});
 // Enhanced logout
-app.post("/auth/logout", (req, res) => {
-    req.logout(() => {
-        var _a;
-        (_a = req.session) === null || _a === void 0 ? void 0 : _a.destroy(() => {
-            res.clearCookie("connect.sid");
-            res.json({ success: true });
-        });
-    });
-});
-app.post("/game/progress", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.user)
-        return res.status(401).json({ error: "Unauthorized" });
+app.post("/auth/logout", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const logoutUser = tsyringe_1.container.resolve(_02_use_cases_1.LogoutUser);
     try {
-        const { level, moves, completed } = req.body;
-        // Validate input
-        if (!level || typeof level !== "number") {
-            return res.status(400).json({ error: "Invalid level" });
-        }
-        // First, get the current level
-        const userStatsResult = yield database_1.default.query(`SELECT current_level, best_combination 
-       FROM game_stats WHERE user_id = $1`, [req.user.id]);
-        const userStats = userStatsResult.rows[0];
-        const currentLevel = (userStats === null || userStats === void 0 ? void 0 : userStats.current_level) || 1;
-        // Only update level if the completed level is the current one
-        // and we're moving to the next level
-        let newLevel = currentLevel;
-        if (completed && level === currentLevel) {
-            newLevel = currentLevel + 1;
-        }
-        // Store the moves as best combination if better than current
-        // or if no best combination exists for this level
-        let bestCombination = (userStats === null || userStats === void 0 ? void 0 : userStats.best_combination) || [];
-        if (Array.isArray(bestCombination)) {
-            // If this level doesn't have a best combination yet or new moves is better
-            if (!bestCombination[level - 1] || moves < bestCombination[level - 1]) {
-                // Create a copy of the array with the right length
-                const newBestCombination = [...bestCombination];
-                // Make sure the array is long enough
-                while (newBestCombination.length < level) {
-                    newBestCombination.push(null);
-                }
-                // Set the new best for this level
-                newBestCombination[level - 1] = moves;
-                bestCombination = newBestCombination;
-            }
-        }
-        // Update the database
-        yield database_1.default.query(`UPDATE game_stats
-       SET current_level = $1, best_combination = $2
-       WHERE user_id = $3`, [newLevel, JSON.stringify(bestCombination), req.user.id]);
-        res.json({
-            success: true,
-            current_level: newLevel,
-            best_combination: bestCombination,
-        });
+        yield logoutUser.execute(req);
+        res.clearCookie("connect.sid");
+        res.json({ success: true });
     }
     catch (err) {
-        console.error("Game progress update error:", err);
-        res.status(500).json({ error: "Database error" });
+        console.error("Error during logout:", err);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 }));
 app.use((err, req, res, next) => {
@@ -364,9 +255,15 @@ app.use((err, req, res, next) => {
 });
 // Initialize database for tests
 if (process.env.NODE_ENV === "test") {
-    (0, schema_1.initializeDatabase)()
-        .then(() => console.log("✅ Test database initialized"))
-        .catch((err) => console.error("❌ Test database initialization failed:", err));
+    (() => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield (0, schema_1.initializeDatabase)();
+            console.log("✅ Test database initialized");
+        }
+        catch (err) {
+            console.error("❌ Test database initialization failed:", err);
+        }
+    }))();
 }
 // Test routes - only available in test environment
 if (process.env.NODE_ENV === "test") {
@@ -422,7 +319,7 @@ function ensureDatabaseInitialized() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // Try to query the users table
-            yield database_1.default.query("SELECT 1 FROM users LIMIT 1");
+            yield connection_1.default.query("SELECT 1 FROM users LIMIT 1");
             console.log("✅ Database already initialized.");
         }
         catch (error) {

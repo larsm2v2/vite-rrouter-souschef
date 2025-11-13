@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { RecipeModel } from "../Models/Models";
 import "./Navbar.css";
 import "../Sidebar/Sidebar.css";
@@ -7,21 +7,12 @@ import "../Sidebar/Sidebar.css";
 interface NavbarProps {
   sidebarToggled: boolean;
   setSidebarToggled: React.Dispatch<React.SetStateAction<boolean>>;
-  setActiveContent: React.Dispatch<
-    React.SetStateAction<"recipes" | "sousChef">
-  >;
-  setRecipeToDisplay: React.Dispatch<React.SetStateAction<RecipeModel | null>>;
+  setActiveContent?: React.Dispatch<React.SetStateAction<"recipes" | "sousChef">>;
+  setRecipeToDisplay?: React.Dispatch<React.SetStateAction<RecipeModel | null>>;
 }
 
-const Navbar: React.FC<NavbarProps> = ({
-  sidebarToggled,
-  setSidebarToggled,
-  setActiveContent,
-  setRecipeToDisplay,
-}: NavbarProps) => {
-  const togglesidebar = () => {
-    setSidebarToggled((prevState) => !prevState);
-  };
+const Navbar: React.FC<NavbarProps> = ({ sidebarToggled }) => {
+  // Toggle handler is provided by parent via setSidebarToggled; helper removed to avoid unused function
 
   const navOpenClose = useCallback(
     (openNav: () => void, closeNav: () => void) => {

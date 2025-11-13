@@ -105,6 +105,73 @@ async function createTables() {
       );
     `);
 
+    // Add profile-related columns to recipes and users if they don't exist
+    await client.query(`
+      ALTER TABLE recipes
+      ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT false,
+      ADD COLUMN IF NOT EXISTS last_viewed_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS cooking_dates JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS photo_url TEXT,
+      ADD COLUMN IF NOT EXISTS share_token TEXT UNIQUE;
+    `);
+
+    await client.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS dietary_preferences TEXT[] DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS favorite_cuisines TEXT[] DEFAULT '{}';
+    `);
+
+    // Meal plan table for scheduling
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS meal_plan (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        planned_date DATE NOT NULL,
+        meal_type TEXT,
+        is_cooked BOOLEAN DEFAULT false,
+        cooked_date TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_meal_plan_user_date ON meal_plan(user_id, planned_date DESC);
+    `);
+
+    // Shopping list versions with version history
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS shopping_list_versions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL,
+        list_data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        is_current BOOLEAN DEFAULT true
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_shopping_list_user_current ON shopping_list_versions(user_id, is_current);
+    `);
+
+    // Recipe activity log
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recipe_activity_log (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        activity_type TEXT NOT NULL,
+        activity_data JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_activity_log_user ON recipe_activity_log(user_id, created_at DESC);
+    `);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS audit_log (
         id SERIAL PRIMARY KEY,

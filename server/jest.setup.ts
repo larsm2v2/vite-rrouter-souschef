@@ -1,4 +1,5 @@
 // jest.setup.ts
+import "reflect-metadata"; // required by tsyringe in tests
 import { initializeDatabase } from "./src/05_frameworks/database/schema";
 import pool from "./src/05_frameworks/database/connection";
 

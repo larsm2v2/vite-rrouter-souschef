@@ -4,6 +4,7 @@ import { RecipeModel } from "../Models/Models"
 import EditableList from "./EditableList/EditableList"
 import shoppingListData from "./ShoppingList.json"
 import { ListItem } from "../Models/Models"
+import apiClient from "../pages/Client"
 
 interface ShoppingListProps {
 	selectedRecipeIds: string[]
@@ -62,16 +63,10 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 	useEffect(() => {
 		const fetchRecipes = async () => {
 			try {
-				const response = await fetch(`/api/clean-recipes`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				})
+				const response = await apiClient.post<{ data: RecipeModel[] }>(`/api/clean-recipes`)
 
-				if (response.ok) {
-					const data = await response.json()
-					setRecipes(data.data) // Update recipes state
+				if (response.status === 200) {
+					setRecipes(response.data.data) // Update recipes state
 				} else {
 					throw new Error("Failed to fetch recipes.")
 				}
@@ -86,15 +81,9 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 	useEffect(() => {
 		const fetchIngredientSynonyms = async () => {
 			try {
-				const response = await fetch(`/api/ingredient-synonyms`, {
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				})
-				if (response.ok) {
-					const data = await response.json()
-					setIngredientSynonyms(data)
+				const response = await apiClient.get<{ [key: string]: string[] }>(`/api/ingredient-synonyms`)
+				if (response.status === 200) {
+					setIngredientSynonyms(response.data)
 				} else {
 					throw new Error("Failed to fetch ingredient synonyms.")
 				}

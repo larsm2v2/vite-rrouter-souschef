@@ -13,10 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.migrateRecipeTables = migrateRecipeTables;
-const database_1 = __importDefault(require("../config/database"));
+exports.updateRecipeTables = updateRecipeTables;
+const connection_1 = __importDefault(require("../05_frameworks/database/connection"));
 function migrateRecipeTables() {
     return __awaiter(this, void 0, void 0, function* () {
-        const client = yield database_1.default.connect();
+        const client = yield connection_1.default.connect();
         try {
             yield client.query("BEGIN");
             // Check if schema_version table exists
@@ -52,7 +53,7 @@ function migrateRecipeTables() {
             // Create tables using the schema we defined
             yield client.query(`
       -- Main recipes table
-      CREATE TABLE recipes (
+      CREATE TABLE IF NOT EXISTS recipes (
           id SERIAL PRIMARY KEY,
           unique_id BIGINT UNIQUE NOT NULL,
           name TEXT NOT NULL,
@@ -65,7 +66,7 @@ function migrateRecipeTables() {
       );
       
       -- Serving information
-      CREATE TABLE recipe_serving_info (
+      CREATE TABLE IF NOT EXISTS recipe_serving_info (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           prep_time TEXT,
           cook_time TEXT,
@@ -75,7 +76,7 @@ function migrateRecipeTables() {
       );
       
       -- Ingredients stored as JSONB for flexibility
-      CREATE TABLE recipe_ingredients (
+      CREATE TABLE IF NOT EXISTS recipe_ingredients (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           category TEXT NOT NULL,
           ingredients JSONB NOT NULL,
@@ -83,7 +84,7 @@ function migrateRecipeTables() {
       );
       
       -- Instructions as ordered steps
-      CREATE TABLE recipe_instructions (
+      CREATE TABLE IF NOT EXISTS recipe_instructions (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           step_number INTEGER NOT NULL,
           instruction TEXT NOT NULL,
@@ -91,14 +92,14 @@ function migrateRecipeTables() {
       );
       
       -- Notes table
-      CREATE TABLE recipe_notes (
+      CREATE TABLE IF NOT EXISTS recipe_notes (
           id SERIAL PRIMARY KEY,
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           note TEXT NOT NULL
       );
       
       -- Nutrition information as JSONB
-      CREATE TABLE recipe_nutrition (
+      CREATE TABLE IF NOT EXISTS recipe_nutrition (
           recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
           nutrition_data JSONB NOT NULL,
           PRIMARY KEY (recipe_id)
@@ -119,6 +120,39 @@ function migrateRecipeTables() {
         catch (err) {
             yield client.query("ROLLBACK");
             console.error("❌ Error creating recipe tables:", err);
+            throw err;
+        }
+        finally {
+            client.release();
+        }
+    });
+}
+function updateRecipeTables() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const client = yield connection_1.default.connect();
+        try {
+            yield client.query("BEGIN");
+            // Add user_id to recipes table
+            yield client.query(`
+      ALTER TABLE recipes
+      ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+    `);
+            // Add recipe_id to grocery_list table
+            yield client.query(`
+      ALTER TABLE grocery_list
+      ADD COLUMN IF NOT EXISTS recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE;
+    `);
+            // Create composite indexes
+            yield client.query(`
+      CREATE INDEX IF NOT EXISTS idx_grocery_list_user_recipe ON grocery_list(user_id, recipe_id);
+      CREATE INDEX IF NOT EXISTS idx_recipes_user_id ON recipes(user_id);
+    `);
+            yield client.query("COMMIT");
+            console.log("✅ Recipe tables updated successfully");
+        }
+        catch (err) {
+            yield client.query("ROLLBACK");
+            console.error("❌ Error updating recipe tables:", err);
             throw err;
         }
         finally {
