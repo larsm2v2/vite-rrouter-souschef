@@ -8,3 +8,4 @@ keycommands.txt
 node_modules
 **/node_modules/**
 **/secrets/**
+**/env/**
