@@ -10,6 +10,15 @@ interface User {
   avatar?: string;
 }
 
+interface GameStats {
+  current_level?: number;
+  best_combination?: Array<number | null>;
+  min_moves?: Record<number, number | null>;
+  saved_maps?: Array<Record<string, unknown>>;
+  // allow other arbitrary fields the server may include
+  [k: string]: unknown;
+}
+
 const Profile = () => {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<GameStats | null>(null);
@@ -26,10 +35,10 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get("/profile", {
-          withCredentials: true,
-          signal: controller.signal,
-        });
+        const response = await apiClient.get<{
+          user: User;
+          stats: GameStats;
+        }>("/profile");
 
         // Only update state if component is still mounted
         if (isActive) {
@@ -43,9 +52,9 @@ const Profile = () => {
 
           if (response.data.stats) {
             // Ensure current_level is at least the number of completed levels
-            const fetchedStats = response.data.stats;
+            const fetchedStats = response.data.stats as GameStats;
             const comboLength = fetchedStats.best_combination?.length || 0;
-            if (fetchedStats.current_level < comboLength) {
+            if ((fetchedStats.current_level ?? 0) < comboLength) {
               fetchedStats.current_level = comboLength;
             }
             setStats(fetchedStats);
@@ -53,14 +62,18 @@ const Profile = () => {
 
           setLoading(false);
         }
-      } catch (error: any) {
+      } catch (err: unknown) {
+        const error =
+          (err as
+            | { name?: string; code?: string; message?: string }
+            | undefined) ?? {};
         // Only handle errors if component is still mounted and error isn't from cancellation
         if (
           isActive &&
           error.name !== "CanceledError" &&
           error.code !== "ERR_CANCELED"
         ) {
-          console.error("Failed to fetch profile:", error);
+          console.error("Failed to fetch profile:", error.message ?? error);
           navigate("/login");
         }
       }
@@ -107,11 +120,17 @@ const Profile = () => {
 
     // Filter out levels with no completion data
     const completedLevels = stats.best_combination
-      .map((moves, index) => ({ level: index + 1, moves }))
-      .filter((item) => item.moves !== null && item.moves > 0);
+      .map((moves: number | null, index: number) => ({
+        level: index + 1,
+        moves,
+      }))
+      .filter(
+        (item: { level: number; moves: number | null }) =>
+          item.moves !== null && (item.moves ?? 0) > 0
+      );
 
     // Return the last 5 levels
-    return completedLevels.slice(-5);
+    return completedLevels.slice(-5) as Array<{ level: number; moves: number }>;
   };
 
   // Calculate progress percent with base and bonuses
@@ -143,7 +162,7 @@ const Profile = () => {
   }
 
   // Ensure best_combination and min_moves are not null
-  const bestComb: number[] = stats.best_combination || [];
+  const bestComb: Array<number | null> = stats.best_combination || [];
   const minMovesMap = stats.min_moves || {};
 
   const lastFiveLevels = getLastFiveCompletedLevels();
@@ -177,7 +196,7 @@ const Profile = () => {
           <div className="stats-grid">
             <StatCard
               title="Highest Completed Level"
-              value={stats?.current_level - 1 || 1}
+              value={Math.max((stats?.current_level ?? 1) - 1, 1)}
               icon="🏆"
             />
             <div className="level-grid-container">

@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 import { CreateRecipe, UpdateRecipe, DeleteRecipe } from "../../02_use_cases";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class RecipeController {
   constructor(
-    private createRecipe: CreateRecipe,
-    private updateRecipe: UpdateRecipe,
-    private deleteRecipe: DeleteRecipe
+    @inject(CreateRecipe) private createRecipe: CreateRecipe,
+    @inject(UpdateRecipe) private updateRecipe: UpdateRecipe,
+    @inject(DeleteRecipe) private deleteRecipe: DeleteRecipe
   ) {}
 
   async create(req: Request, res: Response): Promise<void> {

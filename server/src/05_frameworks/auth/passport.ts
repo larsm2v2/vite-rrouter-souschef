@@ -4,7 +4,7 @@ import pool from "../database/connection";
 import { Pool } from "pg";
 import crypto from "crypto";
 import { Request } from "express";
-import { User } from "../../types/entities/User";
+import { User } from "../../01_entities";
 
 const dbPool =
   process.env.NODE_ENV === "test"

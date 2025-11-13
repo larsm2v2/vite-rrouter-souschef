@@ -26,11 +26,9 @@ function RecipesPage() {
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeModel | null>(
     null
   );
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeModel | null>(
-    null
-  );
+  const [, setSelectedRecipe] = useState<RecipeModel | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
-  const [willTryAgain, setWillTryAgain] = useState(false);
+  const [, setWillTryAgain] = useState(false);
 
   return (
     <>

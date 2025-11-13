@@ -109,29 +109,33 @@ async function createPool() {
 }
 
 const poolPromise = createPool();
-let pool: Pool | null;
+let internalPool: Pool | null;
 
-export default {
+const poolWrapper = {
   query: async (text: string, params?: any[]) => {
-    if (!pool) {
-      pool = await poolPromise;
+    if (!internalPool) {
+      internalPool = await poolPromise;
     }
-    return pool.query(text, params);
+    return internalPool.query(text, params);
   },
   connect: async () => {
-    if (!pool) {
-      pool = await poolPromise;
+    if (!internalPool) {
+      internalPool = await poolPromise;
     }
-    return pool.connect();
+    return internalPool.connect();
   },
   end: async () => {
-    if (pool) {
+    if (internalPool) {
       console.log("Closing database pool connections...");
-      const result = await pool.end();
-      pool = null;
+      const result = await internalPool.end();
+      internalPool = null;
       console.log("Database pool connections closed");
       return result;
     }
     return null;
   },
 };
+
+export default poolWrapper;
+// Backwards-compatible named export used elsewhere in the codebase
+export const pool = poolWrapper;

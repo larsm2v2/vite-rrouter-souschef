@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { GetGroceryList } from "../../02_use_cases";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class GroceryController {
-  constructor(private getGroceryList: GetGroceryList) {}
+  constructor(@inject(GetGroceryList) private getGroceryList: GetGroceryList) {}
 
   async getList(req: Request, res: Response): Promise<void> {
     const userId = req.user?.id;

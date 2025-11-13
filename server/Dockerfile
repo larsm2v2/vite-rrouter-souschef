@@ -1,0 +1,26 @@
+FROM node:18-alpine AS build
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+# Use npm install in the build image so Docker build succeeds even if lockfile and package.json
+# are out-of-sync. This avoids failing the Cloud Build when package-lock.json is not updated.
+# It will install devDeps needed for the TypeScript build.
+RUN npm install --no-audit --no-fund --unsafe-perm
+
+# Copy source and build
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine AS runtime
+WORKDIR /app
+
+# Only copy built artifacts and package.json for production
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/dist ./dist
+
+ENV NODE_ENV=production
+EXPOSE 8000
+
+# Start the compiled entrypoint (06_app/main.js)
+CMD ["node", "dist/06_app/main.js"]

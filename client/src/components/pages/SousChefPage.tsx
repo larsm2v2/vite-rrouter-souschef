@@ -29,9 +29,7 @@ function SousChefPage() {
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeModel | null>(
     null
   );
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeModel | null>(
-    null
-  );
+  const [, setSelectedRecipe] = useState<RecipeModel | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
 
   const handleRecipeGenerated = (recipe: RecipeModel | null) => {

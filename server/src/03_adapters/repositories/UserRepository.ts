@@ -1,6 +1,8 @@
 import pool from "../../05_frameworks/database/connection";
 import { User } from "../../01_entities/User";
+import { injectable } from "tsyringe";
 
+@injectable()
 export class UserRepository {
   async findById(userId: number): Promise<User | null> {
     const result = await pool.query(

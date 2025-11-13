@@ -1,13 +1,14 @@
+import "reflect-metadata"; // required by tsyringe
 import dotenv from "dotenv";
 dotenv.config();
 
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import session from "express-session";
+import session from "express-session"; // kept for test environment only
 import passport, { configurePassport } from "./05_frameworks/auth/passport"; // Ensure this is correctly configured
 import { sessionConfig } from "./05_frameworks/auth/sessions";
 import * as crypto from "crypto";
-import type { User } from "./types/entities/User"; // Import the User interface
+import type { User } from "./01_entities"; // Import the User interface from canonical entities
 import pool from "./05_frameworks/database/connection";
 import { initializeDatabase } from "./05_frameworks/database/schema";
 import helmet from "helmet";
@@ -17,15 +18,15 @@ import { param } from "express-validator";
 import profileRoutes from "./routes/profile";
 import recipeRoutes from "./routes/recipes.routes";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { LogAudit, CheckAuthentication, GetUserProfile } from "./02_use_cases";
+import {
+  LogAudit,
+  CheckAuthentication,
+  GetUserProfile,
+  LogoutUser,
+} from "./02_use_cases";
 import { UserRepository } from "./03_adapters/repositories";
 import { container } from "tsyringe";
-import {
-  createGetUserProfile,
-  createCheckAuthentication,
-  createLogAudit,
-  createLogoutUser,
-} from "./04_factories";
+import "./04_factories/di"; // initialize DI container and reflect-metadata
 
 const app = express();
 app.set("trust proxy", 1);
@@ -75,7 +76,8 @@ app.use(
         callback(null, false);
       }
     },
-    credentials: true, // Required for cookies/sessions
+    // Only enable credentials (cookies/sessions) during test runs to preserve legacy test flows.
+    credentials: process.env.NODE_ENV === "test",
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
     exposedHeaders: ["Content-Type", "Authorization", "X-RateLimit-Reset"],
   })
@@ -94,9 +96,13 @@ app.use(express.json());
 // Add URL-encoded middleware to handle form data
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session(sessionConfig));
+// Initialize passport. Only mount session middleware in test environment to keep
+// the legacy test helpers (mock-login) working. Production and newDev should use `src/06_app`.
 app.use(passport.initialize());
-app.use(passport.session());
+if (process.env.NODE_ENV === "test") {
+  app.use(session(sessionConfig));
+  app.use(passport.session());
+}
 
 // Add request logger middleware
 app.use((req, res, next) => {
@@ -116,8 +122,8 @@ const GOOGLE_OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
 ];
-//Audit Log
-const logAudit = createLogAudit();
+// Audit Log (resolve from DI)
+const logAudit = container.resolve(LogAudit);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
@@ -161,7 +167,7 @@ app.get("/profile", async (req, res) => {
   }
 
   try {
-    const getUserProfile = createGetUserProfile();
+    const getUserProfile = container.resolve(GetUserProfile);
     const userProfile = await getUserProfile.execute(req.user.id);
 
     if (!userProfile) {
@@ -176,7 +182,7 @@ app.get("/profile", async (req, res) => {
 });
 
 app.get("/auth/check", async (req, res) => {
-  const checkAuthentication = createCheckAuthentication();
+  const checkAuthentication = container.resolve(CheckAuthentication);
   const authStatus = await checkAuthentication.execute(req.user);
   res.json(authStatus);
 });
@@ -197,7 +203,7 @@ app.get("/logout", (req, res) => {
 
 // Enhanced logout
 app.post("/auth/logout", async (req, res) => {
-  const logoutUser = createLogoutUser();
+  const logoutUser = container.resolve(LogoutUser) as LogoutUser;
 
   try {
     await logoutUser.execute(req);

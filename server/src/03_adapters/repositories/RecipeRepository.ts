@@ -1,6 +1,8 @@
 import pool from "../../05_frameworks/database/connection";
 import { Recipe } from "../../01_entities/Recipe";
+import { injectable } from "tsyringe";
 
+@injectable()
 export class RecipeRepository {
   async create(recipe: Partial<Recipe>): Promise<Recipe> {
     const result = await pool.query(

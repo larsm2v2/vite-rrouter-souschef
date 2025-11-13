@@ -1,9 +1,11 @@
 import { Recipe } from "../01_entities";
 import { RecipeRepository } from "../03_adapters/repositories/RecipeRepository";
 import { cleanRecipe as remoteClean } from "../05_frameworks/cleanRecipe/client";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class CreateRecipe {
-  constructor(private recipeRepository: RecipeRepository) {}
+  constructor(@inject(RecipeRepository) private recipeRepository: RecipeRepository) {}
 
   /**
    * Execute create recipe flow using the (optional) microservice for cleaning.

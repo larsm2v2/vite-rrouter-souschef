@@ -1,7 +1,9 @@
 import { RecipeRepository } from "../03_adapters/repositories/RecipeRepository";
+import { injectable, inject } from "tsyringe";
 
+@injectable()
 export class DeleteRecipe {
-  constructor(private recipeRepository: RecipeRepository) {}
+  constructor(@inject(RecipeRepository) private recipeRepository: RecipeRepository) {}
 
   async execute(recipeId: number): Promise<boolean> {
     return this.recipeRepository.delete(recipeId);

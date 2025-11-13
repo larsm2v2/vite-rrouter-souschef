@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import "./Recipes.css"
 import { RecipeModel } from "../Models/Models"
+import apiClient from "../pages/Client"
 
 interface RecipesIndexProps {
 	isLoading: boolean
@@ -35,16 +36,10 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
 		setRecipes: React.Dispatch<React.SetStateAction<RecipeModel[]>>
 	) => {
 		try {
-			const response = await fetch(`api/clean-recipes`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			})
-			if (response.ok) {
-				const data = await response.json()
-				setRecipes(data.data) // Assuming the server sends the cleaned recipes in `data.data`
-				console.log("JSON retrieved: ", data.data)
+			const response = await apiClient.post<{ data: RecipeModel[] }>(`/api/clean-recipes`)
+			if (response.status === 200) {
+				setRecipes(response.data.data) // Assuming the server sends the cleaned recipes in `data.data`
+				console.log("JSON retrieved: ", response.data.data)
 			} else {
 				throw new Error("Failed to fetch recipes.")
 			}
@@ -175,14 +170,11 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
 	useEffect(() => {
 		const cleanServerRecipes = async () => {
 			try {
-				const response = await fetch(`/api/clean-recipes`, {
-					method: "POST",
-				})
-				if (!response.ok) {
+				const response = await apiClient.post<{ message: string }>(`/api/clean-recipes`)
+				if (response.status !== 200) {
 					throw new Error("Failed to fix recipe data on server")
 				}
-				const data = await response.json()
-				console.log(data.message) // Log the success message
+				console.log(response.data.message) // Log the success message
 				// Optionally, refetch the recipe data from your server or local file
 				// after the data has been fixed.
 			} catch (error) {

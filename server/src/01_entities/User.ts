@@ -6,6 +6,9 @@ export interface User {
   email: string;
   displayName: string;
   avatar?: string;
+  // Profile fields added in Phase 1
+  dietaryPreferences?: string[];
+  favoriteCuisines?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -31,6 +34,14 @@ export const UserSchema = new EntitySchema<User>({
     },
     avatar: {
       type: String,
+      nullable: true,
+    },
+    dietaryPreferences: {
+      type: "simple-array",
+      nullable: true,
+    },
+    favoriteCuisines: {
+      type: "simple-array",
       nullable: true,
     },
     createdAt: {
