@@ -20,7 +20,8 @@ COPY --from=build /app/package*.json ./
 COPY --from=build /app/dist ./dist
 
 ENV NODE_ENV=production
-EXPOSE 8000
+# Cloud Run sets PORT to 8080 by default; expose 8080 to match
+EXPOSE 8080
 
 # Start the compiled entrypoint (06_app/main.js)
 CMD ["node", "dist/06_app/main.js"]
