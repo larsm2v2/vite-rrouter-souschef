@@ -30,7 +30,8 @@
     "ts-node": "^10.9.2",
     "tsyringe": "^4.10.0",
     "typeorm": "^0.3.22",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@google-cloud/secret-manager": "^4.0.0"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",
