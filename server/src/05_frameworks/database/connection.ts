@@ -6,6 +6,12 @@ import { Pool } from "pg";
 // Note: Express.User type is defined centrally in src/types/express.d.ts
 
 async function ensureDatabaseExists() {
+  // Skip database creation for cloud databases (Neon, etc.) - they're already created
+  if (process.env.PG_URL) {
+    console.log('Using cloud database (PG_URL), skipping database creation check');
+    return;
+  }
+  
   const dbName = process.env.PG_DATABASE || "SousChefDB";
 
   const adminPool = new Pool({
