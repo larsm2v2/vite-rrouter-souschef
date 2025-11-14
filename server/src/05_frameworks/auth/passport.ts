@@ -90,7 +90,7 @@ export function configurePassport() {
         scope: ["openid", "profile", "email"],
         passReqToCallback: true,
         store: new CookieStore(), // Use cookie-based state storage instead of session
-      },
+      } as any,
       async (
         req: Request,
         issuer: string,
