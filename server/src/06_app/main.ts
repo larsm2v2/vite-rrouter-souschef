@@ -4,10 +4,25 @@ import "../04_factories/di"; // boot DI container and register services
 
 import { validateEnvironment } from "./environment";
 import { startServer } from "./server";
+// Load runtime secret helper (fetches secrets from Secret Manager and caches them)
+import { startupCache, scheduleRefresh } from "../secret-manager-example";
 
 async function main() {
   try {
     validateEnvironment();
+    // Attempt to prime critical secrets before starting the server. Failure to fetch
+    // secrets will be logged but will not prevent the server from starting.
+    try {
+      await startupCache();
+      // Start a background refresh loop to pick up rotations periodically
+      scheduleRefresh();
+    } catch (e) {
+      console.warn(
+        "Warning: secret manager startup cache failed, continuing to start server:",
+        e
+      );
+    }
+
     await startServer();
   } catch (error) {
     console.error("❌ Application failed to start:", error);
