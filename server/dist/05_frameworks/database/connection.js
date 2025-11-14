@@ -63,8 +63,8 @@ function createPool() {
                 yield ensureDatabaseExists();
             }
             catch (err) {
-                console.error("Failed to ensure database exists:", err);
-                process.exit(1);
+                console.error("Failed to ensure database exists (continuing anyway):", err);
+                // Don't exit - allow app to start and retry DB operations later
             }
         }
         const pgConfig = isTestEnv
@@ -100,15 +100,11 @@ function createPool() {
                         : false,
                 };
         const pool = new pg_1.Pool(pgConfig);
+        // Don't test connection during pool creation to avoid blocking startup.
+        // Connection will be tested on first query. This allows the HTTP server
+        // to start and become healthy even if DB is temporarily unavailable.
         if (!isTestEnv) {
-            try {
-                const res = yield pool.query("SELECT NOW() as now");
-                console.log("✅ PostgreSQL connected at", res.rows[0].now);
-            }
-            catch (err) {
-                console.error("❌ PostgreSQL connection error:", err);
-                process.exit(1);
-            }
+            console.log("✅ PostgreSQL pool created (connection will be tested on first query)");
         }
         return pool;
     });

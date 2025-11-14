@@ -14,22 +14,25 @@ require("reflect-metadata");
 require("../04_factories/di"); // boot DI container and register services
 const environment_1 = require("./environment");
 const server_1 = require("./server");
-// Load runtime secret helper (fetches secrets from Secret Manager and caches them)
-const secret_manager_example_1 = require("../secret-manager-example");
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             (0, environment_1.validateEnvironment)();
-            // Attempt to prime critical secrets before starting the server. Failure to fetch
-            // secrets will be logged but will not prevent the server from starting.
+            // Secrets are now mounted as environment variables in Cloud Run via --set-secrets,
+            // so we don't need to fetch them at runtime. Commented out to speed up startup.
+            // If you need runtime secret rotation, uncomment this block and ensure GCP_PROJECT is set.
+            /*
             try {
-                yield (0, secret_manager_example_1.startupCache)();
-                // Start a background refresh loop to pick up rotations periodically
-                (0, secret_manager_example_1.scheduleRefresh)();
+              await startupCache();
+              // Start a background refresh loop to pick up rotations periodically
+              scheduleRefresh();
+            } catch (e) {
+              console.warn(
+                "Warning: secret manager startup cache failed, continuing to start server:",
+                e
+              );
             }
-            catch (e) {
-                console.warn("Warning: secret manager startup cache failed, continuing to start server:", e);
-            }
+            */
             yield (0, server_1.startServer)();
         }
         catch (error) {

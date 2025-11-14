@@ -10,8 +10,11 @@ import { startupCache, scheduleRefresh } from "../secret-manager-example";
 async function main() {
   try {
     validateEnvironment();
-    // Attempt to prime critical secrets before starting the server. Failure to fetch
-    // secrets will be logged but will not prevent the server from starting.
+    
+    // Secrets are now mounted as environment variables in Cloud Run via --set-secrets,
+    // so we don't need to fetch them at runtime. Commented out to speed up startup.
+    // If you need runtime secret rotation, uncomment this block and ensure GCP_PROJECT is set.
+    /*
     try {
       await startupCache();
       // Start a background refresh loop to pick up rotations periodically
@@ -22,6 +25,7 @@ async function main() {
         e
       );
     }
+    */
 
     await startServer();
   } catch (error) {

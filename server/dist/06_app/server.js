@@ -14,10 +14,18 @@ const index_1 = require("../05_frameworks/index");
 const database_1 = require("./database");
 function startServer() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield (0, database_1.ensureDatabaseInitialized)();
+        // Start listening immediately so the container becomes healthy for Cloud Run
+        // even if database initialization takes time or briefly fails.
         const PORT = process.env.PORT || 8000;
-        index_1.app.listen(PORT, () => {
+        const server = index_1.app.listen(PORT, () => {
             console.log(`✅ Server running on port ${PORT}`);
         });
+        // Initialize database in the background. If initialization fails, log the
+        // error but keep the server running so Cloud Run health checks succeed and
+        // we can surface errors via logs and retry logic.
+        (0, database_1.ensureDatabaseInitialized)().catch((err) => {
+            console.error("Database initialization failed (continuing to run):", err);
+        });
+        return server;
     });
 }
