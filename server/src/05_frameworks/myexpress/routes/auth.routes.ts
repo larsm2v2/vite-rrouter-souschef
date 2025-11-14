@@ -37,23 +37,11 @@ router.post("/test-body", (req: Request, res: Response) => {
 });
 
 // Initiate Google auth
-router.get("/google", (req: Request, res: Response, next) => {
-  // Generate random state for OAuth (we'll validate it via cookie instead of session)
-  const state = crypto.randomBytes(16).toString("hex");
-  
-  // Store state in a short-lived cookie instead of session
-  res.cookie("oauth_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 5 * 60 * 1000, // 5 minutes
-  });
-
+router.get("/google", 
   passport.authenticate("google", {
-    state,
     prompt: "select_account", // Force account selection
-  })(req, res, next);
-});
+  })
+);
 
 // Google callback
 router.get(
@@ -67,19 +55,6 @@ router.get(
           : req.query.code,
       error: req.query.error,
     });
-    
-    // Validate state (CSRF protection)
-    const receivedState = req.query.state;
-    const storedState = req.cookies?.oauth_state;
-    
-    if (receivedState && storedState && receivedState !== storedState) {
-      console.error("OAuth state mismatch - possible CSRF attack");
-      return res.redirect(process.env.CLIENT_URL + "/login?error=state_mismatch");
-    }
-    
-    // Clear the state cookie
-    res.clearCookie("oauth_state");
-    
     next();
   },
   passport.authenticate("google", {
