@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const passport_1 = __importDefault(require("passport"));
 const crypto_1 = __importDefault(require("crypto"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const password_1 = require("../../auth/password");
 const connection_1 = __importDefault(require("../../database/connection"));
 const jwt_1 = require("../../../utils/jwt");
@@ -64,9 +65,20 @@ router.get("/google/callback", (req, res, next) => {
     // Generate tokens instead of creating session
     const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.email, user.display_name);
     const refreshToken = yield (0, jwt_1.generateRefreshToken)(user.id, user.email, user.display_name);
-    // Redirect to client with tokens in URL fragment (not query params for security)
+    // Set refresh token as Secure, HttpOnly cookie and redirect with only access token
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-    res.redirect(`${clientUrl}/auth/callback#access_token=${accessToken}&refresh_token=${refreshToken}`);
+    try {
+        const decoded = jsonwebtoken_1.default.decode(refreshToken);
+        const expiresMs = (decoded === null || decoded === void 0 ? void 0 : decoded.exp)
+            ? decoded.exp * 1000 - Date.now()
+            : undefined;
+        res.cookie("refreshToken", refreshToken, Object.assign({ httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" }, (expiresMs ? { maxAge: expiresMs } : {})));
+    }
+    catch (err) {
+        console.error("Failed to set refresh cookie:", err);
+    }
+    // Redirect with access token only (in fragment)
+    res.redirect(`${clientUrl}/auth/callback#access_token=${accessToken}`);
 }));
 // Protected route example
 router.get("/profile", (req, res) => {
@@ -74,23 +86,31 @@ router.get("/profile", (req, res) => {
         return res.status(401).json({ error: "Unauthorized" });
     res.json(req.user);
 });
-// Logout (client-side only - delete tokens from storage). If client provides a refresh token we will revoke it.
+// Logout: revoke refresh token from cookie and clear it
 router.post("/logout", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-        return res.json({ message: "Logged out (no refresh token provided)" });
+    var _a;
+    const cookieToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refreshToken;
+    if (cookieToken) {
+        const payload = (0, jwt_1.verifyToken)(cookieToken);
+        if (payload && payload.jti) {
+            yield (0, jwt_1.revokeRefreshTokenByJti)(payload.jti);
+        }
     }
-    const payload = (0, jwt_1.verifyToken)(refreshToken);
-    if (payload && payload.jti) {
-        yield (0, jwt_1.revokeRefreshTokenByJti)(payload.jti);
-    }
+    // Clear cookie on logout
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+    });
     res.json({ message: "Logged out successfully" });
 }));
-// Token refresh endpoint
+// Token refresh endpoint: read refresh token from HttpOnly cookie, rotate, and return new access token
 router.post("/refresh", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { refreshToken } = req.body;
+    var _a;
+    const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refreshToken;
     if (!refreshToken) {
-        return res.status(400).json({ error: "Refresh token required" });
+        return res.status(401).json({ error: "Refresh token required" });
     }
     const check = yield (0, jwt_1.isRefreshTokenValid)(refreshToken);
     if (!check.valid || !check.payload) {
@@ -107,10 +127,18 @@ router.post("/refresh", (req, res) => __awaiter(void 0, void 0, void 0, function
     }
     const newAccessToken = (0, jwt_1.generateAccessToken)(check.payload.sub, check.payload.email, check.payload.display_name);
     const newRefreshToken = yield (0, jwt_1.generateRefreshToken)(check.payload.sub, check.payload.email, check.payload.display_name);
-    res.json({
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-    });
+    // Set new refresh token cookie
+    try {
+        const decoded = jsonwebtoken_1.default.decode(newRefreshToken);
+        const expiresMs = (decoded === null || decoded === void 0 ? void 0 : decoded.exp)
+            ? decoded.exp * 1000 - Date.now()
+            : undefined;
+        res.cookie("refreshToken", newRefreshToken, Object.assign(Object.assign({ httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" }, (expiresMs ? { maxAge: expiresMs } : {})), { path: "/" }));
+    }
+    catch (err) {
+        console.error("Failed to set refresh cookie:", err);
+    }
+    res.json({ accessToken: newAccessToken });
 }));
 // Auth check endpoint
 router.get("/check", jwtAuth_1.authenticateJWT, (req, res) => {
