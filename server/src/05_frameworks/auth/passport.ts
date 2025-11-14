@@ -6,6 +6,31 @@ import crypto from "crypto";
 import { Request } from "express";
 import { User } from "../../01_entities";
 
+// Custom cookie-based state store for passport-google-oidc (no session needed)
+class CookieStore {
+  store(req: any, meta: any, state: any, callback: any) {
+    // Store state in cookie instead of session
+    req.res.cookie("oauth_state", state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 5 * 60 * 1000, // 5 minutes
+    });
+    callback(null);
+  }
+
+  verify(req: any, state: any, callback: any) {
+    // Verify state from cookie
+    const storedState = req.cookies?.oauth_state;
+    if (!storedState || storedState !== state) {
+      return callback(null, false);
+    }
+    // Clear the state cookie after verification
+    req.res.clearCookie("oauth_state");
+    callback(null, true);
+  }
+}
+
 const dbPool =
   process.env.NODE_ENV === "test"
     ? new Pool({
@@ -64,6 +89,7 @@ export function configurePassport() {
         callbackURL: process.env.GOOGLE_CALLBACK_URL!,
         scope: ["openid", "profile", "email"],
         passReqToCallback: true,
+        store: new CookieStore(), // Use cookie-based state storage instead of session
       },
       async (
         req: Request,
@@ -198,4 +224,3 @@ passport.deserializeUser<number>(async (id: number, done) => {
 });
 
 export default passport;
-
