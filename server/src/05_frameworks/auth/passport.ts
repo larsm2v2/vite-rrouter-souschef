@@ -8,7 +8,7 @@ import { User } from "../../01_entities";
 
 // Custom cookie-based state store for passport-google-oidc (no session needed)
 class CookieStore {
-  store(req: any, meta: any, state: any, callback: any) {
+  store(req: any, state: any, callback: any) {
     // Store state in cookie instead of session
     req.res.cookie("oauth_state", state, {
       httpOnly: true,
@@ -16,7 +16,9 @@ class CookieStore {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 5 * 60 * 1000, // 5 minutes
     });
-    callback(null);
+    if (typeof callback === 'function') {
+      callback(null);
+    }
   }
 
   verify(req: any, state: any, callback: any) {
