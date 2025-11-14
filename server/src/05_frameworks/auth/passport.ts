@@ -111,53 +111,56 @@ export function configurePassport() {
 
           const googleId = profile.id;
 
-          const userResult = await dbPool.query(
-            `SELECT id, google_sub, email, display_name 
-           FROM users 
-           WHERE google_sub = $1`,
-            [googleId]
-          );
+          let user;
+          
+          try {
+            const userResult = await dbPool.query(
+              `SELECT id, google_sub, email, display_name 
+             FROM users 
+             WHERE google_sub = $1`,
+              [googleId]
+            );
 
-          let user = userResult.rows[0];
+            user = userResult.rows[0];
 
-          if (!user) {
-            const displayName =
-              profile.displayName ||
-              (profile.name
-                ? `${profile.name.givenName || ""} ${
-                    profile.name.familyName || ""
-                  }`.trim()
-                : email.split("@")[0]);
+            if (!user) {
+              const displayName =
+                profile.displayName ||
+                (profile.name
+                  ? `${profile.name.givenName || ""} ${
+                      profile.name.familyName || ""
+                    }`.trim()
+                  : email.split("@")[0]);
 
-            const avatar =
-              profile.photos && profile.photos.length > 0
-                ? profile.photos[0].value
-                : null;
+              const avatar =
+                profile.photos && profile.photos.length > 0
+                  ? profile.photos[0].value
+                  : null;
 
-            const tokenExpiry = new Date();
-            tokenExpiry.setHours(tokenExpiry.getHours() + 1);
+              const tokenExpiry = new Date();
+              tokenExpiry.setHours(tokenExpiry.getHours() + 1);
 
-            const insertResult = await dbPool.query(
-              `INSERT INTO users (
-              google_sub, 
-              email, 
-              display_name, 
-              avatar, 
-              google_access_token,
-              google_refresh_token,
-              token_expiry
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id`,
-              [
-                googleId,
-                email,
-                displayName,
-                avatar,
-                profile.accessToken ? encryptToken(profile.accessToken) : null,
-                profile.refreshToken
-                  ? encryptToken(profile.refreshToken)
-                  : null,
-                tokenExpiry.toISOString(),
+              const insertResult = await dbPool.query(
+                `INSERT INTO users (
+                google_sub, 
+                email, 
+                display_name, 
+                avatar, 
+                google_access_token,
+                google_refresh_token,
+                token_expiry
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+              RETURNING id`,
+                [
+                  googleId,
+                  email,
+                  displayName,
+                  avatar,
+                  profile.accessToken ? encryptToken(profile.accessToken) : null,
+                  profile.refreshToken
+                    ? encryptToken(profile.refreshToken)
+                    : null,
+                  tokenExpiry.toISOString(),
               ]
             );
 
@@ -169,6 +172,24 @@ export function configurePassport() {
             );
 
             user = newUserResult.rows[0];
+          }
+          } catch (dbError) {
+            console.error('Database error during OAuth, using temporary user:', dbError);
+            // If database fails, create a temporary user object to allow authentication to proceed
+            const displayName =
+              profile.displayName ||
+              (profile.name
+                ? `${profile.name.givenName || ""} ${
+                    profile.name.familyName || ""
+                  }`.trim()
+                : email.split("@")[0]);
+            
+            user = {
+              id: -1, // Temporary ID to indicate DB save pending
+              google_sub: googleId,
+              email: email,
+              display_name: displayName,
+            };
           }
 
           return done(null, user);
