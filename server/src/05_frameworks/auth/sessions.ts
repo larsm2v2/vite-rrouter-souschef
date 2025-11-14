@@ -10,11 +10,10 @@ const sessionPool: Pool | null =
   process.env.NODE_ENV === "test"
     ? null
     : new Pool({
-        user: process.env.PG_USER || "postgres",
-        host: process.env.PG_HOST || "localhost",
-        database: process.env.PG_DATABASE || "SousChefDB",
-        password: process.env.PG_PASSWORD || "tryhavok",
-        port: parseInt(process.env.PG_PORT || "5432"),
+        connectionString: process.env.PG_URL,
+        ssl: process.env.PG_URL?.includes("neon.tech")
+          ? { rejectUnauthorized: false }
+          : undefined,
       });
 
 const MemoryStore = session.MemoryStore;
