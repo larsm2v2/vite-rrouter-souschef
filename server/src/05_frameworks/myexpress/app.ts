@@ -2,12 +2,14 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-// import session from "express-session";
-// import passport from "../auth/passport";
-// import { sessionConfig } from "../auth/sessions";
+import passport from "passport";
+import { configurePassport } from "../auth/passport";
 import routes from "./routes";
 
 const app = express();
+
+// Configure passport strategies
+configurePassport();
 
 app.set("trust proxy", 1);
 app.use(helmet());
@@ -26,7 +28,7 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: false, // Changed from true - no longer needed for cookies
+    credentials: true, // Enable credentials for cookies (OAuth state, refresh token)
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"], // Added Authorization header
     exposedHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining"],
@@ -35,8 +37,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(passport.initialize());
+// Sessions disabled - using JWT tokens instead
 // app.use(session(sessionConfig));
-// app.use(passport.initialize());
 // app.use(passport.session());
 app.use(routes);
 
