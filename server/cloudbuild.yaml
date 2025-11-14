@@ -2,7 +2,7 @@ steps:
   # Debug step (list files first)
   - name: "alpine"
     id: "debug-list-files"
-    args: ["sh", "-c", "ls -la /workspace && ls -la /workspace/server"]
+    args: ["sh", "-c", "ls -la /workspace"]
 
   # Precheck: Fail early if no Dockerfile exists
   - name: "alpine"
@@ -11,18 +11,17 @@ steps:
       [
         "sh",
         "-c",
-        "if [ ! -f server/Dockerfile ]; then echo '❌ Missing server/Dockerfile'; exit 1; fi",
+        "if [ ! -f Dockerfile ]; then echo '❌ Missing Dockerfile'; exit 1; fi",
       ]
 
   # 1. Build Docker image
   - name: "gcr.io/cloud-builders/docker"
     id: "docker-build"
-    dir: "server"
     args: [
         "build",
         "-t",
         "gcr.io/$PROJECT_ID/souschef-api",
-        ".", # Context is inside server
+        ".", # Context is current directory (server)
       ]
 
   # 2. Push Docker image to GCR
@@ -50,7 +49,7 @@ steps:
         "--service-account",
         "souschef-api@$PROJECT_ID.iam.gserviceaccount.com",
         "--set-secrets",
-        "GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GOOGLE_CALLBACK_URL=GOOGLE_CALLBACK_URL:latest,SESSION_SECRET=SESSION_SECRET:latest,CLIENT_URL=CLIENT_URL:latest,API_KEY=API_KEY:latest",
+        "API_KEY=API_KEY:latest,CLIENT_URL=CLIENT_URL:latest,CSRF_SECRET=CSRF_SECRET:latest,DB_ENCRYPTION_KEY=DB_ENCRYPTION_KEY:latest,GOOGLE_ACCESS_TOKEN_URL=GOOGLE_ACCESS_TOKEN_URL:latest,GOOGLE_CALLBACK_URL=GOOGLE_CALLBACK_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GOOGLE_OAUTH_URL=GOOGLE_OAUTH_URL:latest,GOOGLE_TOKEN_INFO_URL=GOOGLE_TOKEN_INFO_URL:latest,JWT_ACCESS_EXPIRATION=JWT_ACCESS_EXPIRATION:latest,JWT_REFRESH_EXPIRATION=JWT_REFRESH_EXPIRATION:latest,JWT_SECRET=JWT_SECRET:latest,NODE_ENV=NODE_ENV:latest,PG_DATABASE=PG_DATABASE:latest,PG_HOST=PG_HOST:latest,PG_PASSWORD=PG_PASSWORD:latest,PG_PORT=PG_PORT:latest,PG_URL=PG_URL:latest,PG_USER=PG_USER:latest,RUN_MIGRATIONS=RUN_MIGRATIONS:latest,SESSION_SECRET=SESSION_SECRET:latest,VITE_API_URL=VITE_API_URL:latest",
         "--allow-unauthenticated",
       ]
 
