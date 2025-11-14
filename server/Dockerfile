@@ -15,8 +15,11 @@ RUN npm run build
 FROM node:18-alpine AS runtime
 WORKDIR /app
 
-# Only copy built artifacts and package.json for production
+# Copy package files and install production dependencies
 COPY --from=build /app/package*.json ./
+RUN npm ci --only=production --no-audit --no-fund
+
+# Copy built artifacts
 COPY --from=build /app/dist ./dist
 
 ENV NODE_ENV=production
