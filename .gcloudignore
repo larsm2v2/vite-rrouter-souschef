@@ -1,0 +1,87 @@
+# This file specifies files that are _not_ uploaded to Google Cloud
+
+# using gcloud. It follows the same syntax as .gitignore, with the addition of
+
+# "#!include" directives (which insert the entries of the given .gitignore-style
+
+# file at that point).
+
+# Ignore node_modules everywhere
+
+node_modules/
+\*\*/node_modules/
+
+# Ignore client directory (not needed for server build)
+
+client/
+
+# Ignore clean-recipe-service (if separate deployment)
+
+clean-recipe-service/
+
+# Ignore build outputs
+
+dist/
+build/
+\*.js.map
+
+# Ignore tests
+
+**/\*.test.ts
+**/_.test.js
+\*\*/_.spec.ts
+**/\*.spec.js
+**/07_tests/
+\*\*/**tests**/
+
+# Ignore git
+
+.git/
+.gitignore
+.gitattributes
+
+# Ignore IDE
+
+.vscode/
+.idea/
+_.swp
+_.swo
+
+# Ignore environment files
+
+.env
+.env.local
+.env.\*.local
+\*\*/env/
+
+# Ignore logs
+
+_.log
+npm-debug.log_
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore documentation
+
+\*_/docs/
+_.md
+!README.md
+
+# Ignore archive
+
+\*\*/archive/
+
+# Ignore local scripts (use only what's needed in cloudbuild.yaml)
+
+\*\*/scripts/
+
+# Ignore other temporary files
+
+\*.tmp
+.DS_Store
+Thumbs.db
+cookiejar
+
+# Include only server directory for server build
+
+# (everything else is already ignored above)
