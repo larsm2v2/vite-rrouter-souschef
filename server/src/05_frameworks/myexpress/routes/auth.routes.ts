@@ -1,5 +1,4 @@
 import { Router } from "express";
-import passport from "passport";
 import crypto from "crypto";
 import { Request, Response } from "express";
 import express from "express";
@@ -31,72 +30,7 @@ router.post("/test-body", (req: Request, res: Response) => {
   });
 });
 
-// Initiate Google auth
-router.get("/google", 
-  passport.authenticate("google", {
-    prompt: "select_account", // Force account selection
-  })
-);
-
-// Google callback
-router.get(
-  "/google/callback",
-  (req, res, next) => {
-    console.log("OAuth callback received:", {
-      state: req.query.state,
-      code:
-        typeof req.query.code === "string"
-          ? req.query.code.substring(0, 10) + "..."
-          : req.query.code,
-      error: req.query.error,
-    });
-    next();
-  },
-  passport.authenticate("google", {
-    failureRedirect: process.env.CLIENT_URL + "/login?error=auth_failed",
-    failureMessage: true,
-    session: false, // IMPORTANT: Disable session
-  }),
-  async (req, res) => {
-    if (!req.user) {
-      return res.redirect(process.env.CLIENT_URL + "/login?error=no_user");
-    }
-
-    const user = req.user as any;
-
-    // Generate tokens instead of creating session
-    const accessToken = generateAccessToken(
-      user.id,
-      user.email,
-      user.display_name
-    );
-    const refreshToken = await generateRefreshToken(
-      user.id,
-      user.email,
-      user.display_name
-    );
-
-    // Set refresh token as Secure, HttpOnly cookie and redirect with only access token
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-    try {
-      const decoded: any = jwt.decode(refreshToken);
-      const expiresMs = decoded?.exp
-        ? decoded.exp * 1000 - Date.now()
-        : undefined;
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        ...(expiresMs ? { maxAge: expiresMs } : {}),
-      });
-    } catch (err) {
-      console.error("Failed to set refresh cookie:", err);
-    }
-
-    // Redirect with access token only (in fragment)
-    res.redirect(`${clientUrl}/auth/callback#access_token=${accessToken}`);
-  }
-);
+// Google OAuth routes removed - now handled by auth-google-pkce.routes.ts with PKCE support
 
 // Protected route example
 router.get("/profile", (req, res) => {
