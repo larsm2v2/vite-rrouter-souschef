@@ -2,25 +2,20 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const routes_1 = __importDefault(require("./routes"));
 // Passport is no longer used - replaced with openid-client for PKCE support
 // import passport from "passport";
 // import { configurePassport } from "../auth/passport";
 console.log("📋 Loading routes...");
-let routes;
-try {
-    routes = require("./routes").default;
-    console.log("✅ Routes loaded successfully");
-}
-catch (err) {
-    console.error("❌ CRITICAL: Failed to load routes:", err);
-    console.error("Stack:", err.stack);
-    throw err;
-}
+console.log("✅ Routes module imported:", typeof routes_1.default);
+console.log("   Routes is Router?", routes_1.default && typeof routes_1.default === "function");
+console.log("   Routes stack length:", ((_a = routes_1.default === null || routes_1.default === void 0 ? void 0 : routes_1.default.stack) === null || _a === void 0 ? void 0 : _a.length) || 0);
 const app = (0, express_1.default)();
 // Passport configuration removed - now using openid-client with PKCE
 // configurePassport();
@@ -53,5 +48,6 @@ app.use((0, cookie_parser_1.default)());
 // Sessions disabled - using JWT tokens instead
 // app.use(session(sessionConfig));
 // app.use(passport.session());
-app.use(routes);
+app.use(routes_1.default);
+console.log("✅ Routes mounted. App stack layers:", ((_c = (_b = app._router) === null || _b === void 0 ? void 0 : _b.stack) === null || _c === void 0 ? void 0 : _c.length) || 0);
 exports.default = app;
