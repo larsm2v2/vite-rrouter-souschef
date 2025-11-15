@@ -29,6 +29,40 @@ app.get("/ready", (req: Request, res: Response) => {
   }
 });
 
+// Debug endpoint - shows registered routes
+app.get("/debug/routes", (req: Request, res: Response) => {
+  const routes: any[] = [];
+
+  // Get all routes from the app
+  app._router.stack.forEach((middleware: any) => {
+    if (middleware.route) {
+      // Route middleware
+      routes.push({
+        path: middleware.route.path,
+        methods: Object.keys(middleware.route.methods),
+      });
+    } else if (middleware.name === "router") {
+      // Router middleware
+      middleware.handle.stack.forEach((handler: any) => {
+        if (handler.route) {
+          const path = middleware.regexp.source
+            .replace("\\/?", "")
+            .replace("(?=\\/|$)", "");
+          routes.push({
+            path: path + handler.route.path,
+            methods: Object.keys(handler.route.methods),
+          });
+        }
+      });
+    }
+  });
+
+  res.json({
+    totalMiddleware: app._router.stack.length,
+    routes: routes,
+  });
+});
+
 export async function startServer() {
   // Start listening immediately so the container becomes healthy for Cloud Run
   // even if database initialization takes time or briefly fails.
