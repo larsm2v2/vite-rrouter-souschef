@@ -12,7 +12,10 @@ import { encryptToken } from "../../../utils/crypto";
 
 console.log("[AUTH-GOOGLE-PKCE] Imports complete");
 console.log("[AUTH-GOOGLE-PKCE] CLIENT_URL present:", !!process.env.CLIENT_URL);
-console.log("[AUTH-GOOGLE-PKCE] GOOGLE_CALLBACK_URL present:", !!process.env.GOOGLE_CALLBACK_URL);
+console.log(
+  "[AUTH-GOOGLE-PKCE] GOOGLE_CALLBACK_URL present:",
+  !!process.env.GOOGLE_CALLBACK_URL
+);
 
 const router = Router();
 console.log("[AUTH-GOOGLE-PKCE] Router created");
@@ -24,7 +27,10 @@ console.log("[AUTH-GOOGLE-PKCE] Initializing OAuth client (async)");
     await initializeGoogleOAuthClient();
     console.log("[AUTH-GOOGLE-PKCE] OAuth client initialized successfully");
   } catch (err) {
-    console.error("[AUTH-GOOGLE-PKCE] CRITICAL: Failed to initialize Google OAuth:", err);
+    console.error(
+      "[AUTH-GOOGLE-PKCE] CRITICAL: Failed to initialize Google OAuth:",
+      err
+    );
     console.error("[AUTH-GOOGLE-PKCE] Stack:", (err as Error).stack);
   }
 })();
@@ -148,6 +154,9 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   }
 });
 
-console.log("[AUTH-GOOGLE-PKCE] Routes defined. Router stack length:", router.stack.length);
+console.log(
+  "[AUTH-GOOGLE-PKCE] Routes defined. Router stack length:",
+  router.stack.length
+);
 console.log("[AUTH-GOOGLE-PKCE] Exporting router");
 export default router;
