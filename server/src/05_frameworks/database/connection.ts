@@ -2,6 +2,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { Pool } from "pg";
+import net from "net";
+import tls from "tls";
+import { URL } from "url";
 
 // Note: Express.User type is defined centrally in src/types/express.d.ts
 
@@ -106,6 +109,110 @@ async function createPool() {
       };
 
   const pool = new Pool(pgConfig as any);
+
+  // Diagnostic: attach pool error handler to capture unexpected errors
+  (pool as any).on("error", (err: any) => {
+    try {
+      console.error("PG POOL ERROR:", {
+        message: err?.message,
+        code: err?.code,
+        stack: err?.stack,
+      });
+    } catch (e) {
+      console.error("PG POOL ERROR (unable to serialize):", err);
+    }
+  });
+
+  // Diagnostic probes: TCP and TLS checks for connection host (only for PG_URL)
+  async function runConnectionProbes() {
+    try {
+      const connString = process.env.PG_URL;
+      if (!connString) return;
+
+      let parsed: URL;
+      try {
+        parsed = new URL(connString);
+      } catch (e) {
+        console.warn("Cannot parse PG_URL for probes", e);
+        return;
+      }
+
+      const host = parsed.hostname;
+      const port = parseInt(parsed.port || "5432");
+
+      const tcpResult = await tcpProbe(host, port, 5000);
+      console.log("DB TCP probe result:", tcpResult);
+
+      const tlsResult = await tlsProbe(host, port, 7000, parsed.hostname);
+      console.log("DB TLS probe result:", tlsResult);
+    } catch (err) {
+      console.error("DB probe failed:", err);
+    }
+  }
+
+  function tcpProbe(host: string, port: number, timeoutMs: number) {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const socket = net.connect(port, host);
+      let done = false;
+
+      const finish = (status: string, info?: any) => {
+        if (done) return;
+        done = true;
+        try {
+          socket.destroy();
+        } catch (e) {}
+        resolve({ status, durationMs: Date.now() - start, info });
+      };
+
+      socket.setTimeout(timeoutMs, () => finish("timeout"));
+      socket.on("connect", () => finish("connected"));
+      socket.on("error", (err) =>
+        finish("error", { message: err.message, code: (err as any).code })
+      );
+    });
+  }
+
+  function tlsProbe(
+    host: string,
+    port: number,
+    timeoutMs: number,
+    servername?: string
+  ) {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const opts: tls.ConnectionOptions = { host, port };
+      if (servername) opts.servername = servername;
+      const socket = tls.connect(opts, () => {
+        const cert =
+          socket.getPeerCertificate && (socket.getPeerCertificate() as any);
+        resolve({
+          status: "secure_connected",
+          durationMs: Date.now() - start,
+          cert: cert && cert.subject,
+        });
+        socket.end();
+      });
+      let done = false;
+      const finish = (status: string, info?: any) => {
+        if (done) return;
+        done = true;
+        try {
+          socket.destroy();
+        } catch (e) {}
+        resolve({ status, durationMs: Date.now() - start, info });
+      };
+      socket.setTimeout(timeoutMs, () => finish("timeout"));
+      socket.on("error", (err) =>
+        finish("error", { message: err.message, code: (err as any).code })
+      );
+    });
+  }
+
+  // Run probes asynchronously, don't block pool creation
+  runConnectionProbes().catch((err) =>
+    console.error("runConnectionProbes error:", err)
+  );
 
   // Don't test connection during pool creation to avoid blocking startup.
   // Connection will be tested on first query. This allows the HTTP server

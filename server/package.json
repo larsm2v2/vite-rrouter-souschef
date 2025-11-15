@@ -2,8 +2,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/06_app/main.js",
-    "dev": "ts-node src/app.ts",
-    "newDev": "ts-node src/06_app/main.ts",
+    "dev": "ts-node src/06_app/main.ts",
     "check-env": "ts-node check-env.ts",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
     "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
