@@ -8,7 +8,9 @@ import routes from "./routes";
 // import { configurePassport } from "../auth/passport";
 
 console.log("📋 Loading routes...");
-console.log("✅ Routes module imported:", typeof routes, routes)
+console.log("✅ Routes module imported:", typeof routes);
+console.log("   Routes is Router?", routes && typeof routes === "function");
+console.log("   Routes stack length:", routes?.stack?.length || 0);
 
 const app = express();
 
@@ -47,5 +49,6 @@ app.use(cookieParser());
 // app.use(session(sessionConfig));
 // app.use(passport.session());
 app.use(routes);
+console.log("✅ Routes mounted. App stack layers:", app._router?.stack?.length || 0);
 
 export default app;
