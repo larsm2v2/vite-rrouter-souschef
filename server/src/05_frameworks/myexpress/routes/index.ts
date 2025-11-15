@@ -31,8 +31,16 @@ const router = express.Router();
 
 console.log("[ROUTES INDEX] Mounting routes to router...");
 // Use PKCE-enabled Google OAuth routes (replaces passport-google-oauth20)
-router.use("/auth", authGooglePkceRoutes);
-console.log("[ROUTES INDEX] Mounted authGooglePkceRoutes on /auth");
+if (authGooglePkceRoutes && typeof authGooglePkceRoutes === "function") {
+  router.use("/auth", authGooglePkceRoutes);
+  console.log("[ROUTES INDEX] Mounted authGooglePkceRoutes on /auth");
+} else {
+  console.error(
+    "[ROUTES INDEX] ERROR: authGooglePkceRoutes is not a valid router:",
+    typeof authGooglePkceRoutes,
+    authGooglePkceRoutes
+  );
+}
 router.use("/auth", authRoutes); // Keep other auth routes (login, register, refresh, etc.)
 console.log("[ROUTES INDEX] Mounted authRoutes on /auth");
 router.use("/api", recipesRoutes);
