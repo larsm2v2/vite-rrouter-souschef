@@ -10,25 +10,25 @@ import { User } from "../../01_entities";
 class CookieStore {
   store(req: any, state: any, meta: any, callback: any) {
     try {
-      console.log('CookieStore.store called with args:', {
+      console.log("CookieStore.store called with args:", {
         hasReq: !!req,
         state: state?.substring?.(0, 10),
         metaType: typeof meta,
-        callbackType: typeof callback
+        callbackType: typeof callback,
       });
-      
+
       // Determine which argument is the callback
       // passport-openidconnect might call with (req, state, callback) or (req, state, meta, callback)
       let cb: any;
-      if (typeof meta === 'function') {
+      if (typeof meta === "function") {
         cb = meta;
-      } else if (typeof callback === 'function') {
+      } else if (typeof callback === "function") {
         cb = callback;
       } else {
-        console.error('No callback function found in store()');
+        console.error("No callback function found in store()");
         return;
       }
-      
+
       // Store state in memory
       if (!global._oauthStateMap) {
         global._oauthStateMap = new Map();
@@ -51,8 +51,8 @@ class CookieStore {
       cb(null);
     } catch (err) {
       console.error("Error storing OAuth state:", err);
-      const cb = typeof meta === 'function' ? meta : callback;
-      if (typeof cb === 'function') {
+      const cb = typeof meta === "function" ? meta : callback;
+      if (typeof cb === "function") {
         cb(err);
       }
     }
