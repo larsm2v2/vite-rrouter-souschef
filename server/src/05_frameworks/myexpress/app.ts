@@ -2,20 +2,13 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import routes from "./routes";
 // Passport is no longer used - replaced with openid-client for PKCE support
 // import passport from "passport";
 // import { configurePassport } from "../auth/passport";
 
 console.log("📋 Loading routes...");
-let routes;
-try {
-  routes = require("./routes").default;
-  console.log("✅ Routes loaded successfully");
-} catch (err) {
-  console.error("❌ CRITICAL: Failed to load routes:", err);
-  console.error("Stack:", (err as Error).stack);
-  throw err;
-}
+console.log("✅ Routes module imported:", typeof routes, routes)
 
 const app = express();
 
