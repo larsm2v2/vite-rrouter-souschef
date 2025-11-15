@@ -14,7 +14,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const passport_1 = __importDefault(require("passport"));
-const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const password_1 = require("../../auth/password");
 const connection_1 = __importDefault(require("../../database/connection"));
@@ -34,15 +33,9 @@ router.post("/test-body", (req, res) => {
     });
 });
 // Initiate Google auth
-router.get("/google", (req, res, next) => {
-    // Generate random state for OAuth
-    const state = crypto_1.default.randomBytes(16).toString("hex");
-    req.session.oauthState = state;
-    passport_1.default.authenticate("google", {
-        state,
-        prompt: "select_account", // Force account selection
-    })(req, res, next);
-});
+router.get("/google", passport_1.default.authenticate("google", {
+    prompt: "select_account", // Force account selection
+}));
 // Google callback
 router.get("/google/callback", (req, res, next) => {
     console.log("OAuth callback received:", {

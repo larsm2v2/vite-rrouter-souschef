@@ -2,6 +2,6 @@ import 'express-session';
 
 declare module 'express-session' {
   interface SessionData {
-    oauthState?: string;
+    // Session data properties can be added here if needed
   }
 } 

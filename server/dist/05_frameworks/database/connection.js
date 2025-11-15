@@ -20,6 +20,11 @@ const pg_1 = require("pg");
 // Note: Express.User type is defined centrally in src/types/express.d.ts
 function ensureDatabaseExists() {
     return __awaiter(this, void 0, void 0, function* () {
+        // Skip database creation for cloud databases (Neon, etc.) - they're already created
+        if (process.env.PG_URL) {
+            console.log('Using cloud database (PG_URL), skipping database creation check');
+            return;
+        }
         const dbName = process.env.PG_DATABASE || "SousChefDB";
         const adminPool = new pg_1.Pool({
             user: process.env.PG_USER || "postgres",

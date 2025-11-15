@@ -1,98 +1,9 @@
 import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oidc";
+import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 import pool from "../database/connection";
 import { Pool } from "pg";
 import crypto from "crypto";
-import { Request } from "express";
 import { User } from "../../01_entities";
-
-// Custom cookie-based state store for passport-google-oidc (no session needed)
-class CookieStore {
-  store(req: any, state: any, meta: any, callback: any) {
-    try {
-      console.log("CookieStore.store called with args:", {
-        hasReq: !!req,
-        state: state?.substring?.(0, 10),
-        metaType: typeof meta,
-        callbackType: typeof callback,
-      });
-
-      // Determine which argument is the callback
-      // passport-openidconnect might call with (req, state, callback) or (req, state, meta, callback)
-      let cb: any;
-      if (typeof meta === "function") {
-        cb = meta;
-      } else if (typeof callback === "function") {
-        cb = callback;
-      } else {
-        console.error("No callback function found in store()");
-        return;
-      }
-
-      // Store state in memory
-      if (!global._oauthStateMap) {
-        global._oauthStateMap = new Map();
-      }
-
-      global._oauthStateMap.set(state, {
-        timestamp: Date.now(),
-        meta: typeof meta === "object" ? meta : {},
-      });
-
-      // Clean up old states (older than 5 minutes)
-      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-      for (const [key, value] of global._oauthStateMap.entries()) {
-        if (value.timestamp < fiveMinutesAgo) {
-          global._oauthStateMap.delete(key);
-        }
-      }
-
-      console.log("OAuth state stored:", state?.substring?.(0, 10));
-      cb(null);
-    } catch (err) {
-      console.error("Error storing OAuth state:", err);
-      const cb = typeof meta === "function" ? meta : callback;
-      if (typeof cb === "function") {
-        cb(err);
-      }
-    }
-  }
-
-  verify(req: any, state: any, callback: any) {
-    try {
-      if (!global._oauthStateMap) {
-        console.error("OAuth state map not initialized");
-        return callback(null, false);
-      }
-
-      const stored = global._oauthStateMap.get(state);
-      if (!stored) {
-        console.error("OAuth state not found or expired");
-        return callback(null, false);
-      }
-
-      // Check if state is too old (5 minutes)
-      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-      if (stored.timestamp < fiveMinutesAgo) {
-        global._oauthStateMap.delete(state);
-        console.error("OAuth state expired");
-        return callback(null, false);
-      }
-
-      // State is valid, remove it
-      global._oauthStateMap.delete(state);
-      console.log("OAuth state verified:", state);
-      callback(null, true, stored.meta);
-    } catch (err) {
-      console.error("Error verifying OAuth state:", err);
-      callback(null, false);
-    }
-  }
-}
-
-declare global {
-  var _oauthStateMap: Map<string, { timestamp: number; meta: any }> | undefined;
-}
 
 const dbPool =
   process.env.NODE_ENV === "test"
@@ -106,32 +17,6 @@ const dbPool =
     : (pool as any);
 
 // Note: Express.User type is defined centrally in src/types/express.d.ts
-
-interface GoogleProfile {
-  id: string;
-  displayName?: string;
-  name?: {
-    familyName?: string;
-    givenName?: string;
-  };
-  emails?: Array<{
-    value: string;
-    verified?: boolean;
-  }>;
-  photos?: Array<{
-    value: string;
-  }>;
-  _raw?: string;
-  _json?: any;
-  accessToken?: string;
-  refreshToken?: string;
-}
-
-type VerifyCallback = (
-  error: Error | null,
-  user?: Express.User | false,
-  info?: unknown
-) => void;
 
 export function configurePassport() {
   if (
@@ -151,13 +36,11 @@ export function configurePassport() {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         callbackURL: process.env.GOOGLE_CALLBACK_URL!,
         scope: ["openid", "profile", "email"],
-        passReqToCallback: true,
-        store: new CookieStore(), // Use cookie-based state storage instead of session
-      } as any,
+      },
       async (
-        req: Request,
-        issuer: string,
-        profile: GoogleProfile,
+        accessToken: string,
+        refreshToken: string,
+        profile: Profile,
         done: VerifyCallback
       ) => {
         try {
@@ -217,12 +100,8 @@ export function configurePassport() {
                   email,
                   displayName,
                   avatar,
-                  profile.accessToken
-                    ? encryptToken(profile.accessToken)
-                    : null,
-                  profile.refreshToken
-                    ? encryptToken(profile.refreshToken)
-                    : null,
+                  accessToken ? encryptToken(accessToken) : null,
+                  refreshToken ? encryptToken(refreshToken) : null,
                   tokenExpiry.toISOString(),
                 ]
               );

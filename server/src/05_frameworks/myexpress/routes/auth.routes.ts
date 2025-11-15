@@ -15,11 +15,6 @@ import {
 } from "../../../utils/jwt";
 import { authenticateJWT } from "../jwtAuth";
 
-declare module "express-session" {
-  interface SessionData {
-    oauthState?: string; // Add this line
-  }
-}
 const router = Router();
 
 // Simple test endpoint to verify request body parsing

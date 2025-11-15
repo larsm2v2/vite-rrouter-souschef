@@ -2,6 +2,7 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sessionConfig = void 0;
 const express_session_1 = __importDefault(require("express-session"));
@@ -13,11 +14,10 @@ const PgSession = (0, connect_pg_simple_1.default)(express_session_1.default);
 const sessionPool = process.env.NODE_ENV === "test"
     ? null
     : new pg_1.Pool({
-        user: process.env.PG_USER || "postgres",
-        host: process.env.PG_HOST || "localhost",
-        database: process.env.PG_DATABASE || "SousChefDB",
-        password: process.env.PG_PASSWORD || "tryhavok",
-        port: parseInt(process.env.PG_PORT || "5432"),
+        connectionString: process.env.PG_URL,
+        ssl: ((_a = process.env.PG_URL) === null || _a === void 0 ? void 0 : _a.includes("neon.tech"))
+            ? { rejectUnauthorized: false }
+            : undefined,
     });
 const MemoryStore = express_session_1.default.MemoryStore;
 exports.sessionConfig = Object.assign({ store: process.env.NODE_ENV === "test"

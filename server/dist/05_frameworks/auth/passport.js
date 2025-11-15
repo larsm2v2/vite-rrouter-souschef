@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.configurePassport = configurePassport;
 const passport_1 = __importDefault(require("passport"));
-const passport_google_oidc_1 = require("passport-google-oidc");
+const passport_google_oauth20_1 = require("passport-google-oauth20");
 const connection_1 = __importDefault(require("../database/connection"));
 const pg_1 = require("pg");
 const crypto_1 = __importDefault(require("crypto"));
@@ -27,19 +27,19 @@ const dbPool = process.env.NODE_ENV === "test"
         port: parseInt(process.env.PG_PORT || "5432"),
     })
     : connection_1.default;
+// Note: Express.User type is defined centrally in src/types/express.d.ts
 function configurePassport() {
     if (!process.env.GOOGLE_CLIENT_ID ||
         !process.env.GOOGLE_CLIENT_SECRET ||
         !process.env.GOOGLE_CALLBACK_URL) {
         throw new Error("Google OAuth environment variables are not properly defined.");
     }
-    passport_1.default.use(new passport_google_oidc_1.Strategy({
+    passport_1.default.use(new passport_google_oauth20_1.Strategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL,
         scope: ["openid", "profile", "email"],
-        passReqToCallback: true,
-    }, (req, issuer, profile, done) => __awaiter(this, void 0, void 0, function* () {
+    }, (accessToken, refreshToken, profile, done) => __awaiter(this, void 0, void 0, function* () {
         try {
             if (!profile || !profile.id) {
                 return done(new Error("Invalid profile data received from Google"));
@@ -48,44 +48,59 @@ function configurePassport() {
                 ? profile.emails[0].value
                 : `user-${profile.id}@example.com`;
             const googleId = profile.id;
-            const userResult = yield dbPool.query(`SELECT id, google_sub, email, display_name 
-           FROM users 
-           WHERE google_sub = $1`, [googleId]);
-            let user = userResult.rows[0];
-            if (!user) {
+            let user;
+            try {
+                const userResult = yield dbPool.query(`SELECT id, google_sub, email, display_name 
+             FROM users 
+             WHERE google_sub = $1`, [googleId]);
+                user = userResult.rows[0];
+                if (!user) {
+                    const displayName = profile.displayName ||
+                        (profile.name
+                            ? `${profile.name.givenName || ""} ${profile.name.familyName || ""}`.trim()
+                            : email.split("@")[0]);
+                    const avatar = profile.photos && profile.photos.length > 0
+                        ? profile.photos[0].value
+                        : null;
+                    const tokenExpiry = new Date();
+                    tokenExpiry.setHours(tokenExpiry.getHours() + 1);
+                    const insertResult = yield dbPool.query(`INSERT INTO users (
+                google_sub, 
+                email, 
+                display_name, 
+                avatar, 
+                google_access_token,
+                google_refresh_token,
+                token_expiry
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+              RETURNING id`, [
+                        googleId,
+                        email,
+                        displayName,
+                        avatar,
+                        accessToken ? encryptToken(accessToken) : null,
+                        refreshToken ? encryptToken(refreshToken) : null,
+                        tokenExpiry.toISOString(),
+                    ]);
+                    const newUserResult = yield dbPool.query(`SELECT id, email, display_name 
+             FROM users 
+             WHERE id = $1`, [insertResult.rows[0].id]);
+                    user = newUserResult.rows[0];
+                }
+            }
+            catch (dbError) {
+                console.error("Database error during OAuth, using temporary user:", dbError);
+                // If database fails, create a temporary user object to allow authentication to proceed
                 const displayName = profile.displayName ||
                     (profile.name
                         ? `${profile.name.givenName || ""} ${profile.name.familyName || ""}`.trim()
                         : email.split("@")[0]);
-                const avatar = profile.photos && profile.photos.length > 0
-                    ? profile.photos[0].value
-                    : null;
-                const tokenExpiry = new Date();
-                tokenExpiry.setHours(tokenExpiry.getHours() + 1);
-                const insertResult = yield dbPool.query(`INSERT INTO users (
-              google_sub, 
-              email, 
-              display_name, 
-              avatar, 
-              google_access_token,
-              google_refresh_token,
-              token_expiry
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id`, [
-                    googleId,
-                    email,
-                    displayName,
-                    avatar,
-                    profile.accessToken ? encryptToken(profile.accessToken) : null,
-                    profile.refreshToken
-                        ? encryptToken(profile.refreshToken)
-                        : null,
-                    tokenExpiry.toISOString(),
-                ]);
-                const newUserResult = yield dbPool.query(`SELECT id, email, display_name 
-             FROM users 
-             WHERE id = $1`, [insertResult.rows[0].id]);
-                user = newUserResult.rows[0];
+                user = {
+                    id: -1, // Temporary ID to indicate DB save pending
+                    google_sub: googleId,
+                    email: email,
+                    display_name: displayName,
+                };
             }
             return done(null, user);
         }
