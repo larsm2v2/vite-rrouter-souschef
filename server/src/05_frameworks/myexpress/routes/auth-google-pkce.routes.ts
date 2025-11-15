@@ -20,6 +20,14 @@ console.log(
 const router = Router();
 console.log("[AUTH-GOOGLE-PKCE] Router created");
 
+// Test route to verify this router is mounted
+router.get("/test-pkce", (req: Request, res: Response) => {
+  res.json({
+    message: "auth-google-pkce router is working!",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Initialize Google OAuth on module load
 console.log("[AUTH-GOOGLE-PKCE] Initializing OAuth client (async)");
 (async () => {
