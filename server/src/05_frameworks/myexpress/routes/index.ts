@@ -16,6 +16,16 @@ import groceryRoutes from "./grocery.routes";
 import profileFeatures from "./profileFeatures.routes";
 
 console.log("[ROUTES INDEX] All route modules imported. Creating router...");
+console.log(
+  "[ROUTES INDEX] authGooglePkceRoutes type:",
+  typeof authGooglePkceRoutes
+);
+console.log(
+  "[ROUTES INDEX] authGooglePkceRoutes stack:",
+  authGooglePkceRoutes?.stack?.length
+);
+console.log("[ROUTES INDEX] authRoutes type:", typeof authRoutes);
+console.log("[ROUTES INDEX] authRoutes stack:", authRoutes?.stack?.length);
 
 const router = express.Router();
 
@@ -33,6 +43,8 @@ router.use("/", profileRoutes);
 console.log("[ROUTES INDEX] Mounted profileRoutes on /");
 router.use("/api", profileFeatures);
 console.log("[ROUTES INDEX] Mounted profileFeatures on /api");
-console.log(`[ROUTES INDEX] Router complete. Stack length: ${router.stack.length}`);
+console.log(
+  `[ROUTES INDEX] Router complete. Stack length: ${router.stack.length}`
+);
 
 export default router;
