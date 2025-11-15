@@ -8,29 +8,73 @@ import { User } from "../../01_entities";
 
 // Custom cookie-based state store for passport-google-oidc (no session needed)
 class CookieStore {
-  store(req: any, state: any, callback: any) {
-    // Store state in cookie instead of session
-    req.res.cookie("oauth_state", state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 5 * 60 * 1000, // 5 minutes
-    });
-    if (typeof callback === 'function') {
-      callback(null);
+  store(req: any, state: any, meta: any, callback: any) {
+    try {
+      // The 'meta' parameter might actually be the callback in some passport versions
+      const cb = typeof meta === "function" ? meta : callback;
+
+      // In passport, we need to access res from the request context
+      // Since we can't easily access res here, we'll store state in a Map temporarily
+      if (!global._oauthStateMap) {
+        global._oauthStateMap = new Map();
+      }
+
+      // Store with expiry
+      global._oauthStateMap.set(state, {
+        timestamp: Date.now(),
+        meta: typeof meta === "object" ? meta : {},
+      });
+
+      // Clean up old states (older than 5 minutes)
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      for (const [key, value] of global._oauthStateMap.entries()) {
+        if (value.timestamp < fiveMinutesAgo) {
+          global._oauthStateMap.delete(key);
+        }
+      }
+
+      console.log("OAuth state stored:", state);
+      if (cb) cb(null);
+    } catch (err) {
+      console.error("Error storing OAuth state:", err);
+      if (callback) callback(err);
     }
   }
 
   verify(req: any, state: any, callback: any) {
-    // Verify state from cookie
-    const storedState = req.cookies?.oauth_state;
-    if (!storedState || storedState !== state) {
-      return callback(null, false);
+    try {
+      if (!global._oauthStateMap) {
+        console.error("OAuth state map not initialized");
+        return callback(null, false);
+      }
+
+      const stored = global._oauthStateMap.get(state);
+      if (!stored) {
+        console.error("OAuth state not found or expired");
+        return callback(null, false);
+      }
+
+      // Check if state is too old (5 minutes)
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      if (stored.timestamp < fiveMinutesAgo) {
+        global._oauthStateMap.delete(state);
+        console.error("OAuth state expired");
+        return callback(null, false);
+      }
+
+      // State is valid, remove it
+      global._oauthStateMap.delete(state);
+      console.log("OAuth state verified:", state);
+      callback(null, true, stored.meta);
+    } catch (err) {
+      console.error("Error verifying OAuth state:", err);
+      callback(null, false);
     }
-    // Clear the state cookie after verification
-    req.res.clearCookie("oauth_state");
-    callback(null, true);
   }
+}
+
+declare global {
+  var _oauthStateMap: Map<string, { timestamp: number; meta: any }> | undefined;
 }
 
 const dbPool =
@@ -112,7 +156,7 @@ export function configurePassport() {
           const googleId = profile.id;
 
           let user;
-          
+
           try {
             const userResult = await dbPool.query(
               `SELECT id, google_sub, email, display_name 
@@ -156,25 +200,30 @@ export function configurePassport() {
                   email,
                   displayName,
                   avatar,
-                  profile.accessToken ? encryptToken(profile.accessToken) : null,
+                  profile.accessToken
+                    ? encryptToken(profile.accessToken)
+                    : null,
                   profile.refreshToken
                     ? encryptToken(profile.refreshToken)
                     : null,
                   tokenExpiry.toISOString(),
-              ]
-            );
+                ]
+              );
 
-            const newUserResult = await dbPool.query(
-              `SELECT id, email, display_name 
+              const newUserResult = await dbPool.query(
+                `SELECT id, email, display_name 
              FROM users 
              WHERE id = $1`,
-              [insertResult.rows[0].id]
-            );
+                [insertResult.rows[0].id]
+              );
 
-            user = newUserResult.rows[0];
-          }
+              user = newUserResult.rows[0];
+            }
           } catch (dbError) {
-            console.error('Database error during OAuth, using temporary user:', dbError);
+            console.error(
+              "Database error during OAuth, using temporary user:",
+              dbError
+            );
             // If database fails, create a temporary user object to allow authentication to proceed
             const displayName =
               profile.displayName ||
@@ -183,7 +232,7 @@ export function configurePassport() {
                     profile.name.familyName || ""
                   }`.trim()
                 : email.split("@")[0]);
-            
+
             user = {
               id: -1, // Temporary ID to indicate DB save pending
               google_sub: googleId,
