@@ -318,21 +318,49 @@ const authRateLimiter = rateLimit({
 app.use(authRateLimiter);
 
 async function ensureDatabaseInitialized() {
-  try {
-    // Try to query the users table
-    await pool.query("SELECT 1 FROM users LIMIT 1");
-    console.log("✅ Database already initialized.");
-  } catch (error) {
-    console.warn(
-      "⚠️ Database not initialized. Running initializeDatabase()..."
-    );
-    await initializeDatabase();
+  const maxAttempts = 5;
+  let attempt = 0;
+  const baseDelayMs = 2000;
+
+  while (attempt < maxAttempts) {
+    try {
+      attempt++;
+      // Try to query the users table
+      await pool.query("SELECT 1 FROM users LIMIT 1");
+      console.log("✅ Database already initialized.");
+      return;
+    } catch (error) {
+      console.warn(
+        `⚠️ Database check attempt ${attempt} failed: ${
+          (error as any)?.message || error
+        }`
+      );
+      if (attempt >= maxAttempts) break;
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      console.log(`Waiting ${delay}ms before retrying database check...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
+
+  console.warn(
+    "⚠️ Database not reachable after multiple attempts. Scheduling initialization in background and continuing to start server."
+  );
+
+  // Try to run initialization in background without blocking server startup
+  initializeDatabase()
+    .then(() => console.log("✅ Background database initialization completed"))
+    .catch((err) =>
+      console.error("❌ Background database initialization failed:", err)
+    );
 }
 
 // Start the server
 async function startServer() {
-  await ensureDatabaseInitialized();
+  // Start DB init in background so server can accept requests even if DB is temporarily unreachable
+  ensureDatabaseInitialized().catch((err) =>
+    console.error("ensureDatabaseInitialized failed (background):", err)
+  );
+
   const PORT = process.env.PORT || 8000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }

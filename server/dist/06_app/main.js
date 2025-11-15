@@ -8,7 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+// Load environment variables first
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config(); // Load .env
+dotenv_1.default.config({ path: ".env.local", override: true }); // Load .env.local (overrides .env)
 // Ensure reflect-metadata and DI are initialized before importing application
 require("reflect-metadata");
 require("../04_factories/di"); // boot DI container and register services

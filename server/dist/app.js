@@ -317,21 +317,38 @@ const authRateLimiter = (0, express_rate_limit_1.default)({
 app.use(authRateLimiter);
 function ensureDatabaseInitialized() {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            // Try to query the users table
-            yield connection_1.default.query("SELECT 1 FROM users LIMIT 1");
-            console.log("✅ Database already initialized.");
+        const maxAttempts = 5;
+        let attempt = 0;
+        const baseDelayMs = 2000;
+        while (attempt < maxAttempts) {
+            try {
+                attempt++;
+                // Try to query the users table
+                yield connection_1.default.query("SELECT 1 FROM users LIMIT 1");
+                console.log("✅ Database already initialized.");
+                return;
+            }
+            catch (error) {
+                console.warn(`⚠️ Database check attempt ${attempt} failed: ${(error === null || error === void 0 ? void 0 : error.message) || error}`);
+                if (attempt >= maxAttempts)
+                    break;
+                const delay = baseDelayMs * Math.pow(2, attempt - 1);
+                console.log(`Waiting ${delay}ms before retrying database check...`);
+                yield new Promise((resolve) => setTimeout(resolve, delay));
+            }
         }
-        catch (error) {
-            console.warn("⚠️ Database not initialized. Running initializeDatabase()...");
-            yield (0, schema_1.initializeDatabase)();
-        }
+        console.warn("⚠️ Database not reachable after multiple attempts. Scheduling initialization in background and continuing to start server.");
+        // Try to run initialization in background without blocking server startup
+        (0, schema_1.initializeDatabase)()
+            .then(() => console.log("✅ Background database initialization completed"))
+            .catch((err) => console.error("❌ Background database initialization failed:", err));
     });
 }
 // Start the server
 function startServer() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield ensureDatabaseInitialized();
+        // Start DB init in background so server can accept requests even if DB is temporarily unreachable
+        ensureDatabaseInitialized().catch((err) => console.error("ensureDatabaseInitialized failed (background):", err));
         const PORT = process.env.PORT || 8000;
         app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     });

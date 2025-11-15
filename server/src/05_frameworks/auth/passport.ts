@@ -1,5 +1,9 @@
 import passport from "passport";
-import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
+import {
+  Strategy as GoogleStrategy,
+  Profile,
+  VerifyCallback,
+} from "passport-google-oauth20";
 import pool from "../database/connection";
 import { Pool } from "pg";
 import crypto from "crypto";
@@ -28,6 +32,11 @@ export function configurePassport() {
       "Google OAuth environment variables are not properly defined."
     );
   }
+
+  console.log(
+    "🔧 Configuring Google OAuth with callback URL:",
+    process.env.GOOGLE_CALLBACK_URL
+  );
 
   passport.use(
     new GoogleStrategy(

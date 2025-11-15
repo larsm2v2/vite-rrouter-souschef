@@ -7,12 +7,23 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const passport_1 = __importDefault(require("passport"));
-const passport_2 = require("../auth/passport");
-const routes_1 = __importDefault(require("./routes"));
+// Passport is no longer used - replaced with openid-client for PKCE support
+// import passport from "passport";
+// import { configurePassport } from "../auth/passport";
+console.log("📋 Loading routes...");
+let routes;
+try {
+    routes = require("./routes").default;
+    console.log("✅ Routes loaded successfully");
+}
+catch (err) {
+    console.error("❌ CRITICAL: Failed to load routes:", err);
+    console.error("Stack:", err.stack);
+    throw err;
+}
 const app = (0, express_1.default)();
-// Configure passport strategies
-(0, passport_2.configurePassport)();
+// Passport configuration removed - now using openid-client with PKCE
+// configurePassport();
 app.set("trust proxy", 1);
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
@@ -37,9 +48,10 @@ app.use((0, cors_1.default)({
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
-app.use(passport_1.default.initialize());
+// Passport removed - using openid-client with PKCE instead
+// app.use(passport.initialize());
 // Sessions disabled - using JWT tokens instead
 // app.use(session(sessionConfig));
 // app.use(passport.session());
-app.use(routes_1.default);
+app.use(routes);
 exports.default = app;

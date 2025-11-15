@@ -2,14 +2,25 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import passport from "passport";
-import { configurePassport } from "../auth/passport";
-import routes from "./routes";
+// Passport is no longer used - replaced with openid-client for PKCE support
+// import passport from "passport";
+// import { configurePassport } from "../auth/passport";
+
+console.log("📋 Loading routes...");
+let routes;
+try {
+  routes = require("./routes").default;
+  console.log("✅ Routes loaded successfully");
+} catch (err) {
+  console.error("❌ CRITICAL: Failed to load routes:", err);
+  console.error("Stack:", (err as Error).stack);
+  throw err;
+}
 
 const app = express();
 
-// Configure passport strategies
-configurePassport();
+// Passport configuration removed - now using openid-client with PKCE
+// configurePassport();
 
 app.set("trust proxy", 1);
 app.use(helmet());
@@ -37,7 +48,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(passport.initialize());
+// Passport removed - using openid-client with PKCE instead
+// app.use(passport.initialize());
 // Sessions disabled - using JWT tokens instead
 // app.use(session(sessionConfig));
 // app.use(passport.session());

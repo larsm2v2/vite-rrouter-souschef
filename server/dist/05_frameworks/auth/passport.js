@@ -34,6 +34,7 @@ function configurePassport() {
         !process.env.GOOGLE_CALLBACK_URL) {
         throw new Error("Google OAuth environment variables are not properly defined.");
     }
+    console.log("🔧 Configuring Google OAuth with callback URL:", process.env.GOOGLE_CALLBACK_URL);
     passport_1.default.use(new passport_google_oauth20_1.Strategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,

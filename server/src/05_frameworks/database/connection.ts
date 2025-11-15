@@ -8,10 +8,12 @@ import { Pool } from "pg";
 async function ensureDatabaseExists() {
   // Skip database creation for cloud databases (Neon, etc.) - they're already created
   if (process.env.PG_URL) {
-    console.log('Using cloud database (PG_URL), skipping database creation check');
+    console.log(
+      "Using cloud database (PG_URL), skipping database creation check"
+    );
     return;
   }
-  
+
   const dbName = process.env.PG_DATABASE || "SousChefDB";
 
   const adminPool = new Pool({
@@ -85,7 +87,8 @@ async function createPool() {
         ssl: { rejectUnauthorized: false },
         max: 10,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        // Increase connection timeout to give remote cloud DBs more time to respond
+        connectionTimeoutMillis: 10000,
       }
     : {
         user: process.env.PG_USER || "postgres",
