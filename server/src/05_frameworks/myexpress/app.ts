@@ -49,6 +49,9 @@ app.use(cookieParser());
 // app.use(session(sessionConfig));
 // app.use(passport.session());
 app.use(routes);
-console.log("✅ Routes mounted. App stack layers:", app._router?.stack?.length || 0);
+console.log(
+  "✅ Routes mounted. App stack layers:",
+  app._router?.stack?.length || 0
+);
 
 export default app;
