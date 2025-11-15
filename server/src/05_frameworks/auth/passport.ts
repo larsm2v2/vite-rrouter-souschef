@@ -10,16 +10,30 @@ import { User } from "../../01_entities";
 class CookieStore {
   store(req: any, state: any, meta: any, callback: any) {
     try {
-      // The 'meta' parameter might actually be the callback in some passport versions
-      const cb = typeof meta === "function" ? meta : callback;
-
-      // In passport, we need to access res from the request context
-      // Since we can't easily access res here, we'll store state in a Map temporarily
+      console.log('CookieStore.store called with args:', {
+        hasReq: !!req,
+        state: state?.substring?.(0, 10),
+        metaType: typeof meta,
+        callbackType: typeof callback
+      });
+      
+      // Determine which argument is the callback
+      // passport-openidconnect might call with (req, state, callback) or (req, state, meta, callback)
+      let cb: any;
+      if (typeof meta === 'function') {
+        cb = meta;
+      } else if (typeof callback === 'function') {
+        cb = callback;
+      } else {
+        console.error('No callback function found in store()');
+        return;
+      }
+      
+      // Store state in memory
       if (!global._oauthStateMap) {
         global._oauthStateMap = new Map();
       }
 
-      // Store with expiry
       global._oauthStateMap.set(state, {
         timestamp: Date.now(),
         meta: typeof meta === "object" ? meta : {},
@@ -33,11 +47,14 @@ class CookieStore {
         }
       }
 
-      console.log("OAuth state stored:", state);
-      if (cb) cb(null);
+      console.log("OAuth state stored:", state?.substring?.(0, 10));
+      cb(null);
     } catch (err) {
       console.error("Error storing OAuth state:", err);
-      if (callback) callback(err);
+      const cb = typeof meta === 'function' ? meta : callback;
+      if (typeof cb === 'function') {
+        cb(err);
+      }
     }
   }
 
