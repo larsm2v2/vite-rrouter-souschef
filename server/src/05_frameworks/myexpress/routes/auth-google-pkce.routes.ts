@@ -1,8 +1,5 @@
-console.log("[AUTH-GOOGLE-PKCE] START: module loading");
-
 import { Router, Request, Response } from "express";
 import {
-  initializeGoogleOAuthClient,
   getGoogleAuthUrl,
   handleGoogleCallback,
 } from "../../auth/google-oauth-pkce";
@@ -10,15 +7,7 @@ import { generateAccessToken, generateRefreshToken } from "../../../utils/jwt";
 import db from "../../database/connection";
 import { encryptToken } from "../../../utils/crypto";
 
-console.log("[AUTH-GOOGLE-PKCE] Imports complete");
-console.log("[AUTH-GOOGLE-PKCE] CLIENT_URL present:", !!process.env.CLIENT_URL);
-console.log(
-  "[AUTH-GOOGLE-PKCE] GOOGLE_CALLBACK_URL present:",
-  !!process.env.GOOGLE_CALLBACK_URL
-);
-
 const router = Router();
-console.log("[AUTH-GOOGLE-PKCE] Router created");
 
 // Test route to verify this router is mounted
 router.get("/test-pkce", (req: Request, res: Response) => {
@@ -28,22 +17,6 @@ router.get("/test-pkce", (req: Request, res: Response) => {
   });
 });
 
-// Initialize Google OAuth on module load
-console.log("[AUTH-GOOGLE-PKCE] Initializing OAuth client (async)");
-(async () => {
-  try {
-    await initializeGoogleOAuthClient();
-    console.log("[AUTH-GOOGLE-PKCE] OAuth client initialized successfully");
-  } catch (err) {
-    console.error(
-      "[AUTH-GOOGLE-PKCE] CRITICAL: Failed to initialize Google OAuth:",
-      err
-    );
-    console.error("[AUTH-GOOGLE-PKCE] Stack:", (err as Error).stack);
-  }
-})();
-
-console.log("[AUTH-GOOGLE-PKCE] Defining /google route");
 // Initiate Google OAuth with PKCE
 router.get("/google", async (req: Request, res: Response) => {
   try {
@@ -64,7 +37,6 @@ router.get("/google", async (req: Request, res: Response) => {
   }
 });
 
-console.log("[AUTH-GOOGLE-PKCE] Defining /google/callback route");
 // Google OAuth callback with PKCE
 router.get("/google/callback", async (req: Request, res: Response) => {
   try {
@@ -162,9 +134,4 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   }
 });
 
-console.log(
-  "[AUTH-GOOGLE-PKCE] Routes defined. Router stack length:",
-  router.stack.length
-);
-console.log("[AUTH-GOOGLE-PKCE] Exporting router");
 export default router;

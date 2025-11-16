@@ -1,18 +1,8 @@
-console.log("🔵 START: google-oauth-pkce module is loading");
-
 import * as oauth from "openid-client";
-import { Request, Response, NextFunction } from "express";
+import { Request } from "express";
 import crypto from "crypto";
 
-// Diagnostic: module load marker and presence checks for required env vars (do NOT print secrets)
-console.log("🔵 START: google-oauth-pkce module is loading");
-console.log("   GOOGLE_CLIENT_ID present:", !!process.env.GOOGLE_CLIENT_ID);
-console.log("   GOOGLE_CLIENT_SECRET present:", !!process.env.GOOGLE_CLIENT_SECRET);
-console.log("   GOOGLE_CALLBACK_URL present:", !!process.env.GOOGLE_CALLBACK_URL);
-
-console.log("📦 openid-client imported successfully");
-
-let googleConfig: oauth.Configuration;
+let googleConfig: oauth.Configuration | null = null;
 
 interface PKCESession {
   codeVerifier: string;
@@ -36,19 +26,27 @@ function cleanupOldSessions() {
 // Run cleanup every minute
 setInterval(cleanupOldSessions, 60 * 1000);
 
-export async function initializeGoogleOAuthClient() {
+/**
+ * Ensure Google OAuth client is initialized (lazy initialization)
+ * This is called on first request, not during module load
+ */
+async function ensureGoogleOAuthInitialized(): Promise<oauth.Configuration> {
+  if (googleConfig) {
+    return googleConfig; // Already initialized
+  }
+
   if (
     !process.env.GOOGLE_CLIENT_ID ||
     !process.env.GOOGLE_CLIENT_SECRET ||
     !process.env.GOOGLE_CALLBACK_URL
   ) {
     throw new Error(
-      "Google OAuth environment variables are not properly defined."
+      "Google OAuth environment variables are not properly defined (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL)"
     );
   }
 
-  console.log("🔧 Initializing Google OAuth with PKCE support");
-  console.log("   Callback URL:", process.env.GOOGLE_CALLBACK_URL);
+  console.log("Initializing Google OAuth with PKCE support");
+  console.log("Callback URL:", process.env.GOOGLE_CALLBACK_URL);
 
   // Discover Google's OpenID configuration
   const issuerUrl = new URL("https://accounts.google.com");
@@ -59,14 +57,13 @@ export async function initializeGoogleOAuthClient() {
   );
 
   googleConfig = authServer;
+  console.log("Google OAuth client initialized successfully");
 
-  console.log("✅ Google OAuth client initialized with PKCE");
+  return googleConfig;
 }
 
 export async function getGoogleAuthUrl(req: Request): Promise<string> {
-  if (!googleConfig) {
-    throw new Error("Google OAuth not initialized");
-  }
+  const config = await ensureGoogleOAuthInitialized();
 
   // Generate PKCE parameters
   const codeVerifier = oauth.randomPKCECodeVerifier();
@@ -97,7 +94,7 @@ export async function getGoogleAuthUrl(req: Request): Promise<string> {
   (req as any).__pkceSessionId = sessionId;
   (req as any).__pkceCookieOptions = cookieOptions;
 
-  const authUrl = oauth.buildAuthorizationUrl(googleConfig, {
+  const authUrl = oauth.buildAuthorizationUrl(config, {
     redirect_uri: process.env.GOOGLE_CALLBACK_URL!,
     scope: "openid email profile",
     code_challenge: codeChallenge,
@@ -110,9 +107,7 @@ export async function getGoogleAuthUrl(req: Request): Promise<string> {
 }
 
 export async function handleGoogleCallback(req: Request): Promise<any> {
-  if (!googleConfig) {
-    throw new Error("Google OAuth not initialized");
-  }
+  const config = await ensureGoogleOAuthInitialized();
 
   const { code, state } = req.query;
 
@@ -146,17 +141,13 @@ export async function handleGoogleCallback(req: Request): Promise<any> {
 
   // Exchange code for tokens using PKCE
   const currentUrl = new URL(req.url, `${req.protocol}://${req.get("host")}`);
-  const tokens = await oauth.authorizationCodeGrant(googleConfig, currentUrl, {
+  const tokens = await oauth.authorizationCodeGrant(config, currentUrl, {
     pkceCodeVerifier: pkceSession.codeVerifier,
     expectedState: pkceSession.state,
   });
 
   // Get user info - pass empty string for subject parameter
-  const claims = await oauth.fetchUserInfo(
-    googleConfig,
-    tokens.access_token,
-    ""
-  );
+  const claims = await oauth.fetchUserInfo(config, tokens.access_token, "");
 
   return {
     googleId: claims.sub as string,
