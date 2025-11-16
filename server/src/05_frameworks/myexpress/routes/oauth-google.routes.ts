@@ -3,6 +3,7 @@ import { generateAccessToken, generateRefreshToken } from "../../../utils/jwt";
 import db from "../../database/connection";
 import { encryptToken } from "../../../utils/crypto";
 
+console.log("📥 Importing oauth-google.routes");
 const router = Router();
 
 interface TokenExchangeRequest {

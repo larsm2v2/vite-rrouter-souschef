@@ -4,6 +4,7 @@ import "../../../04_factories/di";
 import { container } from "tsyringe";
 import { GroceryController } from "../../../03_adapters/controllers/GroceryController";
 
+console.log("📥 Importing grocery.routes");
 const router = express.Router();
 
 const groceryController = container.resolve(GroceryController);

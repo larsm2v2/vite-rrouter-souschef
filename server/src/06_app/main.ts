@@ -14,6 +14,7 @@ import { startupCache, scheduleRefresh } from "../secret-manager-example";
 
 async function main() {
   try {
+    console.log("🚀 Starting application, NODE_ENV=", process.env.NODE_ENV);
     validateEnvironment();
 
     // Secrets are now mounted as environment variables in Cloud Run via --set-secrets,

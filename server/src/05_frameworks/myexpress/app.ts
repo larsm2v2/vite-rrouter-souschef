@@ -11,6 +11,14 @@ import routes from "./routes/index";
 // import { configurePassport } from "../auth/passport";
 
 console.log("📋 Loading routes...");
+// Diagnostic: flag app creation so we can detect multiple app instances
+if ((global as any).__souschef_app_created__) {
+  console.warn(
+    "⚠️ Express app instance already created elsewhere in the process — multiple apps may be running"
+  );
+} else {
+  (global as any).__souschef_app_created__ = true;
+}
 console.log("✅ Routes module imported:", typeof routes);
 console.log("   Routes is Router?", routes && typeof routes === "function");
 console.log("   Routes stack length:", routes?.stack?.length || 0);
@@ -56,5 +64,26 @@ console.log(
   "✅ Routes mounted. App stack layers:",
   app._router?.stack?.length || 0
 );
+
+// Print a compact summary of layers and mounted route paths for quick diagnostics
+try {
+  const entries =
+    app._router?.stack?.map((layer: any, i: number) => {
+      const isRouter = layer.name === "router";
+      const prefix =
+        isRouter && layer.regexp
+          ? layer.regexp?.source
+          : layer.route?.path || "";
+      return {
+        i,
+        name: layer.name,
+        path: prefix,
+        hasStack: !!layer.handle?.stack,
+      };
+    }) || [];
+  console.log("🔍 App router layer summary:", JSON.stringify(entries, null, 2));
+} catch (e) {
+  console.error("Failed to summarize app router stack:", e);
+}
 
 export default app;

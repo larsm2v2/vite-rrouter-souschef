@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import db from "../../database/connection";
 import { authenticateJWT } from "../jwtAuth";
 
+console.log("📥 Importing recipes.routes");
 const router = express.Router();
 
 // Initialize Google Generative AI
