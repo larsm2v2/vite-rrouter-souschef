@@ -1,4 +1,13 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -13,23 +22,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GroceryRepository = void 0;
+const tsyringe_1 = require("tsyringe");
 const connection_1 = __importDefault(require("../../05_frameworks/database/connection"));
-class GroceryRepository {
-    constructor(getGroceryList) {
-        this.getGroceryList = getGroceryList;
-    }
+let GroceryRepository = class GroceryRepository {
+    constructor() { }
     getList(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
             if (!userId) {
                 res.status(401).json({ error: "Unauthorized" });
-                return;
-            }
-            // If a GetGroceryList use case was injected, use it; otherwise fall back to repository query
-            if (this.getGroceryList) {
-                const groceryList = yield this.getGroceryList.execute(userId);
-                res.status(200).json(groceryList);
                 return;
             }
             const groceryList = yield this.findByUserId(userId);
@@ -111,5 +113,9 @@ class GroceryRepository {
             return ((_a = result.rowCount) !== null && _a !== void 0 ? _a : 0) > 0;
         });
     }
-}
+};
 exports.GroceryRepository = GroceryRepository;
+exports.GroceryRepository = GroceryRepository = __decorate([
+    (0, tsyringe_1.injectable)(),
+    __metadata("design:paramtypes", [])
+], GroceryRepository);

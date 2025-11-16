@@ -2,9 +2,9 @@
 node_modules/
 **/node_modules/
 
-# Ignore build outputs
-dist/
-build/
+# Ignore build outputs - COMMENTED OUT so dist/ is included in deployment
+# dist/
+# build/
 *.js.map
 
 # Ignore tests
