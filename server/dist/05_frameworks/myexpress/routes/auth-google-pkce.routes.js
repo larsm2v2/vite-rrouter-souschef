@@ -12,29 +12,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-console.log("🔵 START: auth-google-pkce.routes module is loading");
 const express_1 = require("express");
 const google_oauth_pkce_1 = require("../../auth/google-oauth-pkce");
 const jwt_1 = require("../../../utils/jwt");
 const connection_1 = __importDefault(require("../../database/connection"));
 const crypto_1 = require("../../../utils/crypto");
-console.log("📋 Loading auth-google-pkce.routes module");
-// Diagnostic: module load marker
-console.log("🔵 START: auth-google-pkce.routes module is loading");
-// Log presence of key env vars (non-sensitive)
-console.log("   CLIENT_URL present:", !!process.env.CLIENT_URL);
-console.log("   GOOGLE_CALLBACK_URL present:", !!process.env.GOOGLE_CALLBACK_URL);
 const router = (0, express_1.Router)();
-// Initialize Google OAuth on module load
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield (0, google_oauth_pkce_1.initializeGoogleOAuthClient)();
-    }
-    catch (err) {
-        console.error("❌ CRITICAL: Failed to initialize Google OAuth:", err);
-        console.error("Stack:", err.stack);
-    }
-}))();
+// Test route to verify this router is mounted
+router.get("/test-pkce", (req, res) => {
+    res.json({
+        message: "auth-google-pkce router is working!",
+        timestamp: new Date().toISOString(),
+    });
+});
 // Initiate Google OAuth with PKCE
 router.get("/google", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
