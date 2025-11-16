@@ -7,6 +7,7 @@ import { generateAccessToken, generateRefreshToken } from "../../../utils/jwt";
 import db from "../../database/connection";
 import { encryptToken } from "../../../utils/crypto";
 
+console.log("📥 Importing auth-google-pkce.routes");
 const router = Router();
 
 // Test route to verify this router is mounted

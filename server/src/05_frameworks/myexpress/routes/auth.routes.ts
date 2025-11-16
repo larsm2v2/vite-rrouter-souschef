@@ -14,6 +14,7 @@ import {
 } from "../../../utils/jwt";
 import { authenticateJWT } from "../jwtAuth";
 
+console.log("📥 Importing auth.routes");
 const router = Router();
 
 // Simple test endpoint to verify request body parsing

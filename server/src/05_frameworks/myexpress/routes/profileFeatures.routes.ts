@@ -6,6 +6,7 @@ import { MealPlanController } from "../../../03_adapters/controllers/MealPlanCon
 import { ShoppingListController } from "../../../03_adapters/controllers/ShoppingListController";
 import { RecipeActivityController } from "../../../03_adapters/controllers/RecipeActivityController";
 
+console.log("📥 Importing profileFeatures.routes");
 const router = Router();
 
 // Apply authentication to all routes in this router

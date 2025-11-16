@@ -32,7 +32,10 @@ describe("Routes Module Tests", () => {
       expect(profileRoutes).toBeDefined();
       expect(typeof profileRoutes).toBe("function");
       expect(profileRoutes.stack).toBeDefined();
-      console.log("profile routes stack length:", profileRoutes.stack?.length || 0);
+      console.log(
+        "profile routes stack length:",
+        profileRoutes.stack?.length || 0
+      );
     });
 
     it("should import recipes.routes successfully", () => {
@@ -77,7 +80,7 @@ describe("Routes Module Tests", () => {
       console.log("\n=== ROUTES STACK ANALYSIS ===");
       console.log("Total routes.stack length:", routes.stack?.length || 0);
       console.log("\nRoutes stack details:");
-      
+
       routes.stack?.forEach((layer: any, index: number) => {
         console.log(`\n[${index}] Layer:`, {
           name: layer.name,
@@ -110,6 +113,13 @@ describe("Routes Module Tests", () => {
       // Check the regexp matches /api/oauth
       expect(oauthLayer.regexp?.source).toContain("api");
       expect(oauthLayer.regexp?.source).toContain("oauth");
+      // Extra check: ensure oauth router has /google/token route defined
+      // Type guard to reach nested router stack
+      const oauthHandle = oauthLayer?.handle as any;
+      const tokenRoute = oauthHandle?.stack?.find(
+        (l: any) => l.route?.path === "/google/token"
+      );
+      expect(tokenRoute).toBeDefined();
     });
 
     it("should mount /auth routes second", () => {
@@ -126,8 +136,11 @@ describe("Routes Module Tests", () => {
       testApp.use(routes);
 
       console.log("\n=== EXPRESS APP STACK ANALYSIS ===");
-      console.log("App middleware stack length:", testApp._router?.stack?.length || 0);
-      
+      console.log(
+        "App middleware stack length:",
+        testApp._router?.stack?.length || 0
+      );
+
       testApp._router?.stack?.forEach((layer: any, index: number) => {
         if (layer.name === "router") {
           console.log(`\n[${index}] Router middleware:`, {
@@ -141,7 +154,7 @@ describe("Routes Module Tests", () => {
       const routersInApp = testApp._router?.stack?.filter(
         (layer: any) => layer.name === "router"
       );
-      
+
       console.log("\nTotal routers in app:", routersInApp?.length || 0);
       expect(routersInApp?.length).toBeGreaterThan(0);
     });
@@ -151,18 +164,18 @@ describe("Routes Module Tests", () => {
     it("should have POST /google/token route in oauth-google.routes", () => {
       console.log("\n=== OAUTH GOOGLE ROUTES ANALYSIS ===");
       console.log("oauth-google routes stack:", oauthGoogleRoutes.stack);
-      
+
       const postRoute = oauthGoogleRoutes.stack?.find(
         (layer: any) => layer.route?.path === "/google/token"
       );
-      
+
       expect(postRoute).toBeDefined();
       expect((postRoute?.route as any)?.methods?.post).toBe(true);
     });
 
     it("should mount oauth routes at /api/oauth in main routes", () => {
       const oauthLayer = routes.stack?.[0] as any;
-      
+
       console.log("\n=== OAUTH MOUNTING ANALYSIS ===");
       console.log("First layer in routes.stack:", {
         name: oauthLayer?.name,
@@ -173,9 +186,51 @@ describe("Routes Module Tests", () => {
 
       // Verify it's a router
       expect(oauthLayer?.name).toBe("router");
-      
+
       // Verify it has routes inside
       expect(oauthLayer?.handle?.stack?.length).toBeGreaterThan(0);
+    });
+
+    it("should expose combined path /api/oauth/google/token when routes are mounted on app", () => {
+      const testApp = express();
+      testApp.use(routes);
+
+      // Find the top-level routes layer where routes were mounted, then inspect
+      // its nested routers. When you do `app.use(routes)` Express places a single
+      // router on the app and the actual child routers are inside its `handle.stack`.
+      const routesTopLayer = testApp._router?.stack?.find(
+        (layer: any) => layer.name === "router" && layer.handle?.stack
+      );
+      const oauthLayer = routesTopLayer?.handle?.stack?.find(
+        (layer: any) =>
+          layer.name === "router" && layer.regexp?.source?.includes("oauth")
+      );
+
+      expect(oauthLayer).toBeDefined();
+
+      // Clean the prefix like the debug route does
+      const prefix = (oauthLayer?.regexp?.source || "")
+        .replace("\\/?", "")
+        .replace("(?=\\/|$)", "")
+        .replace(/\\/g, "");
+      const cleaned = prefix.replace(/\^|\$|\(|\)|\?=|\\/g, "");
+      const base = (cleaned.startsWith("/") ? cleaned : "/" + cleaned).replace(
+        /\/\//g,
+        "/"
+      );
+
+      // Find the token route inside oauth router
+      const postRoute = oauthGoogleRoutes.stack?.find(
+        (l: any) => l.route?.path === "/google/token"
+      );
+      expect(postRoute).toBeDefined();
+
+      // TS guard - now postRoute is defined
+      const combined = `${base}${(postRoute as any).route.path}`.replace(
+        /\/\//g,
+        "/"
+      );
+      expect(combined).toBe("/api/oauth/google/token");
     });
   });
 });

@@ -9,25 +9,62 @@ import profileFeatures from "./profileFeatures.routes";
 const router = express.Router();
 
 console.log("📋 Mounting routes...");
+console.log("Environment for routes mount: NODE_ENV=", process.env.NODE_ENV);
 
 // Mount all routes
 console.log("  Mounting /api/oauth → oauth-google routes");
 router.use("/api/oauth", oauthGoogleRoutes); // Client-side PKCE token exchange
+console.log(
+  "    -> oauthGoogleRoutes loaded?",
+  typeof oauthGoogleRoutes,
+  "stackLength",
+  oauthGoogleRoutes?.stack?.length
+);
 
 console.log("  Mounting /auth → auth routes");
 router.use("/auth", authRoutes); // Traditional auth routes (login, register, refresh, etc.)
+console.log(
+  "    -> authRoutes loaded?",
+  typeof authRoutes,
+  "stackLength",
+  authRoutes?.stack?.length
+);
 
 console.log("  Mounting /api → recipes routes");
 router.use("/api", recipesRoutes);
+console.log(
+  "    -> recipesRoutes loaded?",
+  typeof recipesRoutes,
+  "stackLength",
+  recipesRoutes?.stack?.length
+);
 
 console.log("  Mounting /api → grocery routes");
 router.use("/api", groceryRoutes);
+console.log(
+  "    -> groceryRoutes loaded?",
+  typeof groceryRoutes,
+  "stackLength",
+  groceryRoutes?.stack?.length
+);
 
 console.log("  Mounting / → profile routes");
 router.use("/", profileRoutes);
+console.log(
+  "    -> profileRoutes loaded?",
+  typeof profileRoutes,
+  "stackLength",
+  profileRoutes?.stack?.length
+);
 
 console.log("  Mounting /api → profile features routes");
 router.use("/api", profileFeatures);
+console.log(
+  "    -> profileFeatures loaded?",
+  typeof profileFeatures,
+  "stackLength",
+  profileFeatures?.stack?.length
+);
 
 console.log(
   `✅ Routes mounted successfully. Total routers: ${router.stack.length}`
