@@ -120,7 +120,7 @@ describe("Passport Configuration", () => {
 
 ```typescript
 import request from "supertest";
-import app from "../../../app";
+import { app } from "../../../05_frameworks"; // Use the framework app; legacy src/app.ts has been removed
 import pool from "../../../05_frameworks/database/connection";
 import { initializeDatabase } from "../../../05_frameworks/database/schema";
 import { User } from "../../../01_entities";

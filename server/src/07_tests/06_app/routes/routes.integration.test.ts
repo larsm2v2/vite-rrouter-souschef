@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../../../app";
+import { app } from "../../../05_frameworks/index";
 
 describe("Route discovery and endpoints (integration)", () => {
   it("should discover oauth router and token route in routes module", async () => {

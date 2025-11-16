@@ -496,7 +496,7 @@ Update all protected routes in:
 
 #### 2.4 Update CORS Configuration
 
-Modify `server/src/app.ts`:
+Modify `server/src/05_frameworks/myexpress/app.ts` (or the canonical `src/06_app/main.ts` for entrypoint-level changes):
 
 ```typescript
 // Remove credentials: true (no longer needed for cookies)
@@ -525,7 +525,7 @@ app.use(
 
 #### 2.5 Remove Session Middleware
 
-In `server/src/app.ts`, comment out or remove:
+In `server/src/05_frameworks/myexpress/app.ts`, comment out or remove session-related middleware and any session-specific logic. For entrypoint-level changes you can also update `src/06_app/main.ts`.
 
 ```typescript
 // REMOVE OR COMMENT OUT

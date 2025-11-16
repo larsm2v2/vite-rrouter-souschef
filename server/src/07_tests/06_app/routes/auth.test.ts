@@ -1,5 +1,5 @@
 import request from "supertest";
-import app from "../../../app";
+import { app } from "../../../05_frameworks/index";
 import db from "../../../05_frameworks/database/connection";
 import { initializeDatabase } from "../../../05_frameworks/database/schema";
 import { User } from "../../../01_entities";
