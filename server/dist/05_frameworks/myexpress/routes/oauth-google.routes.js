@@ -53,7 +53,8 @@ router.post("/google/token", (req, res) => __awaiter(void 0, void 0, void 0, fun
                 client_secret: process.env.GOOGLE_CLIENT_SECRET,
                 code,
                 code_verifier, // Client-generated PKCE verifier
-                redirect_uri: process.env.GOOGLE_CALLBACK_URL || `${process.env.CLIENT_URL}/auth/callback`,
+                redirect_uri: process.env.GOOGLE_CALLBACK_URL ||
+                    `${process.env.CLIENT_URL}/auth/callback`,
                 grant_type: "authorization_code",
             }),
         });

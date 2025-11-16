@@ -19,6 +19,7 @@ steps:
     id: "docker-build"
     args: [
         "build",
+        "--no-cache", # Force rebuild without cache
         "-t",
         "gcr.io/$PROJECT_ID/souschef-api",
         ".", # Context is current directory (server)
