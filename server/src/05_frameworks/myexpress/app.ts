@@ -2,7 +2,10 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import routes from "./routes";
+// Import the directory index explicitly to avoid importing the legacy
+// `routes.ts` file. This ensures the new combined router in
+// `./routes/index.ts` (which mounts /api/oauth etc.) is used in production.
+import routes from "./routes/index";
 // Passport is no longer used - replaced with openid-client for PKCE support
 // import passport from "passport";
 // import { configurePassport } from "../auth/passport";

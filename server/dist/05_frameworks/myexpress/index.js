@@ -20,7 +20,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.test = exports.routes = exports.app = void 0;
 var app_1 = require("./app");
 Object.defineProperty(exports, "app", { enumerable: true, get: function () { return __importDefault(app_1).default; } });
-var routes_1 = require("./routes");
-Object.defineProperty(exports, "routes", { enumerable: true, get: function () { return __importDefault(routes_1).default; } });
+// Import the folder index explicitly to avoid accidental import of ./routes.ts
+// which exists for legacy usage. This ensures the main routes in
+// `./routes/index.ts` are used in production.
+var index_1 = require("./routes/index");
+Object.defineProperty(exports, "routes", { enumerable: true, get: function () { return __importDefault(index_1).default; } });
 __exportStar(require("./middleware"), exports);
 exports.test = "Express module loaded!";
