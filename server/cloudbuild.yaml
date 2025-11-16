@@ -54,6 +54,28 @@ steps:
         "--allow-unauthenticated",
       ]
 
+    # 4. Wait for the expected routes to appear on the deployed service. This helps
+    # catch issues where a revision starts but some routers or modules are not yet
+    # imported (we poll the /debug/routes endpoint added to the app).
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "wait-for-routes"
+    entrypoint: "bash"
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        SERVICE_URL=$(gcloud run services describe souschef-api --region us-central1 --platform managed --format 'value(status.url)')
+        echo "Waiting for expected routes at $${SERVICE_URL}/debug/routes"
+        for i in $(seq 1 30); do
+          echo "Attempt: ${i}"
+          if curl -s --fail "$${SERVICE_URL}/debug/routes" | grep -q "/api/oauth/google/token"; then
+            echo "Found oauth route - routes appear healthy"
+            exit 0
+          fi
+          sleep 4
+        done
+        echo "Timed out waiting for oauth route to appear" >&2
+        exit 1
 images:
   - "gcr.io/$PROJECT_ID/souschef-api"
 
