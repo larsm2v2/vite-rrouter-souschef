@@ -52,7 +52,7 @@ https://accounts.google.com/signin/oauth/error?authError=...
 
 ### 5. **Entry Point Configuration**
 
-- Updated correct entry point: `src/06_app/main.ts` (not `src/app.ts`)
+- Updated correct entry point: `src/06_app/main.ts` (not `src/app.ts`, legacy removed)
 - Added dotenv loading with `.env.local` override support
 - **Status:** ✅ Fixed
 
