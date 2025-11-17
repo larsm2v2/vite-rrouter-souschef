@@ -7,6 +7,14 @@ This document lists environment variables and basic deployment steps to run the 
 - NODE_ENV — set to `production` in production.
 - PORT — port the server listens on (default often: 3000 or set in `src/06_app/main.ts`).
 - CLEAN_RECIPE_SERVICE_URL — full URL to the clean-recipe microservice (optional). If unset, the server uses the local cleaner.
+
+## Running migrations during deploy
+
+The Cloud Build pipeline deploys to Cloud Run and will briefly set RUN_MIGRATIONS=true for the new revision so idempotent migrations run once during startup.
+
+The deployment step uses RUN_MIGRATIONS to indicate that the first migraiton pass should run as the revision starts — once migration completes, the pipeline flips RUN_MIGRATIONS back to false so subsequent restarts don't re-run migrations unexpectedly.
+
+This ensures one-time schema work (like creating the `refresh_tokens` table) happens automatically during the first deploy.
 - DATABASE_URL or Postgres-specific envs:
   - PGHOST
   - PGUSER
