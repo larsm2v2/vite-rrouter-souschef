@@ -15,6 +15,7 @@ The Cloud Build pipeline deploys to Cloud Run and will briefly set RUN_MIGRATION
 The deployment step uses RUN_MIGRATIONS to indicate that the first migraiton pass should run as the revision starts — once migration completes, the pipeline flips RUN_MIGRATIONS back to false so subsequent restarts don't re-run migrations unexpectedly.
 
 This ensures one-time schema work (like creating the `refresh_tokens` table) happens automatically during the first deploy.
+
 - DATABASE_URL or Postgres-specific envs:
   - PGHOST
   - PGUSER
