@@ -21,9 +21,11 @@ require("reflect-metadata");
 require("../04_factories/di"); // boot DI container and register services
 const environment_1 = require("./environment");
 const server_1 = require("./server");
+const migrations_1 = __importDefault(require("../05_frameworks/database/migrations/migrations"));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            console.log("🚀 Starting application, NODE_ENV=", process.env.NODE_ENV);
             (0, environment_1.validateEnvironment)();
             // Secrets are now mounted as environment variables in Cloud Run via --set-secrets,
             // so we don't need to fetch them at runtime. Commented out to speed up startup.
@@ -40,6 +42,23 @@ function main() {
               );
             }
             */
+            // Optionally run migrations automatically in production with a controlled
+            // flag. Cloud Build can set RUN_MIGRATIONS=true for a single deploy which
+            // will trigger the migration runner before the server starts accepting
+            // traffic. This is intentional to allow first-time deployments to apply
+            // idempotent schema migrations.
+            if (process.env.RUN_MIGRATIONS === "true") {
+                console.log("RUN_MIGRATIONS=true - running migration runner before start");
+                try {
+                    yield (0, migrations_1.default)();
+                    console.log("✅ Migrations applied (RUN_MIGRATIONS)");
+                }
+                catch (err) {
+                    console.error("Migration runner failed:", err);
+                    // Don't block startup forever - continue and let Cloud Run healthchecks
+                    // fail if something is wrong. Operator alerting should pick this up.
+                }
+            }
             yield (0, server_1.startServer)();
         }
         catch (error) {

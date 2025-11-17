@@ -18,6 +18,7 @@ const password_1 = require("../../auth/password");
 const connection_1 = __importDefault(require("../../database/connection"));
 const jwt_1 = require("../../../utils/jwt");
 const jwtAuth_1 = require("../jwtAuth");
+console.log("📥 Importing auth.routes");
 const router = (0, express_1.Router)();
 // Simple test endpoint to verify request body parsing
 router.post("/test-body", (req, res) => {

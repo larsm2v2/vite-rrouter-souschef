@@ -16,6 +16,7 @@ const express_1 = require("express");
 const jwt_1 = require("../../../utils/jwt");
 const connection_1 = __importDefault(require("../../database/connection"));
 const crypto_1 = require("../../../utils/crypto");
+console.log("📥 Importing oauth-google.routes");
 const router = (0, express_1.Router)();
 /**
  * Stateless OAuth token exchange endpoint

@@ -94,13 +94,18 @@ describe("Routes Module Tests", () => {
             expect(index_1.default.stack.length).toBe(6);
         });
         it("should mount /api/oauth routes first", () => {
-            var _a, _b, _c;
+            var _a, _b, _c, _d;
             const oauthLayer = (_a = index_1.default.stack) === null || _a === void 0 ? void 0 : _a[0];
             expect(oauthLayer).toBeDefined();
             expect(oauthLayer.name).toBe("router");
             // Check the regexp matches /api/oauth
             expect((_b = oauthLayer.regexp) === null || _b === void 0 ? void 0 : _b.source).toContain("api");
             expect((_c = oauthLayer.regexp) === null || _c === void 0 ? void 0 : _c.source).toContain("oauth");
+            // Extra check: ensure oauth router has /google/token route defined
+            // Type guard to reach nested router stack
+            const oauthHandle = oauthLayer === null || oauthLayer === void 0 ? void 0 : oauthLayer.handle;
+            const tokenRoute = (_d = oauthHandle === null || oauthHandle === void 0 ? void 0 : oauthHandle.stack) === null || _d === void 0 ? void 0 : _d.find((l) => { var _a; return ((_a = l.route) === null || _a === void 0 ? void 0 : _a.path) === "/google/token"; });
+            expect(tokenRoute).toBeDefined();
         });
         it("should mount /auth routes second", () => {
             var _a, _b;
@@ -155,6 +160,30 @@ describe("Routes Module Tests", () => {
             expect(oauthLayer === null || oauthLayer === void 0 ? void 0 : oauthLayer.name).toBe("router");
             // Verify it has routes inside
             expect((_f = (_e = oauthLayer === null || oauthLayer === void 0 ? void 0 : oauthLayer.handle) === null || _e === void 0 ? void 0 : _e.stack) === null || _f === void 0 ? void 0 : _f.length).toBeGreaterThan(0);
+        });
+        it("should expose combined path /api/oauth/google/token when routes are mounted on app", () => {
+            var _a, _b, _c, _d, _e, _f;
+            const testApp = (0, express_1.default)();
+            testApp.use(index_1.default);
+            // Find the top-level routes layer where routes were mounted, then inspect
+            // its nested routers. When you do `app.use(routes)` Express places a single
+            // router on the app and the actual child routers are inside its `handle.stack`.
+            const routesTopLayer = (_b = (_a = testApp._router) === null || _a === void 0 ? void 0 : _a.stack) === null || _b === void 0 ? void 0 : _b.find((layer) => { var _a; return layer.name === "router" && ((_a = layer.handle) === null || _a === void 0 ? void 0 : _a.stack); });
+            const oauthLayer = (_d = (_c = routesTopLayer === null || routesTopLayer === void 0 ? void 0 : routesTopLayer.handle) === null || _c === void 0 ? void 0 : _c.stack) === null || _d === void 0 ? void 0 : _d.find((layer) => { var _a, _b; return layer.name === "router" && ((_b = (_a = layer.regexp) === null || _a === void 0 ? void 0 : _a.source) === null || _b === void 0 ? void 0 : _b.includes("oauth")); });
+            expect(oauthLayer).toBeDefined();
+            // Clean the prefix like the debug route does
+            const prefix = (((_e = oauthLayer === null || oauthLayer === void 0 ? void 0 : oauthLayer.regexp) === null || _e === void 0 ? void 0 : _e.source) || "")
+                .replace("\\/?", "")
+                .replace("(?=\\/|$)", "")
+                .replace(/\\/g, "");
+            const cleaned = prefix.replace(/\^|\$|\(|\)|\?=|\\/g, "");
+            const base = (cleaned.startsWith("/") ? cleaned : "/" + cleaned).replace(/\/\//g, "/");
+            // Find the token route inside oauth router
+            const postRoute = (_f = oauth_google_routes_1.default.stack) === null || _f === void 0 ? void 0 : _f.find((l) => { var _a; return ((_a = l.route) === null || _a === void 0 ? void 0 : _a.path) === "/google/token"; });
+            expect(postRoute).toBeDefined();
+            // TS guard - now postRoute is defined
+            const combined = `${base}${postRoute.route.path}`.replace(/\/\//g, "/");
+            expect(combined).toBe("/api/oauth/google/token");
         });
     });
 });

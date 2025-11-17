@@ -17,6 +17,7 @@ const jwtAuth_1 = require("../jwtAuth");
 require("../../../04_factories/di");
 const tsyringe_1 = require("tsyringe");
 const UserController_1 = require("../../../03_adapters/controllers/UserController");
+console.log("📥 Importing profile.routes");
 const router = express_1.default.Router();
 const userController = tsyringe_1.container.resolve(UserController_1.UserController);
 router.get("/profile", jwtAuth_1.authenticateJWT, (req, res) => __awaiter(void 0, void 0, void 0, function* () {

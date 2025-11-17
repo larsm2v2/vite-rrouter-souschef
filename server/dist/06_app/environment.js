@@ -20,5 +20,9 @@ function validateEnvironment() {
             throw new Error(`${varName} is not defined in .env`);
         }
     });
+    // Warn if no encryption key is present - this will break token storage
+    if (!process.env.ENCRYPTION_KEY && !process.env.DB_ENCRYPTION_KEY) {
+        console.error("⚠️ Missing encryption key — OAuth tokens will fail unless ENCRYPTION_KEY or DB_ENCRYPTION_KEY is set");
+    }
     console.log("✅ Environment variables validated successfully.");
 }

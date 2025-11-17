@@ -16,6 +16,7 @@ const tsyringe_1 = require("tsyringe");
 const MealPlanController_1 = require("../../../03_adapters/controllers/MealPlanController");
 const ShoppingListController_1 = require("../../../03_adapters/controllers/ShoppingListController");
 const RecipeActivityController_1 = require("../../../03_adapters/controllers/RecipeActivityController");
+console.log("📥 Importing profileFeatures.routes");
 const router = (0, express_1.Router)();
 // Apply authentication to all routes in this router
 router.use(jwtAuth_1.authenticateJWT);

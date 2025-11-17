@@ -8,11 +8,9 @@ steps:
   - name: "alpine"
     id: "check-dockerfile"
     args:
-      [
-        "sh",
-        "-c",
-        "if [ ! -f Dockerfile ]; then echo '❌ Missing Dockerfile'; exit 1; fi",
-      ]
+      - "sh"
+      - "-c"
+      - "if [ ! -f Dockerfile ]; then echo '❌ Missing Dockerfile'; exit 1; fi"
 
   # 1. Build Docker image
   - name: "gcr.io/cloud-builders/docker"
@@ -35,24 +33,24 @@ steps:
     id: "deploy-cloud-run"
     entrypoint: "gcloud"
     args:
-      [
-        "run",
-        "deploy",
-        "souschef-api",
-        "--image",
-        "gcr.io/$PROJECT_ID/souschef-api",
-        "--region",
-        "us-central1",
-        "--platform",
-        "managed",
-        "--port",
-        "8080",
-        "--service-account",
-        "souschef-api@$PROJECT_ID.iam.gserviceaccount.com",
-        "--set-secrets",
-        "API_KEY=API_KEY:latest,CLIENT_URL=CLIENT_URL:latest,CSRF_SECRET=CSRF_SECRET:latest,DB_ENCRYPTION_KEY=DB_ENCRYPTION_KEY:latest,GOOGLE_ACCESS_TOKEN_URL=GOOGLE_ACCESS_TOKEN_URL:latest,GOOGLE_CALLBACK_URL=GOOGLE_CALLBACK_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GOOGLE_OAUTH_URL=GOOGLE_OAUTH_URL:latest,GOOGLE_TOKEN_INFO_URL=GOOGLE_TOKEN_INFO_URL:latest,JWT_ACCESS_EXPIRATION=JWT_ACCESS_EXPIRATION:latest,JWT_REFRESH_EXPIRATION=JWT_REFRESH_EXPIRATION:latest,JWT_SECRET=JWT_SECRET:latest,NODE_ENV=NODE_ENV:latest,PG_DATABASE=PG_DATABASE:latest,PG_HOST=PG_HOST:latest,PG_PASSWORD=PG_PASSWORD:latest,PG_PORT=PG_PORT:latest,PG_URL=PG_URL:latest,PG_USER=PG_USER:latest,RUN_MIGRATIONS=RUN_MIGRATIONS:latest,SESSION_SECRET=SESSION_SECRET:latest,VITE_API_URL=VITE_API_URL:latest",
-        "--allow-unauthenticated",
-      ]
+      - "run"
+      - "deploy"
+      - "souschef-api"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/souschef-api"
+      - "--region"
+      - "us-central1"
+      - "--platform"
+      - "managed"
+      - "--port"
+      - "8080"
+      - "--service-account"
+      - "souschef-api@$PROJECT_ID.iam.gserviceaccount.com"
+      - "--set-secrets"
+      - "API_KEY=API_KEY:latest,CLIENT_URL=CLIENT_URL:latest,CSRF_SECRET=CSRF_SECRET:latest,DB_ENCRYPTION_KEY=DB_ENCRYPTION_KEY:latest,GOOGLE_ACCESS_TOKEN_URL=GOOGLE_ACCESS_TOKEN_URL:latest,GOOGLE_CALLBACK_URL=GOOGLE_CALLBACK_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,GOOGLE_OAUTH_URL=GOOGLE_OAUTH_URL:latest,GOOGLE_TOKEN_INFO_URL=GOOGLE_TOKEN_INFO_URL:latest,JWT_ACCESS_EXPIRATION=JWT_ACCESS_EXPIRATION:latest,JWT_REFRESH_EXPIRATION=JWT_REFRESH_EXPIRATION:latest,JWT_SECRET=JWT_SECRET:latest,NODE_ENV=NODE_ENV:latest,PG_DATABASE=PG_DATABASE:latest,PG_HOST=PG_HOST:latest,PG_PASSWORD=PG_PASSWORD:latest,PG_PORT=PG_PORT:latest,PG_URL=PG_URL:latest,PG_USER=PG_USER:latest,RUN_MIGRATIONS=RUN_MIGRATIONS:latest,SESSION_SECRET=SESSION_SECRET:latest,VITE_API_URL=VITE_API_URL:latest"
+      - "--allow-unauthenticated"
+      - "--set-env-vars"
+      - "RUN_MIGRATIONS=true"
 
     # 4. Wait for the expected routes to appear on the deployed service. This helps
     # catch issues where a revision starts but some routers or modules are not yet
@@ -76,6 +74,22 @@ steps:
         done
         echo "Timed out waiting for oauth route to appear" >&2
         exit 1
+  # After deploy and once migrations are applied, toggle the RUN_MIGRATIONS flag
+  # off so future restarts don't re-run migrations unintentionally.
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "disable-run-migrations"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "services"
+      - "update"
+      - "souschef-api"
+      - "--region"
+      - "us-central1"
+      - "--platform"
+      - "managed"
+      - "--update-env-vars"
+      - "RUN_MIGRATIONS=false"
 images:
   - "gcr.io/$PROJECT_ID/souschef-api"
 

@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const supertest_1 = __importDefault(require("supertest"));
-const app_1 = __importDefault(require("../../../app"));
+const index_1 = require("../../../05_frameworks/index");
 const connection_1 = __importDefault(require("../../../05_frameworks/database/connection"));
 const schema_1 = require("../../../05_frameworks/database/schema");
 describe("Authentication Routes", () => {
@@ -36,7 +36,7 @@ describe("Authentication Routes", () => {
     }));
     describe("GET /auth/google", () => {
         it("should redirect to Google OAuth", () => __awaiter(void 0, void 0, void 0, function* () {
-            const res = yield (0, supertest_1.default)(app_1.default).get("/auth/google");
+            const res = yield (0, supertest_1.default)(index_1.app).get("/auth/google");
             expect([302, 404]).toContain(res.status);
             if (res.status === 302) {
                 expect(res.header.location).toMatch(/accounts\.google\.com/);
@@ -46,14 +46,14 @@ describe("Authentication Routes", () => {
     describe("GET /auth/google/callback", () => {
         it("should handle the OAuth callback successfully (mocked)", () => __awaiter(void 0, void 0, void 0, function* () {
             // This test assumes passport.authenticate is mocked at runtime if needed
-            const res = yield (0, supertest_1.default)(app_1.default)
+            const res = yield (0, supertest_1.default)(index_1.app)
                 .get("/auth/google/callback")
                 .query({ code: "mock_code", state: "mock_state" });
             // We expect some redirect, a not-found, or common error statuses (actual behavior depends on passport/setup)
             expect([302, 400, 401, 404, 500]).toContain(res.status);
         }));
         it("should handle OAuth callback failure", () => __awaiter(void 0, void 0, void 0, function* () {
-            const res = yield (0, supertest_1.default)(app_1.default)
+            const res = yield (0, supertest_1.default)(index_1.app)
                 .get("/auth/google/callback")
                 .query({ error: "access_denied" });
             expect([302, 401, 400, 404]).toContain(res.status);

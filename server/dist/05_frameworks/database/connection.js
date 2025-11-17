@@ -199,8 +199,14 @@ function createPool() {
                 socket.on("error", (err) => finish("error", { message: err.message, code: err.code }));
             });
         }
-        // Run probes asynchronously, don't block pool creation
-        runConnectionProbes().catch((err) => console.error("runConnectionProbes error:", err));
+        // Run probes asynchronously, don't block pool creation.
+        // These probes may log messages about DB reachability; in test
+        // environments that run many short-lived processes they can cause
+        // "Cannot log after tests are done" warnings if they finish after
+        // Jest has torn down. Skip the probes in test envs to avoid this.
+        if (!isTestEnv) {
+            runConnectionProbes().catch((err) => console.error("runConnectionProbes error:", err));
+        }
         // Don't test connection during pool creation to avoid blocking startup.
         // Connection will be tested on first query. This allows the HTTP server
         // to start and become healthy even if DB is temporarily unavailable.

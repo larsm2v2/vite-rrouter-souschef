@@ -17,6 +17,7 @@ const jwtAuth_1 = require("../jwtAuth");
 require("../../../04_factories/di");
 const tsyringe_1 = require("tsyringe");
 const GroceryController_1 = require("../../../03_adapters/controllers/GroceryController");
+console.log("📥 Importing grocery.routes");
 const router = express_1.default.Router();
 const groceryController = tsyringe_1.container.resolve(GroceryController_1.GroceryController);
 router.get("/user/:userId/grocery-list", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {

@@ -17,6 +17,7 @@ const google_oauth_pkce_1 = require("../../auth/google-oauth-pkce");
 const jwt_1 = require("../../../utils/jwt");
 const connection_1 = __importDefault(require("../../database/connection"));
 const crypto_1 = require("../../../utils/crypto");
+console.log("📥 Importing auth-google-pkce.routes");
 const router = (0, express_1.Router)();
 // Test route to verify this router is mounted
 router.get("/test-pkce", (req, res) => {

@@ -39,38 +39,63 @@ index_1.app.get("/ready", (req, res) => {
 });
 // Debug endpoint - shows registered routes
 index_1.app.get("/debug/routes", (req, res) => {
+    var _a, _b, _c;
+    // Walk the middleware stack recursively and collect routes. This is more
+    // robust than the previous implementation which missed nested routers in
+    // some edge cases across environments.
     const routes = [];
-    // Get all routes from the app
-    index_1.app._router.stack.forEach((middleware) => {
-        if (middleware.route) {
-            // Route middleware
-            routes.push({
-                path: middleware.route.path,
-                methods: Object.keys(middleware.route.methods),
-            });
-        }
-        else if (middleware.name === "router") {
-            // Router middleware
-            middleware.handle.stack.forEach((handler) => {
-                if (handler.route) {
-                    const path = middleware.regexp.source
-                        .replace("\\/?", "")
-                        .replace("(?=\\/|$)", "");
+    function walk(stack, basePath = "") {
+        stack.forEach((layer) => {
+            try {
+                if (layer.route) {
+                    // Direct route on app or router
                     routes.push({
-                        path: path + handler.route.path,
-                        methods: Object.keys(handler.route.methods),
+                        path: basePath + (layer.route.path || ""),
+                        methods: Object.keys(layer.route.methods || {}),
                     });
                 }
-            });
-        }
-    });
+                else if (layer.name === "router" &&
+                    layer.handle &&
+                    layer.handle.stack) {
+                    // Router middleware: compute its prefix and dive into children
+                    const prefix = layer.regexp && layer.regexp.source
+                        ? layer.regexp.source
+                            .replace("\\/?", "")
+                            .replace("(?=\\/|$)", "")
+                            .replace(/\\/g, "")
+                        : "";
+                    // If the prefix looks like ^\/api\/oauth\/?(?=\/|$) this will
+                    // convert it to /api/oauth
+                    const cleaned = prefix.replace(/\^|\$|\(|\)|\?=|\\/g, "");
+                    const newBase = (basePath + cleaned).replace(/\/\//g, "/");
+                    // Recurse into this router
+                    walk(layer.handle.stack, newBase);
+                }
+            }
+            catch (ignore) {
+                // Defensive - don't fail debug route because one middleware is odd
+            }
+        });
+    }
+    walk(((_a = index_1.app._router) === null || _a === void 0 ? void 0 : _a.stack) || []);
     res.json({
-        totalMiddleware: index_1.app._router.stack.length,
+        totalMiddleware: ((_c = (_b = index_1.app._router) === null || _b === void 0 ? void 0 : _b.stack) === null || _c === void 0 ? void 0 : _c.length) || 0,
         routes: routes,
     });
 });
+// Debug: list all loaded modules that look like routes to detect tree-shaking
+index_1.app.get("/debug/imported-modules", (req, res) => {
+    try {
+        const modules = Object.keys(require.cache || {}).filter((k) => k.includes("/routes/") || k.includes("\\routes\\"));
+        res.json({ count: modules.length, modules: modules.slice(0, 200) });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
 function startServer() {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         // Start listening immediately so the container becomes healthy for Cloud Run
         // even if database initialization takes time or briefly fails.
         const PORT = process.env.PORT || 8000;
@@ -79,6 +104,40 @@ function startServer() {
             console.log(`Health check available at http://localhost:${PORT}/health`);
             console.log(`Readiness check available at http://localhost:${PORT}/ready`);
         });
+        // Diagnostic: print the full app router paths on startup for Cloud Run logs
+        try {
+            const list = [];
+            (((_a = index_1.app._router) === null || _a === void 0 ? void 0 : _a.stack) || []).forEach((layer) => {
+                var _a;
+                if (layer.route) {
+                    list.push({
+                        type: "route",
+                        path: layer.route.path,
+                        methods: Object.keys(layer.route.methods || {}),
+                    });
+                }
+                else if (layer.name === "router" &&
+                    layer.handle &&
+                    layer.handle.stack) {
+                    // Print a short list of child route paths
+                    const childPaths = (layer.handle.stack || [])
+                        .map((child) => { var _a; return ((_a = child.route) === null || _a === void 0 ? void 0 : _a.path) || child.path; })
+                        .filter(Boolean);
+                    list.push({
+                        type: "router",
+                        prefix: (_a = layer.regexp) === null || _a === void 0 ? void 0 : _a.source,
+                        children: childPaths.slice(0, 10),
+                    });
+                }
+                else {
+                    list.push({ type: layer.name || "unknown" });
+                }
+            });
+            console.log("🔎 App routes snapshot on startup:", JSON.stringify(list, null, 2));
+        }
+        catch (err) {
+            console.error("Failed to list app routes during startup:", err);
+        }
         // Initialize database in the background with retry logic
         const initDB = (...args_1) => __awaiter(this, [...args_1], void 0, function* (retries = 5, delayMs = 2000) {
             for (let attempt = 1; attempt <= retries; attempt++) {

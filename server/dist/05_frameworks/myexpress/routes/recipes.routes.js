@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const generative_ai_1 = require("@google/generative-ai");
 const connection_1 = __importDefault(require("../../database/connection"));
 const jwtAuth_1 = require("../jwtAuth");
+console.log("📥 Importing recipes.routes");
 const router = express_1.default.Router();
 // Initialize Google Generative AI
 const apiKey = process.env.API_KEY;

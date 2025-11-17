@@ -12,28 +12,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const supertest_1 = __importDefault(require("supertest"));
-const index_1 = require("../../../05_frameworks/index");
-const connection_1 = __importDefault(require("../../../05_frameworks/database/connection"));
 const schema_1 = require("../../../05_frameworks/database/schema");
-const test_utils_1 = require("../../test-utils");
-describe("Profile Routes", () => {
-    let testUser;
+const migrations_1 = __importDefault(require("../../../05_frameworks/database/migrations/migrations"));
+const connection_1 = __importDefault(require("../../../05_frameworks/database/connection"));
+describe("Database migrations runner", () => {
     beforeAll(() => __awaiter(void 0, void 0, void 0, function* () {
+        // Ensure base schema exists
         yield (0, schema_1.initializeDatabase)();
-        testUser = yield (0, test_utils_1.createTestUser)();
     }));
     afterAll(() => __awaiter(void 0, void 0, void 0, function* () {
-        yield connection_1.default.query("DELETE FROM users WHERE id = $1", [testUser.id]);
+        // Clean up - drop table if it exists
+        try {
+            yield connection_1.default.query("DROP TABLE IF EXISTS refresh_tokens");
+        }
+        catch (err) {
+            // ignore
+        }
+        yield connection_1.default.end();
     }));
-    describe("GET /profile", () => {
-        it("should return 401 if not authenticated", () => __awaiter(void 0, void 0, void 0, function* () {
-            const res = yield (0, supertest_1.default)(index_1.app).get("/profile");
-            expect(res.status).toBe(401);
-        }));
-        it("should return user profile if authenticated (placeholder)", () => __awaiter(void 0, void 0, void 0, function* () {
-            // This requires session setup or passport mocking. Placeholder for future expansion.
-            expect(true).toBe(true);
-        }));
-    });
+    it("applies refresh token migration", () => __awaiter(void 0, void 0, void 0, function* () {
+        // Run migration runner (idempotent)
+        yield (0, migrations_1.default)();
+        // Verify the table exists
+        const res = yield connection_1.default.query("SELECT EXISTS(SELECT FROM information_schema.tables WHERE table_name='refresh_tokens') as exists");
+        expect(res.rows[0].exists).toBe(true);
+    }), 15000);
 });
