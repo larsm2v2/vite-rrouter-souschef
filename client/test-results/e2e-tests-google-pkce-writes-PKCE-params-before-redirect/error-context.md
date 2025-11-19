@@ -1,0 +1,45 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - progressbar [ref=e5]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e16]:
+            - img [ref=e18]
+            - generic [ref=e23]: Sign in with Google
+          - heading "Authorization Error" [level=1] [ref=e25]
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - 'heading "Error 400: redirect_uri_mismatch" [level=2] [ref=e34]':
+              - generic [ref=e35]: "Error 400: redirect_uri_mismatch"
+            - generic [ref=e38]:
+              - text: You can't sign in to this app because it doesn't comply with Google's OAuth 2.0 policy.
+              - text: If you're the app developer, register the redirect URI in the Google Cloud Console.
+          - link "Learn more" [ref=e40] [cursor=pointer]:
+            - /url: https://developers.google.com/identity/protocols/oauth2/web-server#authorization-errors-redirect-uri-mismatch
+          - heading "Request Details" [level=2] [ref=e43] [cursor=pointer]:
+            - button "Request Details"
+            - generic:
+              - generic:
+                - img
+    - contentinfo [ref=e45]:
+      - combobox "‪English (United States)‬" [ref=e49] [cursor=pointer]:
+        - generic:
+          - generic: ‪English (United States)‬
+        - generic:
+          - img
+      - list [ref=e51]:
+        - listitem [ref=e52]:
+          - link "Help" [ref=e53] [cursor=pointer]:
+            - /url: https://support.google.com/accounts?hl=en&p=account_iph
+        - listitem [ref=e54]:
+          - link "Privacy" [ref=e55] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=US&hl=en&privacy=true
+        - listitem [ref=e56]:
+          - link "Terms" [ref=e57] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=US&hl=en
+  - generic [ref=e59]: Authorization Error
+```

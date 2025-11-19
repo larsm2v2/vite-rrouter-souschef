@@ -1,3 +1,5 @@
+console.log("Loaded GoogleLoginButton from the correct file");
+
 import {
   generateCodeVerifier,
   generateCodeChallenge,
@@ -11,35 +13,41 @@ interface GoogleLoginButtonProps {
   children?: React.ReactNode;
 }
 
-/**
- * Google OAuth Login Button with client-side PKCE
- *
- * This component initiates the OAuth flow entirely in the browser.
- * The PKCE code_verifier never leaves the client.
- */
 export default function GoogleLoginButton({
   className,
   children,
 }: GoogleLoginButtonProps) {
   const handleGoogleLogin = async () => {
+    console.log("LOGIN CLICK FIRED");
     try {
-      // Generate PKCE parameters (CLIENT-SIDE ONLY)
+      // Generate PKCE parameters
       const verifier = generateCodeVerifier();
       const challenge = await generateCodeChallenge(verifier);
       const state = generateState();
 
-      // Store verifier and state in sessionStorage
+      // Synchronously store in sessionStorage
       storePKCEParams(verifier, state);
 
-      // Get configuration from environment
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/auth/callback`;
-
-      if (!clientId) {
-        throw new Error("VITE_GOOGLE_CLIENT_ID is not configured");
-      }
+      // Diagnostics
+      console.debug("WRITING PKCE", { verifierLength: verifier.length, state });
+      console.debug("STORAGE NOW:", {
+        session: {
+          verifier: sessionStorage.getItem("pkce_verifier") ? "present" : null,
+          state: sessionStorage.getItem("oauth_state") ? "present" : null,
+          length: sessionStorage.length,
+        },
+        local: {
+          verifier: localStorage.getItem("pkce_verifier") ? "present" : null,
+          state: localStorage.getItem("oauth_state") ? "present" : null,
+          length: localStorage.length,
+        },
+      });
 
       // Build OAuth URL
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) throw new Error("VITE_GOOGLE_CLIENT_ID is not configured");
+
+      const redirectUri = `${window.location.origin}/auth/callback`;
       const authUrl = buildGoogleAuthUrl({
         clientId,
         redirectUri,
@@ -47,7 +55,7 @@ export default function GoogleLoginButton({
         state,
       });
 
-      // Redirect to Google OAuth
+      // Redirect immediately AFTER sessionStorage write
       window.location.href = authUrl;
     } catch (error) {
       console.error("Failed to initiate Google login:", error);

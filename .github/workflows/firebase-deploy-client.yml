@@ -1,0 +1,53 @@
+name: Firebase Deploy Client
+
+on:
+    push:
+        branches: [main]
+
+permissions:
+    contents: read
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+              working-directory: client
+              env:
+                  VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+            - name: Build client
+              run: npm run build --if-present
+              working-directory: client
+              env:
+                  VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+            - name: Deploy to Firebase Hosting
+              run: npx firebase-tools deploy --project "${{ secrets.FIREBASE_PROJECT }}" --token "${{ secrets.FIREBASE_TOKEN }}" --only hosting
+              working-directory: client
+
+            - name: Report deployment URL
+              if: success()
+              run: |
+                  echo "Deployed client for project: ${{ secrets.FIREBASE_PROJECT }}"
+                  echo "If you configured a custom domain, visit your hosting domain to verify the site."
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps
+              working-directory: client
+
+            - name: Run Playwright E2E against deployed site
+              env:
+                  PLAYWRIGHT_BASE_URL: "https://${{ secrets.FIREBASE_PROJECT }}.web.app"
+                  VITE_API_URL: ${{ secrets.VITE_API_URL }}
+              run: npx playwright test --reporter=github
+              working-directory: client
