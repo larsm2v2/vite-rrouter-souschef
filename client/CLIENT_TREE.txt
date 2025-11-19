@@ -1,0 +1,62 @@
+client/
+├─ .env
+├─ .env.development
+├─ .env.example
+├─ .gitignore
+├─ dist/
+├─ e2e/
+│  ├─ playwright.config.ts
+│  └─ tests/
+│     └─ google-pkce.spec.ts
+├─ eslint.config.js
+├─ index.html
+├─ node_modules/
+├─ package-lock.json
+├─ package.json
+├─ public/
+├─ README.md
+├─ src/
+│  ├─ App.css
+│  ├─ App.tsx
+│  ├─ assets/
+│  │  ├─ assets.tsx
+│  │  ├─ Chef.css
+│  │  └─ Chef.tsx
+│  ├─ components/
+│  │  ├─ assets/
+│  │  ├─ auth/
+│  │  │  ├─ GoogleCallback.tsx
+│  │  │  ├─ GoogleLoginButton.tsx
+│  │  │  └─ ProtectedRoute.tsx
+│  │  ├─ FormInputs/
+│  │  ├─ layout/
+│  │  ├─ Models/
+│  │  ├─ Navbar/
+│  │  ├─ pages/
+│  │  │  ├─ ApiRequest.tsx
+│  │  │  ├─ ApiRequests_Specific.tsx
+│  │  │  ├─ Client.tsx
+│  │  │  ├─ Login.css
+│  │  │  ├─ Login.tsx
+│  │  │  ├─ Profile.css
+│  │  │  ├─ Profile.tsx
+│  │  │  ├─ RecipesPage.tsx
+│  │  │  └─ SousChefPage.tsx
+│  │  ├─ RecipeDisplay/
+│  │  ├─ Recipes/
+│  │  ├─ ShoppingList/
+│  │  ├─ Sidebar/
+│  │  ├─ SousChef/
+│  │  └─ Thumbnail/
+│  ├─ contexts/
+│  ├─ index.css
+│  ├─ main.tsx
+│  ├─ oldApp.tsx
+│  ├─ utils/
+│  │  └─ pkce.ts
+│  └─ vite-env.d.ts
+├─ test-results/
+├─ tsconfig.app.json
+├─ tsconfig.json
+├─ tsconfig.node.json
+└─ vite.config.ts

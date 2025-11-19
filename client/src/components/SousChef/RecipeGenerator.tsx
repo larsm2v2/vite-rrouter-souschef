@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useImperativeHandle, forwardRef, useEffect } from "react";
 import { preprompt } from "../Models/Prompts";
 import axios from "axios";
 import "./RecipeGenerator.css";
@@ -13,7 +13,11 @@ type GeneratedRecipe = {
   [k: string]: unknown;
 };
 
-const RecipeGenerator: React.FC = () => {
+export type PrefillHandle = {
+  prefillRecipe: (parsed: GeneratedRecipe) => void;
+};
+
+const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
   const [cuisine, setCuisine] = useState("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState("");
   const [knownIngredients, setKnownIngredients] = useState("");
@@ -23,6 +27,57 @@ const RecipeGenerator: React.FC = () => {
   const [generatedRecipe, setGeneratedRecipe] =
     useState<GeneratedRecipe | null>(null);
   const [error, setError] = useState("");
+
+  // Expose an imperative handle to allow modal/import to prefill
+  useImperativeHandle(ref, () => ({
+    prefillRecipe(parsed: GeneratedRecipe) {
+      setGeneratedRecipe(parsed);
+      if (parsed.cuisine && typeof parsed.cuisine === "string")
+        setCuisine(parsed.cuisine);
+      // Simple heuristic: flatten ingredient names into knownIngredients textarea
+      try {
+        const ingLines: string[] = [];
+        Object.values(parsed.ingredients || {}).forEach(
+          (arr: Array<Record<string, unknown>>) => {
+            (arr || []).forEach((it: Record<string, unknown>) => {
+              if (it && it.name) ingLines.push(String(it.name));
+            });
+          }
+        );
+        if (ingLines.length) setKnownIngredients(ingLines.join("\n"));
+      } catch {
+        console.warn("Failed to prefill ingredients from parsed recipe");
+      }
+    },
+  }));
+
+  // Also listen for global OCR import events (dispatched by OCRModal)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent;
+      const parsed = ce.detail as GeneratedRecipe;
+      if (!parsed) return;
+      setGeneratedRecipe(parsed);
+      if (parsed.cuisine && typeof parsed.cuisine === "string")
+        setCuisine(parsed.cuisine);
+      try {
+        const ingLines: string[] = [];
+        Object.values(parsed.ingredients || {}).forEach(
+          (arr: Array<Record<string, unknown>>) => {
+            (arr || []).forEach((it: Record<string, unknown>) => {
+              if (it && it.name) ingLines.push(String(it.name));
+            });
+          }
+        );
+        if (ingLines.length) setKnownIngredients(ingLines.join("\n"));
+      } catch {
+        console.warn("Failed to prefill ingredients from parsed recipe");
+      }
+    };
+    window.addEventListener("ocr:import", handler as EventListener);
+    return () =>
+      window.removeEventListener("ocr:import", handler as EventListener);
+  }, []);
 
   const generateRecipe = async () => {
     setLoading(true);
@@ -225,6 +280,6 @@ const RecipeGenerator: React.FC = () => {
       )}
     </div>
   );
-};
+});
 
 export default RecipeGenerator;

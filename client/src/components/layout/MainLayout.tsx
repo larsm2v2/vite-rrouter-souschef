@@ -3,6 +3,9 @@ import { RecipeModel } from "../Models/Models"; // Adjust the path as needed
 import { Outlet } from "react-router-dom";
 import Navbar from "../Navbar/Navbar";
 import Sidebar from "../Sidebar/Sidebar";
+import FloatingActionButton from "../common/FloatingActionButton";
+import OCRModal from "../common/OCRModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 const MainLayout = () => {
   const [sidebarToggled, setSidebarToggled] = useState(false);
@@ -48,6 +51,12 @@ const MainLayout = () => {
     return () => window.removeEventListener("scroll", navbarFixedTop);
   }, []);
 
+  const { user } = useAuth() || { user: null };
+  const [showOcrModal, setShowOcrModal] = useState(false);
+
+  const openOcr = () => setShowOcrModal(true);
+  const closeOcr = () => setShowOcrModal(false);
+
   return (
     <Fragment>
       <nav className="nav-items" id="App-navbar">
@@ -74,6 +83,9 @@ const MainLayout = () => {
             }}
           />
         </div>
+        {/* Floating action and OCR modal mounted at layout level */}
+        {user && <FloatingActionButton onOpen={openOcr} />}
+        <OCRModal isOpen={showOcrModal} onClose={closeOcr} />
       </div>
     </Fragment>
   );
