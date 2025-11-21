@@ -1,4 +1,4 @@
-FROM node:18-alpine AS build
+FROM node:18-bullseye AS build
 WORKDIR /app
 
 # Install dependencies
@@ -12,7 +12,7 @@ RUN npm install --no-audit --no-fund --unsafe-perm
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine AS runtime
+FROM node:18-bullseye AS runtime
 WORKDIR /app
 
 # Copy package files and install production dependencies
@@ -25,6 +25,5 @@ COPY --from=build /app/dist ./dist
 ENV NODE_ENV=production
 # Cloud Run sets PORT to 8080 by default; expose 8080 to match
 EXPOSE 8080
-
 # Start the compiled entrypoint (06_app/main.js)
 CMD ["node", "dist/06_app/main.js"]
