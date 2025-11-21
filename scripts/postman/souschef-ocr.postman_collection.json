@@ -8,11 +8,55 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://your-production-host.example.com",
+      "value": " https://souschef-api-238603140451.us-central1.run.app",
       "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string",
+      "description": "Bearer token for Authorization header"
     }
   ],
   "item": [
+    {
+      "name": "Login (Get token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Save access token from login response to collection variable 'authToken'",
+              "try {",
+              "  const body = pm.response.json();",
+              "  const token = body.accessToken || body.access_token || body.access_token;",
+              "  if (token) { pm.collectionVariables.set('authToken', token); console.log('authToken set'); }",
+              "} catch (e) { console.warn('Failed to set authToken from response', e); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"lawrence.armand@outlook.com\",\n  \"password\": \"living\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "response": []
+    },
     {
       "name": "Parse Text (JSON)",
       "request": {
@@ -21,6 +65,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
           }
         ],
         "body": {
@@ -39,7 +87,12 @@
       "name": "Upload Image (multipart/form-data)",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
         "body": {
           "mode": "formdata",
           "formdata": [
