@@ -1,352 +1,174 @@
 .profile-container {
   display: flex;
-  min-height: 100vh;
-  align-items: center;
+  min-height: 80vh;
+  align-items: flex-start;
   justify-content: center;
-  background-color: #242424;
+  background-color: var(--primary-color);
   color: #f9fafb;
   padding: 1rem;
 }
 
 .profile-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   width: 100%;
-  max-width: 600px;
-  background: #242424;
+  max-width: 720px;
+  background: var(--primary-color);
   border-radius: 0.5rem;
-  box-shadow: var(--shadow);
-  padding: 1rem 2rem;
+
+  padding: 1rem 1.25rem;
 }
 
 .profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   margin-bottom: 1rem;
 }
 
 .avatar {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto .2rem;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 0.5rem;
   border-radius: 50%;
-  background-color: var(--primary);
-  color: white;
+  background-color: var(--tertiary-color);
+  color: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 600;
 }
 
-.profile-header h1 {
-  margin-top: 0.2rem;
+.avatar.large {
+  width: 96px;
+  height: 96px;
+  font-size: 2.25rem;
+}
+
+.initial {
+  display: inline-block;
+}
+
+.profile-meta h1 {
+  margin: 0.25rem 0 0.25rem 0;
   font-size: 1.5rem;
   font-weight: 600;
   color: #f9fafb;
-  margin-bottom: 0.25rem;
 }
 
 .email {
-  color: #f9fafb;
-  font-size: 0.875rem;
-  margin: 0.5rem 0.5rem;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
 }
 
-.logout-button {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background: none;
-  border: 1px solid var(--border);
+.profile-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  padding: 0.45rem 0.7rem;
   border-radius: 0.375rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: #f9fafb;
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.logout-button:hover {
-  background-color: #f3f4f6;
-}
-
-.stats-section {
-  margin-bottom: 2rem;
-}
-
-.stats-section h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #f9fafb;
-  margin-bottom: 1rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.stat-card {
-  padding: 1rem;
-  border: none;
-  border-radius: 0.375rem;
-  text-align: center;
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.stat-card h3 {
-  font-size: 0.875rem;
   font-weight: 500;
-  color: #f9fafb;
+}
+
+.btn.danger {
+  border-color: #7f1d1d;
+  background: #7f1d1d;
+}
+
+.profile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.recipes-summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.recipes-summary h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.count {
+  margin-left: auto;
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.recipe-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  margin-top: 0.5rem;
+}
+
+.recipe-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.6rem;
+  border-radius: 0.375rem;
+  background: #1f1f1f;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+.title {
+  font-weight: 600;
   margin-bottom: 0.25rem;
 }
 
-.stat-card p {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #f9fafb;
+.meta {
+  color: #94a3b8;
+  font-size: 0.85rem;
 }
 
-/* Recent Levels Section */
-.recent-levels-section {
-  margin-bottom: 2rem;
-}
-
-.recent-levels-section h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #f9fafb;
-  margin-bottom: 1rem;
-}
-
-.levels-table {
-  border: 1px solid var(--border);
-  border-radius: 0.375rem;
-  overflow: hidden;
-}
-
-.levels-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  background-color: #333333;
-  font-weight: 600;
-  color: #f9fafb;
-}
-
-.level-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  border-top: 1px solid var(--border);
-  color: #f9fafb;
-}
-
-.level-cell {
-  padding: 0.75rem 1rem;
+.empty {
   display: flex;
-  align-items: center;
-  color: #f9fafb;
-}
-
-.level-action-button {
-  padding: 0.375rem 0.75rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.level-action-button:hover {
-  background-color: var(--primary-hover);
-}
-
-.no-data {
-  text-align: center;
-  color: var(--text-light);
-  padding: 1.5rem;
-  font-style: italic;
-}
-
-.game-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.action-button {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 120px;
-}
-
-.action-button.primary {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-}
-
-.action-button.primary:hover {
-  background-color: var(--primary-hover);
-}
-
-.action-button.secondary {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.action-button.secondary:hover {
-  background-color: #f3f4f6;
-}
-
-.action-button.create {
-  background-color: #10b981; /* Green color for create button */
-  color: white;
-  border: none;
-}
-
-.action-button.create:hover {
-  background-color: #059669;
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .game-actions {
-    flex-direction: column;
-  }
-  
-  .levels-header, .level-row {
-    font-size: 0.875rem;
-  }
-}
-.profile-header {
-  display: flex;
-  flex-direction:column;
   align-items: center;
   justify-content: center;
-}
-
-/* Dark mode overrides for Profile page */
-.profile-header h1,
-.profile-header .email,
-.logout-button {
-  color: #f9fafb;
-}
-
-.stats-section h2,
-.recent-levels-section h2,
-.saved-maps-section h2 {
-  color: #f9fafb;
-}
-
-.levels-header {
-  background-color: #333333;
-}
-
-.profile-container .levels-header,
-.profile-container .level-row,
-.profile-container .level-cell,
-.profile-container .no-data {
-  color: #f9fafb;
-}
-
-.stat-card h3,
-.stat-card p {
-  color: #f9fafb;
-}
-.pagination-button {
-  background-color: #000000;
-  color: #f9fafb;
-  border: none;
-  padding: 0.2rem 0.2rem 0.2rem 0.2rem;
-  border-radius: 0.375rem;
-  margin: 0.5rem 0.5rem 0.5rem 0.5rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-.pagination-button:hover {
-  background-color: #f3f3f3;
-  color: #000000;
-}
-.pagination-button:disabled {
-  background-color: #555555;
-  color: #777777;
-  cursor: default;
-}
-.action-button.primary,
-.action-button.secondary,
-.action-button.create {
-  color: #f9fafb;
-}
-
-/* Saved Maps button styled for dark mode */
-.saved-maps-button {
-  background-color: #242424;
-  border: none;
-  color: #f9fafb;
-}
-.saved-maps-button:hover {
-  background-color: #333333;
-}
-
-/* Level grid styles */
-.level-grid-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #333333;
   padding: 1rem;
-  border-radius: 0.375rem;
-  color: #f9fafb;
+  text-align: center;
+  color: #94a3b8;
 }
-.level-grid-container h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.875rem;
+
+.loading {
+  padding: 1rem;
+  text-align: center;
 }
-.levels-grid {
-  display: grid;
-  gap: 0.5rem;
-  width: 100%;
-  grid-template-columns: repeat(5, 1fr);
-}
-.level-light {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: none;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  transition: transform 0.15s ease;
-}
-.level-light.locked {
-  background-color: #555555;
-  color: #777777;
-  cursor: default;
-}
-.level-light.completed {
-  background-color: #ff4081; /* pink */
-  color: #ffffff;
-  cursor: pointer;
-}
-.level-light.perfect {
-  background-color: #ffeb3b; /* yellow */
-  color: #000000;
-  box-shadow: 0 0 6px #ffeb3b;
-  cursor: pointer;
-}
-.level-light.completed:hover,
-.level-light.perfect:hover {
-  transform: scale(1.1);
+
+@media (max-width: 640px) {
+  .profile-card {
+    padding: 0.75rem;
+  }
+  .avatar.large {
+    width: 72px;
+    height: 72px;
+  }
+  .recipe-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

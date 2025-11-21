@@ -345,13 +345,6 @@ const Login = () => {
         <div className="oauth-providers">
           <GoogleLoginButton />
         </div>
-        {import.meta.env.VITE_DEV_BYPASS === "true" && (
-          <div style={{ marginTop: 12 }}>
-            <a href="/dev-login" className="dev-login-link">
-              Dev: Simulate Sign In
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

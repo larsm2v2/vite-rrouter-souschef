@@ -5,15 +5,25 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg,#ff7a18,#af002d);
-  color: white;
+  background: linear-gradient(
+    to right,
+    var(--primary-color) 0%,
+    var(--primary-hover-color) 110%
+  );
+  color: var(--tertiary-color);
   border: none;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 18px var(--primary-color);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
-.fab-button:active { transform: scale(0.98); }
-.fab-plus { font-size: 28px; line-height: 0; }
+.fab-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 0 12px rgb(171, 172, 96), 0 0 24px rgb(171, 172, 96);
+}
+.fab-plus {
+  font-size: 28px;
+  line-height: 0;
+}

@@ -7,11 +7,16 @@ import "../Sidebar/Sidebar.css";
 interface NavbarProps {
   sidebarToggled: boolean;
   setSidebarToggled: React.Dispatch<React.SetStateAction<boolean>>;
-  setActiveContent?: React.Dispatch<React.SetStateAction<"recipes" | "sousChef">>;
+  setActiveContent?: React.Dispatch<
+    React.SetStateAction<"recipes" | "sousChef">
+  >;
   setRecipeToDisplay?: React.Dispatch<React.SetStateAction<RecipeModel | null>>;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ sidebarToggled }) => {
+const Navbar: React.FC<NavbarProps> = ({
+  sidebarToggled,
+  setSidebarToggled,
+}) => {
   // Toggle handler is provided by parent via setSidebarToggled; helper removed to avoid unused function
 
   const navOpenClose = useCallback(
@@ -32,11 +37,9 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarToggled }) => {
   }, [sidebarToggled, navOpenClose]); // This useEffect depends on sidebarToggled
 
   function openNav() {
-    const sidebarWidth: string = "50vw";
-    const sidebarWidthSmall: string = "80vw";
     const sidebar = document.getElementById("App-sidebar");
     if (sidebar) {
-      sidebar.style.width = sidebarWidth;
+      // Let CSS handle widths via the `.open` class and media queries.
       const navbar = document.getElementById("App-navbar");
       if (navbar) {
         const navbarHeight = navbar.offsetHeight;
@@ -44,10 +47,6 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarToggled }) => {
           "--navbar-height",
           `${navbarHeight}px`
         );
-      }
-
-      if (window.innerWidth <= 480) {
-        sidebar.style.width = sidebarWidthSmall;
       }
       sidebar.classList.add("open");
     }
@@ -61,7 +60,28 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarToggled }) => {
   }
 
   return (
-    <nav className={"nav"}>
+    <>
+      {sidebarToggled && (
+        <div
+          className="sidebar-backdrop"
+          role="button"
+          aria-label="Close sidebar"
+          onClick={() => setSidebarToggled(false)}
+        />
+      )}
+      <nav className={"nav"}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <button
+          className={`sidebar-toggle ${sidebarToggled ? "open" : ""}`}
+          aria-controls="App-sidebar"
+          aria-label={sidebarToggled ? "Close sidebar" : "Open sidebar"}
+          aria-expanded={sidebarToggled}
+          onClick={() => setSidebarToggled((s) => !s)}
+        >
+          ☰
+        </button>
+      </div>
+
       <ul>
         <li>
           <Link to="/recipes">myRecipes</Link>
@@ -77,6 +97,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarToggled }) => {
         </li>
       </ul>
     </nav>
+    </>
   );
 };
 
