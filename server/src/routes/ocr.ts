@@ -18,6 +18,9 @@ router.post("/ocr", upload.single("image"), async (req, res) => {
     const id = Date.now().toString(36);
     const destDir = path.join(process.cwd(), "data/ocr");
     fs.mkdirSync(destDir, { recursive: true });
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
     const destPath = path.join(destDir, `${id}_${file.originalname}`);
     fs.renameSync(file.path, destPath);
 
@@ -37,12 +40,35 @@ router.post("/ocr", upload.single("image"), async (req, res) => {
   }
 });
 
+// POST /api/ocr/parse - accept JSON { text } and return parsed recipe
+router.post("/ocr/parse", async (req, res) => {
+  try {
+    const ocrText = (req.body && (req.body.text || req.body.ocrText)) || "";
+
+    // Minimal structured response: server-side parsing heuristics can be added later
+    const parsed = {
+      name: undefined,
+      cuisine: undefined,
+      ingredients: { "from-ocr": [] },
+      instructions: [{ number: 1, text: ocrText }],
+      notes: ["Parsed via /ocr/parse"],
+    };
+
+    res.json({ parsed, text: ocrText });
+  } catch (err) {
+    console.error("/ocr/parse error:", err);
+    res.status(500).json({ message: "Parse failed" });
+  }
+});
+
 // GET /api/ocr/gallery - list files
 router.get("/ocr/gallery", async (_req, res) => {
   try {
     const dir = path.join(process.cwd(), "data/ocr");
     if (!fs.existsSync(dir)) return res.json([]);
-    const files = fs.readdirSync(dir).map((name) => ({ id: name, originalUrl: `/data/ocr/${name}` }));
+    const files = fs
+      .readdirSync(dir)
+      .map((name) => ({ id: name, originalUrl: `/data/ocr/${name}` }));
     res.json(files);
   } catch (err) {
     console.error(err);

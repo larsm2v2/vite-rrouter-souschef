@@ -3,13 +3,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
+  padding: 2vw 1vw;
   box-sizing: border-box;
   width: 90%;
 }
 .souschef-prompt {
   width: 100%; /* Take full width on all screens */
-  padding: 0rem 0rem; /* More spacing for smaller screens */
+  padding: 0 0; /* More spacing for smaller screens */
   margin: 0; /* Remove margin */
   display: flex;
   flex-direction: column;
@@ -171,10 +171,10 @@ p {
 }
 
 /* Media Queries for Different Screen Sizes */
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   /* Adjust breakpoint as needed */
   .souschef-prompt {
-    padding: 0rem 0rem; /* More padding on larger screens */
+    padding: 0 0; /* More padding on larger screens */
   }
 
   .askAwayPrompt,

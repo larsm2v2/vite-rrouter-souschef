@@ -70,33 +70,48 @@ const Navbar: React.FC<NavbarProps> = ({
         />
       )}
       <nav className={"nav"}>
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <button
-          className={`sidebar-toggle ${sidebarToggled ? "open" : ""}`}
-          aria-controls="App-sidebar"
-          aria-label={sidebarToggled ? "Close sidebar" : "Open sidebar"}
-          aria-expanded={sidebarToggled}
-          onClick={() => setSidebarToggled((s) => !s)}
-        >
-          ☰
-        </button>
-      </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            className={`sidebar-toggle ${sidebarToggled ? "open" : ""}`}
+            aria-controls="App-sidebar"
+            aria-label={sidebarToggled ? "Close sidebar" : "Open sidebar"}
+            aria-expanded={sidebarToggled}
+            onClick={() => setSidebarToggled((s) => !s)}
+          >
+            ☰
+          </button>
+        </div>
 
-      <ul>
-        <li>
-          <Link to="/recipes">myRecipes</Link>
-        </li>
-        <li>
-          <Link to="/sous-chef">mySousChef</Link>
-        </li>
-        <li>
-          <Link to="/shoppingList">myShoppingList</Link>
-        </li>
-        <li>
-          <Link to="/profile">Profile</Link>
-        </li>
-      </ul>
-    </nav>
+        <ul className="nav-links">
+          <li>
+            <Link to="/recipes" title="My Recipes" aria-label="My Recipes">
+              <span className="nav-full">myRecipes</span>
+              <span className="nav-compact">R</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/sous-chef" title="My SousChef" aria-label="My SousChef">
+              <span className="nav-full">mySousChef</span>
+              <span className="nav-compact">SC</span>
+            </Link>
+          </li>
+          {/* <li>
+            <Link
+              to="/shoppingList"
+              title="My Shopping List"
+              aria-label="My Shopping List"
+            >
+              <span className="nav-full">myShoppingList</span>
+              <span className="nav-compact">List</span>
+            </Link>
+          </li> */}
+          <li>
+            <Link to="/profile" title="My Profile" aria-label="My Profile">
+              <span className="nav-compact avatar">U</span>
+            </Link>
+          </li>
+        </ul>
+      </nav>
     </>
   );
 };
