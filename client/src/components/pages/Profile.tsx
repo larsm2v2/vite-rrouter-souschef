@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "./Client";
 import "./Profile.css";
@@ -6,358 +6,220 @@ import "./Profile.css";
 interface User {
   id: number;
   display_name: string;
-  email: string;
-  avatar?: string;
+  email?: string;
+  avatar?: string | null;
 }
 
-interface GameStats {
-  current_level?: number;
-  best_combination?: Array<number | null>;
-  min_moves?: Record<number, number | null>;
-  saved_maps?: Array<Record<string, unknown>>;
-  // allow other arbitrary fields the server may include
-  [k: string]: unknown;
+interface RecipeIndexItem {
+  id: number;
+  title: string;
+  created_at?: string;
 }
 
-const Profile = () => {
+const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [stats, setStats] = useState<GameStats | null>(null);
+  const [recipes, setRecipes] = useState<RecipeIndexItem[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  // Levels pagination
-  const levelsPerPage = 25;
-  const [page, setPage] = useState<number>(0);
 
   useEffect(() => {
-    const controller = new AbortController();
-    let isActive = true; // Flag to track if effect is still active
+    let mounted = true;
 
-    const fetchProfile = async () => {
+    const load = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get<{
-          user: User;
-          stats: GameStats;
-        }>("/profile");
+        const profileResp = await apiClient.get<{ user?: User }>("/profile");
+        if (!mounted) return;
+        if (profileResp.data?.user) setUser(profileResp.data.user);
 
-        // Only update state if component is still mounted
-        if (isActive) {
-          // Log the actual response to help with debugging
-          console.log("Profile response:", response.data);
-
-          // Match the server response structure
-          if (response.data.user) {
-            setUser(response.data.user);
-          }
-
-          if (response.data.stats) {
-            // Ensure current_level is at least the number of completed levels
-            const fetchedStats = response.data.stats as GameStats;
-            const comboLength = fetchedStats.best_combination?.length || 0;
-            if ((fetchedStats.current_level ?? 0) < comboLength) {
-              fetchedStats.current_level = comboLength;
-            }
-            setStats(fetchedStats);
-          }
-
-          setLoading(false);
+        try {
+          const r = await apiClient.get<{ items: RecipeIndexItem[] }>(
+            "/api/recipes?owned=true&limit=100"
+          );
+          if (mounted && Array.isArray(r.data?.items)) setRecipes(r.data.items);
+        } catch (err) {
+          console.debug("Profile: unable to fetch recipes index:", err);
+          if (mounted) setRecipes([]);
         }
-      } catch (err: unknown) {
-        const error =
-          (err as
-            | { name?: string; code?: string; message?: string }
-            | undefined) ?? {};
-        // Only handle errors if component is still mounted and error isn't from cancellation
-        if (
-          isActive &&
-          error.name !== "CanceledError" &&
-          error.code !== "ERR_CANCELED"
-        ) {
-          console.error("Failed to fetch profile:", error.message ?? error);
-          navigate("/login");
-        }
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
 
-    fetchProfile();
-
-    // Cleanup function
+    load();
     return () => {
-      isActive = false; // Mark effect as inactive
-      controller.abort(); // Abort any in-flight requests
+      mounted = false;
     };
-  }, [navigate]);
-
-  useEffect(() => {
-    if (stats) {
-      const startIdx = (stats.current_level || 1) - 1;
-      setPage(Math.floor(startIdx / levelsPerPage));
-    }
-  }, [stats]);
+  }, []);
 
   const handleLogout = async () => {
     try {
       await apiClient.post("/auth/logout");
       navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch (err) {
+      console.error("Logout failed:", err);
     }
   };
 
-  // New helper to wipe server stats then start at level 1
-  const handleNewGame = async () => {
-    try {
-      await apiClient.post("/profile/reset-stats");
-      navigate("/game/1", { state: { level: 1 } });
-    } catch (error) {
-      console.error("Failed to reset game stats:", error);
-    }
+  const prettifyName = (raw: string) => {
+    if (!raw) return raw;
+    // Replace common separators with spaces, collapse multiple spaces
+    const parts = raw.replace(/[._\-+]/g, " ").split(/\s+/).filter(Boolean);
+    // Capitalize each word
+    const words = parts.map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+    return words.join(" ");
   };
 
-  // Get the last 5 completed levels based on best_combination
-  const getLastFiveCompletedLevels = () => {
-    if (!stats?.best_combination) return [];
+  const displayName = user
+    ? (user.display_name && user.display_name.trim().length > 0
+        ? user.display_name
+        : user.email
+        ? prettifyName(user.email.split("@")[0])
+        : "User")
+    : "User";
+  const [isEditing, setIsEditing] = useState(false);
+  const [nameInput, setNameInput] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-    // Filter out levels with no completion data
-    const completedLevels = stats.best_combination
-      .map((moves: number | null, index: number) => ({
-        level: index + 1,
-        moves,
-      }))
-      .filter(
-        (item: { level: number; moves: number | null }) =>
-          item.moves !== null && (item.moves ?? 0) > 0
-      );
+  // Keep the input in sync when the user object changes
+  useEffect(() => {
+    setNameInput(displayName || "");
+  }, [displayName]);
 
-    // Return the last 5 levels
-    return completedLevels.slice(-5) as Array<{ level: number; moves: number }>;
-  };
+  if (loading) return <div className="loading">Loading profile...</div>;
 
-  // Calculate progress percent with base and bonuses
-  const calculateProgress = (): string => {
-    if (!stats) return "0%";
-    const bestComb = stats.best_combination ?? [];
-    // Fallback to original level-based if no min_moves data or no best_combination
-    if (!stats.min_moves || bestComb.length === 0) {
-      return `${Math.min(100, ((stats.current_level || 1) / 50) * 100)}%`;
-    }
-    let percent = 0;
-    bestComb.forEach((moves, idx) => {
-      if (moves != null && moves > 0) {
-        const level = idx + 1;
-        // 1% for completion
-        percent += 1;
-        const minMove = stats.min_moves?.[level];
-        if (minMove != null) {
-          const diff = moves - minMove;
-          if (diff === 0) percent += 1;
-        }
-      }
-    });
-    return `${Math.min(percent, 100)}%`;
-  };
-
-  if (loading || !stats) {
-    return <div className="loading">Loading profile...</div>;
-  }
-
-  // Ensure best_combination and min_moves are not null
-  const bestComb: Array<number | null> = stats.best_combination || [];
-  const minMovesMap = stats.min_moves || {};
-
-  const lastFiveLevels = getLastFiveCompletedLevels();
-  // Determine grid dimensions and total levels
-  const totalLevels = Object.keys(minMovesMap).length || bestComb.length || 25;
-  // Compute pagination slices
-  const totalPages = Math.ceil(totalLevels / levelsPerPage);
-  const levelsArray = Array.from({ length: totalLevels }, (_, i) => i + 1);
-  const levelsToShow = levelsArray.slice(
-    page * levelsPerPage,
-    (page + 1) * levelsPerPage
-  );
-  const gridSize = Math.sqrt(totalLevels);
 
   return (
-    <div className="profile-container">
+    <div className="profile-container simple">
       <div className="profile-card">
         <div className="profile-header">
-          <div className="avatar">
-            {user?.display_name.charAt(0).toUpperCase()}
+          <div className="avatar large">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="User avatar" />
+            ) : (
+              <span className="initial">{(displayName?.charAt(0) || "U").toUpperCase()}</span>
+            )}
           </div>
-          <h1>{user?.display_name}</h1>
-          <p className="email">{user?.email}</p>
-          <button onClick={handleLogout} className="logout-button">
-            Sign out
-          </button>
-        </div>
 
-        <div className="stats-section">
-          <h2>Game Statistics</h2>
-          <div className="stats-grid">
-            <StatCard
-              title="Highest Completed Level"
-              value={Math.max((stats?.current_level ?? 1) - 1, 1)}
-              icon="🏆"
-            />
-            <div className="level-grid-container">
-              <h3>Classic Levels (5x5)</h3>
-              <div className="pagination-controls">
-                <button
-                  className="pagination-button"
-                  disabled={page === 0}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Prev
-                </button>
-                <span>
-                  Page {page + 1}/{totalPages}
-                </span>
-                <button
-                  className="pagination-button"
-                  disabled={page + 1 >= totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </button>
-              </div>
-              <div
-                className="levels-grid"
-                style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
-              >
-                {levelsToShow.map((level) => {
-                  const idx = level - 1;
-                  const moves = bestComb[idx];
-                  const minMove = minMovesMap[level];
-
-                  // Determine the next level after last finished, default to 1
-                  const currentToPlay =
-                    stats.current_level != null ? stats.current_level : 1;
-                  // Determine status: locked, completed, perfect, or next
-                  let levelStatus: "locked" | "completed" | "perfect" | "next" =
-                    "locked";
-                  if (moves != null && moves > 0) levelStatus = "completed";
-                  if (moves != null && minMove != null && moves === minMove) {
-                    levelStatus = "perfect";
-                  }
-                  if (levelStatus === "locked" && level === currentToPlay)
-                    levelStatus = "next";
-                  const clickable = levelStatus !== "locked";
-                  return (
-                    <button
-                      key={level}
-                      className={`level-light ${levelStatus}`}
-                      disabled={!clickable}
-                      onClick={
-                        clickable
-                          ? () =>
-                              navigate(`/game/${level}`, { state: { level } })
-                          : undefined
+          <div className="profile-meta">
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {!isEditing ? (
+                <>
+                  <h1 style={{ margin: 0 }}>{displayName}</h1>
+                  <button
+                    className="btn"
+                    onClick={() => setIsEditing(true)}
+                    aria-label="Edit display name"
+                    style={{ padding: "0.25rem 0.5rem", fontSize: "0.9rem" }}
+                  >
+                    Edit
+                  </button>
+                </>
+              ) : (
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    aria-label="Display name"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    style={{ padding: "0.35rem 0.5rem", borderRadius: 6 }}
+                    disabled={saving}
+                  />
+                  <button
+                    className="btn"
+                    onClick={async () => {
+                      setSaving(true);
+                      setSaveError(null);
+                      try {
+                        // Persist to server; backend should accept PUT /profile { display_name }
+                        await apiClient.put("/profile", { display_name: nameInput });
+                        // Update local user state
+                        setUser((prev) => (prev ? { ...prev, display_name: nameInput } : prev));
+                        setIsEditing(false);
+                      } catch (err: unknown) {
+                        console.error("Failed to save display name:", err);
+                        const maybeErr = err as { message?: unknown } | undefined;
+                        const msg = maybeErr && typeof maybeErr.message === "string"
+                          ? maybeErr.message
+                          : String(err ?? "Save failed");
+                        setSaveError(msg);
+                      } finally {
+                        setSaving(false);
                       }
-                    >
-                      {level}
-                    </button>
-                  );
-                })}
-              </div>
+                    }}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setNameInput(displayName || "");
+                      setSaveError(null);
+                    }}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              className="stat-card saved-maps-button"
-              onClick={() => navigate("/saved-maps")}
-            >
-              <div className="stat-icon">🗺️</div>
-              <h3>Saved Maps</h3>
-              <p>{stats?.saved_maps?.length || 0}</p>
+
+            {user?.email && <p className="email">{user.email}</p>}
+            {saveError && <p style={{ color: "#ffb4b4", marginTop: 6 }}>{saveError}</p>}
+          </div>
+
+          <div className="profile-actions">
+            <button className="btn" onClick={() => navigate("/settings")}>
+              Settings
             </button>
-            <StatCard title="Progress" value={calculateProgress()} icon="📈" />
+            <button className="btn danger" onClick={handleLogout}>
+              Sign out
+            </button>
+          </div>
+          <div className="profile-actions">
+            <button className="btn" onClick={() => navigate("/recipes")}>
+              My Recipes
+            </button>
+            <button className="btn" onClick={() => navigate("/favorites")}>
+              Favorites
+            </button>
           </div>
         </div>
-        <div className="game-actions">
-          <button
-            className="action-button primary"
-            onClick={() =>
-              navigate(`/game/${stats?.current_level || 1}`, {
-                state: { level: stats?.current_level || 1 },
-              })
-            }
-          >
-            Continue Game
-          </button>
-          <button className="action-button secondary" onClick={handleNewGame}>
-            New Game
-          </button>
-          <button
-            className="action-button create"
-            onClick={() => navigate("/create-puzzle")}
-          >
-            Create Puzzle
-          </button>
-        </div>
-        <div className="recent-levels-section">
-          <h2>Recent Level Completions</h2>
-          {lastFiveLevels.length > 0 ? (
-            <div className="levels-table">
-              <div className="levels-header">
-                <div className="level-cell">Level</div>
-                <div className="level-cell">Moves</div>
-                <div className="level-cell">Action</div>
-              </div>
-              {lastFiveLevels.map((levelData) => (
-                <div key={levelData.level} className="level-row">
-                  <div className="level-cell">Level {levelData.level}</div>
-                  <div className="level-cell">{levelData.moves} moves</div>
-                  <div className="level-cell">
-                    <button
-                      className="level-action-button"
-                      onClick={() => navigate(`/game/${levelData.level}`)}
-                    >
-                      Replay
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="no-data">
-              No completed levels yet. Start playing to see your stats!
-            </p>
-          )}
-        </div>
 
-        {/* <div className="saved-maps-section">
-          <h2>Saved Maps</h2>
-          {stats?.saved_maps?.length ? (
-            <div className="saved-maps-grid">
-              {stats.saved_maps.map((map: any, idx: number) => (
-                <Thumbnail
-                  key={idx}
-                  pattern={map.pattern}
-                  onClick={() => navigate(`/game/custom/${map.level}`)}
-                />
-              ))}
-            </div>
-          ) : (
-            <p>No saved maps yet.</p>
-          )}
-        </div> */}
+        <div className="profile-body">
+          <div className="recipes-summary">
+            <h2>My Recipes</h2>
+            <p className="count">Total: {recipes.length}</p>
+          </div>
+
+          <div className="recipe-grid">
+            {recipes.length === 0 ? (
+              <div className="empty">No recipes found.</div>
+            ) : (
+              recipes.map((r) => (
+                <button
+                  key={r.id}
+                  className="recipe-tile"
+                  onClick={() => navigate(`/recipes/${r.id}`)}
+                >
+                  <div className="title">{r.title}</div>
+                  <div className="meta">
+                    {r.created_at
+                      ? new Date(r.created_at).toLocaleDateString()
+                      : ""}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
-
-const StatCard = ({
-  title,
-  value,
-  icon,
-}: {
-  title: string;
-  value: string | number;
-  icon: string;
-}) => (
-  <div className="stat-card">
-    <div className="stat-icon">{icon}</div>
-    <h3>{title}</h3>
-    <p>{value}</p>
-  </div>
-);
 
 export default Profile;

@@ -11,7 +11,7 @@ export default function FloatingActionButton({ onOpen }: Props) {
       aria-label="Create Recipe"
       className="fab-button"
       onClick={onOpen}
-      title="Add (OCR)"
+      title="Add (Recipe via OCR/Text)"
     >
       <span className="fab-plus">+</span>
     </button>

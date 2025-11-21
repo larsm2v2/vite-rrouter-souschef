@@ -39,8 +39,6 @@ function SousChefPage() {
 
   return (
     <div className="souschef-page">
-      <RecipeGenerator />
-
       <RecipeDisplay
         savedRecipe={savedRecipe}
         setSavedRecipe={setSavedRecipe}
@@ -61,6 +59,7 @@ function SousChefPage() {
         showAddToSelectedRecipes={showAddToSelectedRecipes}
         setShowAddToSelectedRecipes={setShowAddToSelectedRecipes}
       />
+      <RecipeGenerator />
       <SousChef
         willTryAgain={willTryAgain}
         setWillTryAgain={setWillTryAgain}

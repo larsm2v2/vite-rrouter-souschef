@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react"
-import "./ShoppingList.css"
-import { RecipeModel } from "../Models/Models"
-import EditableList from "./EditableList/EditableList"
-import shoppingListData from "./ShoppingList.json"
-import { ListItem } from "../Models/Models"
-import apiClient from "../pages/Client"
+import React, { useState, useEffect } from "react";
+import "./ShoppingList.css";
+import { RecipeModel } from "../Models/Models";
+import EditableList from "./EditableList/EditableList";
+import shoppingListData from "./ShoppingList.json";
+import { ListItem } from "../Models/Models";
+import apiClient from "../pages/Client";
 
 interface ShoppingListProps {
-	selectedRecipeIds: string[]
+  selectedRecipeIds: string[];
 }
 
 // Fetch recipe by ID (from the imported Recipes.json)
@@ -34,21 +34,21 @@ interface ShoppingListProps {
 	return fixedRecipe as RecipeModel
 } */
 const ShoppingList: React.FC<ShoppingListProps> = ({
-	selectedRecipeIds = [],
+  selectedRecipeIds = [],
 }) => {
-	const [, setRecipeIngredients] = useState<{
-		[recipeId: string]: ListItem[]
-	}>({})
-	const [recipes, setRecipes] = useState<RecipeModel[]>([])
-	const [listItems, setListItems] = useState<ListItem[]>(
-		shoppingListData.map((item) => ({
-			...item,
-			listItem: item.item,
-			isDone: false,
-			toTransfer: false,
-		}))
-	)
-	/* 	const [newItem, setNewItem] = useState<ListItem>({
+  const [, setRecipeIngredients] = useState<{
+    [recipeId: string]: ListItem[];
+  }>({});
+  const [recipes, setRecipes] = useState<RecipeModel[]>([]);
+  const [listItems, setListItems] = useState<ListItem[]>(
+    shoppingListData.map((item) => ({
+      ...item,
+      listItem: item.item,
+      isDone: false,
+      toTransfer: false,
+    }))
+  );
+  /* 	const [newItem, setNewItem] = useState<ListItem>({
 		id: Date.now(),
 		quantity: 0,
 		unit: "",
@@ -56,46 +56,50 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 		isDone: false,
 		toTransfer: false,
 	}) */
-	const [ingredientSynonyms, setIngredientSynonyms] = useState<{
-		[key: string]: string[]
-	}>({})
-	//Clean and Fetch Backend Recipes
-	useEffect(() => {
-		const fetchRecipes = async () => {
-			try {
-				const response = await apiClient.post<{ data: RecipeModel[] }>(`/api/clean-recipes`)
+  const [ingredientSynonyms, setIngredientSynonyms] = useState<{
+    [key: string]: string[];
+  }>({});
+  //Clean and Fetch Backend Recipes
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const response = await apiClient.post<{ data: RecipeModel[] }>(
+          `/api/clean-recipes`
+        );
 
-				if (response.status === 200) {
-					setRecipes(response.data.data) // Update recipes state
-				} else {
-					throw new Error("Failed to fetch recipes.")
-				}
-			} catch (error) {
-				console.error("Error fetching recipes:", error)
-			}
-		}
+        if (response.status === 200) {
+          setRecipes(response.data.data); // Update recipes state
+        } else {
+          throw new Error("Failed to fetch recipes.");
+        }
+      } catch (error) {
+        console.error("Error fetching recipes:", error);
+      }
+    };
 
-		fetchRecipes() // Fetch recipes on component mount
-	}, [])
-	// Fetch Ingredient Synonyms
-	useEffect(() => {
-		const fetchIngredientSynonyms = async () => {
-			try {
-				const response = await apiClient.get<{ [key: string]: string[] }>(`/api/ingredient-synonyms`)
-				if (response.status === 200) {
-					setIngredientSynonyms(response.data)
-				} else {
-					throw new Error("Failed to fetch ingredient synonyms.")
-				}
-			} catch (error) {
-				console.error("Error fetching ingredient synonyms:", error)
-			}
-		}
+    fetchRecipes(); // Fetch recipes on component mount
+  }, []);
+  // Fetch Ingredient Synonyms
+  useEffect(() => {
+    const fetchIngredientSynonyms = async () => {
+      try {
+        const response = await apiClient.get<{ [key: string]: string[] }>(
+          `/api/ingredient-synonyms`
+        );
+        if (response.status === 200) {
+          setIngredientSynonyms(response.data);
+        } else {
+          throw new Error("Failed to fetch ingredient synonyms.");
+        }
+      } catch (error) {
+        console.error("Error fetching ingredient synonyms:", error);
+      }
+    };
 
-		fetchIngredientSynonyms()
-	}, [])
-	// Helper function to consolidate ingredients
-	/* 	const consolidateIngredients = (
+    fetchIngredientSynonyms();
+  }, []);
+  // Helper function to consolidate ingredients
+  /* 	const consolidateIngredients = (
 		listItems: ListItem[],
 		newItems: ListItem[],
 		removingRecipe?: RecipeModel
@@ -132,7 +136,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 			}, [] as ListItem[])
 			.filter((item) => item.quantity > 0) // Remove items with zero quantity
 	} */
-	/* 	const handleAdd = (e: React.FormEvent) => {
+  /* 	const handleAdd = (e: React.FormEvent) => {
 		e.preventDefault()
 		if (newItem.listItem.trim() !== "") {
 			setListItems((prevItems) =>
@@ -148,91 +152,85 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 			})
 		}
 	} */
-	useEffect(() => {
-		const updateShoppingList = async () => {
-			const newRecipeIngredients: { [recipeId: string]: ListItem[] } = {}
-			const validRecipeIds = selectedRecipeIds.filter(
-				(recipeId) => recipeId !== null && recipeId !== ""
-			)
-			await Promise.all(
-				validRecipeIds.map(async (recipeId) => {
-					const recipe = recipes.find((r) => r.id === recipeId)
-					if (recipe) {
-						newRecipeIngredients[recipeId] = Object.values(
-							recipe.ingredients
-						)
-							.flat()
-							.map((ingredient) => {
-								// Check for synonyms
-								const standardizedName = Object.keys(
-									ingredientSynonyms
-								).find((key) => {
-									const normalizedIngredientName =
-										ingredient.name.toLowerCase().trim() // Normalize for better matching
-									// Get the array of synonyms for the current key
-									const synonymsForIngredient =
-										ingredientSynonyms[key]
-									return (
-										Array.isArray(synonymsForIngredient) && // Ensure it's an array
-										synonymsForIngredient.some(
-											(synonym) =>
-												synonym.toLowerCase().trim() ===
-												normalizedIngredientName
-										)
-									)
-								})
-								return {
-									id: Date.now() + Math.random(), // Generate a unique ID
-									quantity: ingredient.quantity || 0,
-									unit: ingredient.unit || "",
-									listItem:
-										standardizedName || ingredient.name,
-									isDone: false,
-									toTransfer: false,
-								}
-							})
-					}
-				})
-			)
+  useEffect(() => {
+    const updateShoppingList = async () => {
+      const newRecipeIngredients: { [recipeId: string]: ListItem[] } = {};
+      const validRecipeIds = selectedRecipeIds.filter(
+        (recipeId) => recipeId !== null && recipeId !== ""
+      );
+      await Promise.all(
+        validRecipeIds.map(async (recipeId) => {
+          const recipe = recipes.find((r) => r.id === recipeId);
+          if (recipe) {
+            newRecipeIngredients[recipeId] = Object.values(recipe.ingredients)
+              .flat()
+              .map((ingredient) => {
+                // Check for synonyms
+                const standardizedName = Object.keys(ingredientSynonyms).find(
+                  (key) => {
+                    const normalizedIngredientName = ingredient.name
+                      .toLowerCase()
+                      .trim(); // Normalize for better matching
+                    // Get the array of synonyms for the current key
+                    const synonymsForIngredient = ingredientSynonyms[key];
+                    return (
+                      Array.isArray(synonymsForIngredient) && // Ensure it's an array
+                      synonymsForIngredient.some(
+                        (synonym) =>
+                          synonym.toLowerCase().trim() ===
+                          normalizedIngredientName
+                      )
+                    );
+                  }
+                );
+                return {
+                  id: Date.now() + Math.random(), // Generate a unique ID
+                  quantity: ingredient.quantity || 0,
+                  unit: ingredient.unit || "",
+                  listItem: standardizedName || ingredient.name,
+                  isDone: false,
+                  toTransfer: false,
+                };
+              });
+          }
+        })
+      );
 
-			setRecipeIngredients(newRecipeIngredients)
-			const allIngredients = Object.values(newRecipeIngredients).flat()
-			const uniqueIngredients = new Set<string>()
-			const consolidatedList: ListItem[] = []
+      setRecipeIngredients(newRecipeIngredients);
+      const allIngredients = Object.values(newRecipeIngredients).flat();
+      const uniqueIngredients = new Set<string>();
+      const consolidatedList: ListItem[] = [];
 
-			allIngredients.forEach((ingredient) => {
-				if (!uniqueIngredients.has(ingredient.listItem)) {
-					uniqueIngredients.add(ingredient.listItem)
-					consolidatedList.push(ingredient)
-				} else {
-					const existingItem = consolidatedList.find(
-						(item) => item.listItem === ingredient.listItem
-					)
-					if (existingItem) {
-						existingItem.quantity += ingredient.quantity
-					}
-				}
-			})
+      allIngredients.forEach((ingredient) => {
+        if (!uniqueIngredients.has(ingredient.listItem)) {
+          uniqueIngredients.add(ingredient.listItem);
+          consolidatedList.push(ingredient);
+        } else {
+          const existingItem = consolidatedList.find(
+            (item) => item.listItem === ingredient.listItem
+          );
+          if (existingItem) {
+            existingItem.quantity += ingredient.quantity;
+          }
+        }
+      });
 
-			setListItems(consolidatedList)
-		}
+      setListItems(consolidatedList);
+    };
 
-		updateShoppingList()
-	}, [selectedRecipeIds, recipes, ingredientSynonyms])
+    updateShoppingList();
+  }, [selectedRecipeIds, recipes, ingredientSynonyms]);
 
-	return (
-		<div className="shoppinglist-container">
-			<h1>myShoppingList</h1>
-			<div className="flex-container">
-				<div className="edit-box">
-					<EditableList
-						listItems={listItems}
-						setListItems={setListItems}
-					/>
-				</div>
-			</div>
-		</div>
-	)
-}
+  return (
+    <div className="shoppinglist-container">
+      <h1 className="shoppinglist-title">myShoppingList</h1>
+      <div className="flex-container">
+        <div className="edit-box">
+          <EditableList listItems={listItems} setListItems={setListItems} />
+        </div>
+      </div>
+    </div>
+  );
+};
 
-export default ShoppingList
+export default ShoppingList;

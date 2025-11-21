@@ -99,6 +99,7 @@ apiClient.interceptors.response.use(
 
     // Handle unauthorized - token expired or not logged in
     if (error.response?.status === 401 && !requestWithRetry._retry) {
+        console.warn("API client received 401, attempting refresh...");
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -120,12 +121,14 @@ apiClient.interceptors.response.use(
 
       try {
         // Try to refresh the token by calling refresh endpoint which reads HttpOnly cookie
+        console.debug("Calling refresh endpoint:", `${API_URL}/auth/refresh`);
         const response = await axios.post<{ accessToken: string }>(
           `${API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
+        console.debug("Refresh response:", response.status, response.data);
         const { accessToken: newAccessToken } = response.data;
 
         // Store new access token

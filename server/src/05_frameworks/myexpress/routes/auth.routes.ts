@@ -62,9 +62,18 @@ router.post("/logout", async (req, res) => {
 
 // Token refresh endpoint: read refresh token from HttpOnly cookie, rotate, and return new access token
 router.post("/refresh", async (req: Request, res: Response) => {
+  // Diagnostic logging to help debug refresh token behavior
+  console.log("/auth/refresh called. req.cookies:", req.cookies);
+  console.log("/auth/refresh headers:", {
+    origin: req.get("Origin"),
+    referer: req.get("Referer"),
+    cookieHeader: req.get("Cookie"),
+  });
+
   const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
+    console.warn("/auth/refresh: no refreshToken cookie present on request");
     return res.status(401).json({ error: "Refresh token required" });
   }
 
@@ -119,6 +128,16 @@ router.get("/check", authenticateJWT, (req: Request, res: Response) => {
   res.json({
     authenticated: true,
     user: req.user,
+  });
+});
+
+// Diagnostic endpoint: echo cookies and raw Cookie header for debugging cross-site cookie behavior
+router.get("/debug/cookies", (req: Request, res: Response) => {
+  console.log("/auth/debug/cookies called. req.cookies:", req.cookies);
+  console.log("/auth/debug/cookies cookie header:", req.get("Cookie"));
+  res.json({
+    cookies: req.cookies || {},
+    cookieHeader: req.get("Cookie") || null,
   });
 });
 
