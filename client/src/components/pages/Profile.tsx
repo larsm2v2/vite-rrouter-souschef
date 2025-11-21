@@ -66,18 +66,21 @@ const Profile: React.FC = () => {
   const prettifyName = (raw: string) => {
     if (!raw) return raw;
     // Replace common separators with spaces, collapse multiple spaces
-    const parts = raw.replace(/[._\-+]/g, " ").split(/\s+/).filter(Boolean);
+    const parts = raw
+      .replace(/[._\-+]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
     // Capitalize each word
     const words = parts.map((w) => w.charAt(0).toUpperCase() + w.slice(1));
     return words.join(" ");
   };
 
   const displayName = user
-    ? (user.display_name && user.display_name.trim().length > 0
-        ? user.display_name
-        : user.email
-        ? prettifyName(user.email.split("@")[0])
-        : "User")
+    ? user.display_name && user.display_name.trim().length > 0
+      ? user.display_name
+      : user.email
+      ? prettifyName(user.email.split("@")[0])
+      : "User"
     : "User";
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState<string>("");
@@ -91,7 +94,6 @@ const Profile: React.FC = () => {
 
   if (loading) return <div className="loading">Loading profile...</div>;
 
-
   return (
     <div className="profile-container simple">
       <div className="profile-card">
@@ -100,7 +102,9 @@ const Profile: React.FC = () => {
             {user?.avatar ? (
               <img src={user.avatar} alt="User avatar" />
             ) : (
-              <span className="initial">{(displayName?.charAt(0) || "U").toUpperCase()}</span>
+              <span className="initial">
+                {(displayName?.charAt(0) || "U").toUpperCase()}
+              </span>
             )}
           </div>
 
@@ -134,16 +138,23 @@ const Profile: React.FC = () => {
                       setSaveError(null);
                       try {
                         // Persist to server; backend should accept PUT /profile { display_name }
-                        await apiClient.put("/profile", { display_name: nameInput });
+                        await apiClient.put("/profile", {
+                          display_name: nameInput,
+                        });
                         // Update local user state
-                        setUser((prev) => (prev ? { ...prev, display_name: nameInput } : prev));
+                        setUser((prev) =>
+                          prev ? { ...prev, display_name: nameInput } : prev
+                        );
                         setIsEditing(false);
                       } catch (err: unknown) {
                         console.error("Failed to save display name:", err);
-                        const maybeErr = err as { message?: unknown } | undefined;
-                        const msg = maybeErr && typeof maybeErr.message === "string"
-                          ? maybeErr.message
-                          : String(err ?? "Save failed");
+                        const maybeErr = err as
+                          | { message?: unknown }
+                          | undefined;
+                        const msg =
+                          maybeErr && typeof maybeErr.message === "string"
+                            ? maybeErr.message
+                            : String(err ?? "Save failed");
                         setSaveError(msg);
                       } finally {
                         setSaving(false);
@@ -169,13 +180,15 @@ const Profile: React.FC = () => {
             </div>
 
             {user?.email && <p className="email">{user.email}</p>}
-            {saveError && <p style={{ color: "#ffb4b4", marginTop: 6 }}>{saveError}</p>}
+            {saveError && (
+              <p style={{ color: "#ffb4b4", marginTop: 6 }}>{saveError}</p>
+            )}
           </div>
 
           <div className="profile-actions">
-            <button className="btn" onClick={() => navigate("/settings")}>
+            {/* <button className="btn" onClick={() => navigate("/settings")}>
               Settings
-            </button>
+            </button> */}
             <button className="btn danger" onClick={handleLogout}>
               Sign out
             </button>

@@ -5,6 +5,7 @@ import profileRoutes from "./profile";
 import recipesRoutes from "./recipes.routes";
 import groceryRoutes from "./grocery.routes";
 import profileFeatures from "./profileFeatures.routes";
+import ocrRoutes from "../../../routes/ocr";
 
 const router = express.Router();
 
@@ -64,6 +65,15 @@ console.log(
   typeof profileFeatures,
   "stackLength",
   profileFeatures?.stack?.length
+);
+
+console.log("  Mounting /api → ocr routes");
+router.use("/api", ocrRoutes);
+console.log(
+  "    -> ocrRoutes loaded?",
+  typeof ocrRoutes,
+  "stackLength",
+  ocrRoutes?.stack?.length
 );
 
 console.log(

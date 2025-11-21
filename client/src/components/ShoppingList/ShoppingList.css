@@ -19,7 +19,7 @@
   /* text-justify: center; */
   justify-content: left;
   width: 100%;
-  padding: 0 0rem 0 0rem;
+  padding: 0 1vw 0 1vw;
 }
 .shoppinglist-title {
   background-color: var(--primary-text-color);

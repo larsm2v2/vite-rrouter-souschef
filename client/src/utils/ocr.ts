@@ -1,7 +1,7 @@
 export async function extractTextWithTesseract(file: File): Promise<string> {
   // Lazy-load tesseract.js to keep bundle small
   try {
-    // @ts-expect-error - dynamic import
+    // dynamic import
     const Tesseract = await import("tesseract.js");
     const worker = await Tesseract.createWorker({
       logger: (m: { status: string; progress: number }) =>

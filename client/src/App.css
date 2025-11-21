@@ -1,13 +1,8 @@
-#root {
-  max-width: 90%;
-  margin: 0 auto;
-  padding: 0.5rem;
-  text-align: center;
-}
+/* `#root` styles consolidated into `src/index.css :root` */
 
 .logo {
   height: 6em;
-  padding: 1.5em;
+  padding: 1.5vw;
   will-change: filter;
   transition: filter 300ms;
 }
@@ -34,7 +29,7 @@
 }
 
 .card {
-  padding: 2em;
+  padding: 2vw;
 }
 
 .read-the-docs {

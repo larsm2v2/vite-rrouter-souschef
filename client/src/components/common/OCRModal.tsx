@@ -22,9 +22,13 @@ interface OCRResponse {
 }
 
 export default function OCRModal({ isOpen, onClose }: Props) {
-  const [tab, setTab] = useState<"upload" | "text" | "gallery">("upload");
+  const [tab, setTab] = useState<"upload" | "text" | "gallery" | "preview">(
+    "upload"
+  );
   const [ocrText, setOcrText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [parsedResult, setParsedResult] = useState<ParsedRecipe | null>(null);
+  const [previewMode, setPreviewMode] = useState<"json" | "pretty">("pretty");
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   if (!isOpen) return null;
@@ -86,14 +90,14 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       form.append("ocrText", ocrText || "");
 
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const resp = await axios.post(`${apiUrl}/api/ocr/upload`, form, {
+      const resp = await axios.post(`${apiUrl}/api/ocr`, form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const parsed = (resp.data as OCRResponse)?.parsed;
       if (parsed) {
-        // dispatch to listeners (RecipeGenerator listens to this event)
-        window.dispatchEvent(new CustomEvent("ocr:import", { detail: parsed }));
-        onClose();
+        // Show preview so user can confirm before importing
+        setParsedResult(parsed);
+        setTab("preview");
         return;
       }
 
@@ -132,6 +136,70 @@ export default function OCRModal({ isOpen, onClose }: Props) {
 
     window.dispatchEvent(new CustomEvent("ocr:import", { detail: parsed }));
     onClose();
+  };
+
+  const onParseText = async () => {
+    // Attempt to send the edited OCR text to the server for structured parsing
+    if (!ocrText || ocrText.trim().length === 0) {
+      alert("Please paste or enter some text to parse first.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      // POST as JSON { text: string }
+      const resp = await axios.post(`${apiUrl}/api/ocr/parse`, {
+        text: ocrText,
+      });
+      const parsed = (resp.data as OCRResponse)?.parsed;
+      if (parsed) {
+        // Show preview so user can confirm before importing
+        setParsedResult(parsed);
+        setTab("preview");
+        return;
+      }
+
+      // If server returned no parsed recipe, fall back to import-as-instructions
+      alert(
+        "Server was unable to parse structured recipe data. The text will be imported as raw instructions instead."
+      );
+      onImportText();
+    } catch (err: unknown) {
+      console.error("Text parse failed:", err);
+      const msg =
+        (
+          err as {
+            response?: { data?: { message?: string } };
+            message?: string;
+          }
+        )?.response?.data?.message ||
+        (err as { message?: string })?.message ||
+        "Unknown error";
+      alert(`Parsing failed: ${msg}. Importing as raw instructions instead.`);
+      onImportText();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const acceptParsed = () => {
+    if (!parsedResult) return;
+    window.dispatchEvent(
+      new CustomEvent("ocr:import", { detail: parsedResult })
+    );
+    setParsedResult(null);
+    onClose();
+  };
+
+  const cancelPreview = () => {
+    // keep parsedResult available but go back to text for edits
+    setTab("text");
+  };
+
+  const rejectParsed = () => {
+    // discard parsed result and return to text editor
+    setParsedResult(null);
+    setTab("text");
   };
 
   return (
@@ -191,11 +259,247 @@ export default function OCRModal({ isOpen, onClose }: Props) {
                 value={ocrText}
                 onChange={(e) => setOcrText(e.target.value)}
                 rows={10}
+                aria-label="OCR text editor"
               />
               <div className="ocr-text-actions">
-                <button onClick={onImportText}>
-                  Import Text as Instructions
+                <button onClick={onParseText} disabled={loading}>
+                  {loading ? "Parsing..." : "Parse Text on Server"}
                 </button>
+                <button onClick={onImportText} disabled={loading || !ocrText}>
+                  Import Text as Instructions (raw)
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === "preview" && parsedResult && (
+            <div className="ocr-preview">
+              <div className="ocr-preview-header">
+                <h4>Parsed Recipe Preview</h4>
+                <div className="preview-toggle">
+                  <label>
+                    <input
+                      type="radio"
+                      name="previewMode"
+                      checked={previewMode === "pretty"}
+                      onChange={() => setPreviewMode("pretty")}
+                    />{" "}
+                    Pretty
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="previewMode"
+                      checked={previewMode === "json"}
+                      onChange={() => setPreviewMode("json")}
+                    />{" "}
+                    JSON
+                  </label>
+                </div>
+              </div>
+
+              <div className="ocr-preview-body">
+                {previewMode === "json" ? (
+                  <pre className="preview-json">
+                    {JSON.stringify(parsedResult, null, 2)}
+                  </pre>
+                ) : (
+                  <div className="preview-pretty">
+                    <div className="preview-field">
+                      <label className="preview-label">Name</label>
+                      <input
+                        className="preview-input"
+                        value={parsedResult.name ?? ""}
+                        onChange={(e) =>
+                          setParsedResult((p) =>
+                            p ? { ...p, name: e.target.value } : p
+                          )
+                        }
+                        placeholder="Recipe name"
+                      />
+                    </div>
+
+                    <div className="preview-field">
+                      <label className="preview-label">Cuisine</label>
+                      <input
+                        className="preview-input"
+                        value={parsedResult.cuisine ?? ""}
+                        onChange={(e) =>
+                          setParsedResult((p) =>
+                            p ? { ...p, cuisine: e.target.value } : p
+                          )
+                        }
+                        placeholder="Cuisine"
+                      />
+                    </div>
+
+                    <div className="preview-section">
+                      <strong>Ingredients</strong>
+                      {Object.keys(parsedResult.ingredients).length === 0 && (
+                        <div className="preview-empty">
+                          No ingredients parsed.
+                        </div>
+                      )}
+                      {Object.entries(parsedResult.ingredients).map(
+                        ([group, items]) => (
+                          <div key={group} className="ingredient-group">
+                            {group !== "default" && (
+                              <div className="ingredient-group-name">
+                                {group}
+                              </div>
+                            )}
+                            <ul className="ingredient-list">
+                              {items.map((it, idx) => (
+                                <li key={idx} className="ingredient-item">
+                                  <input
+                                    className="preview-input"
+                                    value={it}
+                                    onChange={(e) =>
+                                      setParsedResult((p) => {
+                                        if (!p) return p;
+                                        const next = { ...p } as ParsedRecipe;
+                                        next.ingredients = { ...p.ingredients };
+                                        next.ingredients[group] = [...items];
+                                        next.ingredients[group][idx] =
+                                          e.target.value;
+                                        return next;
+                                      })
+                                    }
+                                  />
+                                  <button
+                                    className="tiny-btn"
+                                    onClick={() =>
+                                      setParsedResult((p) => {
+                                        if (!p) return p;
+                                        const next = { ...p } as ParsedRecipe;
+                                        next.ingredients = { ...p.ingredients };
+                                        next.ingredients[group] = [
+                                          ...items.filter((_, i) => i !== idx),
+                                        ];
+                                        return next;
+                                      })
+                                    }
+                                    aria-label="Remove ingredient"
+                                  >
+                                    ✕
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="ingredient-add">
+                              <button
+                                onClick={() =>
+                                  setParsedResult((p) => {
+                                    if (!p) return p;
+                                    const next = { ...p } as ParsedRecipe;
+                                    next.ingredients = { ...p.ingredients };
+                                    next.ingredients[group] = [...items, ""];
+                                    return next;
+                                  })
+                                }
+                                className="add-btn"
+                              >
+                                + Add ingredient
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    <div className="preview-section">
+                      <strong>Instructions</strong>
+                      {(!parsedResult.instructions ||
+                        parsedResult.instructions.length === 0) && (
+                        <div className="preview-empty">
+                          No instructions parsed.
+                        </div>
+                      )}
+                      <ol className="instruction-list">
+                        {parsedResult.instructions.map((ins, idx) => (
+                          <li key={idx} className="instruction-item">
+                            <textarea
+                              className="instruction-textarea"
+                              value={ins.text}
+                              onChange={(e) =>
+                                setParsedResult((p) => {
+                                  if (!p) return p;
+                                  const next = { ...p } as ParsedRecipe;
+                                  next.instructions = p.instructions.map(
+                                    (ii, j) =>
+                                      j === idx
+                                        ? { ...ii, text: e.target.value }
+                                        : ii
+                                  );
+                                  return next;
+                                })
+                              }
+                            />
+                            <div className="instruction-actions">
+                              <button
+                                className="tiny-btn"
+                                onClick={() =>
+                                  setParsedResult((p) => {
+                                    if (!p) return p;
+                                    const next = { ...p } as ParsedRecipe;
+                                    next.instructions = p.instructions
+                                      .filter((_, i) => i !== idx)
+                                      .map((ii, i) => ({
+                                        ...ii,
+                                        number: i + 1,
+                                      }));
+                                    return next;
+                                  })
+                                }
+                                aria-label="Remove instruction"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                      <div className="instruction-add">
+                        <button
+                          className="add-btn"
+                          onClick={() =>
+                            setParsedResult((p) => {
+                              if (!p) return p;
+                              const next = { ...p } as ParsedRecipe;
+                              next.instructions = [
+                                ...(p.instructions || []),
+                                {
+                                  number: (p.instructions?.length ?? 0) + 1,
+                                  text: "",
+                                },
+                              ];
+                              return next;
+                            })
+                          }
+                        >
+                          + Add instruction
+                        </button>
+                      </div>
+                    </div>
+
+                    {parsedResult.notes && parsedResult.notes.length > 0 && (
+                      <div className="preview-section">
+                        <strong>Notes</strong>
+                        <ul>
+                          {parsedResult.notes.map((n, i) => (
+                            <li key={i}>{n}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="ocr-preview-actions">
+                <button onClick={acceptParsed}>Accept & Import</button>
+                <button onClick={cancelPreview}>Edit Text</button>
+                <button onClick={rejectParsed}>Discard</button>
               </div>
             </div>
           )}

@@ -1,3 +1,74 @@
+/* Basic modal layout already exists; add preview-specific styles */
+.ocr-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.ocr-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.preview-toggle label {
+  margin-left: 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.ocr-preview-body {
+  background: var(--primary-background-color, #fff);
+  padding: 0.8rem;
+  border-radius: 6px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.preview-json {
+  white-space: pre-wrap;
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
+    "Courier New", monospace;
+  font-size: 0.85rem;
+}
+.preview-pretty {
+  text-align: left;
+  color: var(--primary-text-color, #072733);
+}
+.preview-name {
+  margin: 0 0 0.4rem 0;
+}
+.preview-section {
+  margin-top: 0.6rem;
+}
+.ingredient-group-name {
+  font-style: italic;
+  margin-bottom: 0.2rem;
+}
+.preview-empty {
+  color: var(--text-light, #6b7280);
+  font-size: 0.95rem;
+  margin-top: 0.4rem;
+}
+.ocr-preview-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+.ocr-preview-actions button {
+  padding: 0.45rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--secondary-color, #fabf2c);
+  color: var(--primary-color, #154153);
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .ocr-preview-body {
+    max-height: 40vh;
+  }
+  .ocr-preview-actions {
+    justify-content: center;
+  }
+}
 .ocr-modal-overlay {
   position: fixed;
   width: auto;

@@ -1,0 +1,67 @@
+{
+  "info": {
+    "name": "SousChef OCR",
+    "_postman_id": "7a3d9f2a-ocr-collection",
+    "description": "Postman collection for testing OCR endpoints (/api/ocr and /api/ocr/parse)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://your-production-host.example.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Parse Text (JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"1 cup flour\\n2 eggs\\nMix and bake.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/ocr/parse",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocr", "parse"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Upload Image (multipart/form-data)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": ""
+            },
+            {
+              "key": "ocrText",
+              "type": "text",
+              "value": "Optional OCR text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/ocr",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocr"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
