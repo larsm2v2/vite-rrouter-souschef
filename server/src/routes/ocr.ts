@@ -5,6 +5,10 @@ import path from "path";
 import fs from "fs";
 import { execFile } from "child_process";
 import { promisify } from "util";
+// Import the clean-recipe-service client wrapper — it will POST to the
+// microservice when `CLEAN_RECIPE_SERVICE_URL` is configured, otherwise
+// it falls back to a local cleaning implementation.
+import { cleanRecipe as forwardToCleanService } from "../05_frameworks/cleanRecipe/client";
 const execFileAsync = promisify(execFile);
 
 const router = Router();
@@ -108,13 +112,20 @@ async function handleOcrUpload(req: any, res: any) {
       ingredients: { "from-ocr": [] },
       instructions,
       notes: ["Imported via server OCR"],
-    };
+    } as any;
 
-    res.json({
-      parsed,
-      text: combinedText || ocrText,
-      meta: { files: stored },
-    });
+    // Optionally forward parsed recipe to the clean-recipe-service. The
+    // wrapper will fall back to a local cleaner if the microservice URL
+    // is not configured or the request fails.
+    let cleaned: any = parsed;
+    try {
+      cleaned = await forwardToCleanService(parsed);
+    } catch (err) {
+      console.warn("Forwarding to clean service failed, returning raw parse", err && (err as Error).message);
+      cleaned = parsed;
+    }
+
+    res.json({ parsed: cleaned, rawParsed: parsed, text: combinedText || ocrText, meta: { files: stored } });
   } catch (err) {
     console.error("OCR upload handler error:", err);
     res.status(500).json({ message: "OCR upload failed" });
@@ -153,9 +164,16 @@ router.post("/ocr/parse", async (req, res) => {
       ingredients: { "from-ocr": [] },
       instructions: [{ number: 1, text: ocrText }],
       notes: ["Parsed via /ocr/parse"],
-    };
+    } as any;
 
-    res.json({ parsed, text: ocrText });
+    // Try to forward to clean-recipe-service; wrapper handles fallback.
+    try {
+      const cleaned = await forwardToCleanService(parsed);
+      return res.json({ parsed: cleaned, text: ocrText });
+    } catch (err) {
+      console.warn("/ocr/parse: clean service forwarding failed", err && (err as Error).message);
+      return res.json({ parsed, text: ocrText });
+    }
   } catch (err) {
     console.error("/ocr/parse error:", err);
     res.status(500).json({ message: "Parse failed" });
