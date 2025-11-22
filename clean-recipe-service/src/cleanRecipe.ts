@@ -82,8 +82,15 @@ export function cleanRecipe(recipe: any): any {
     out.instructions = [];
   }
   out.instructions = out.instructions.map((instr: any, index: number) => {
-    const stepNumber = instr.stepNumber || instr.number || index + 1;
-    return { ...instr, stepNumber };
+    const stepNumber = (instr && (instr.stepNumber || instr.number)) || index + 1;
+    if (typeof instr === "string") {
+      return { text: instr, stepNumber };
+    }
+    if (instr && typeof instr === "object") {
+      return { ...instr, stepNumber };
+    }
+    // fallback: coerce to string
+    return { text: String(instr), stepNumber };
   });
 
   // notes and nutrition defaults
