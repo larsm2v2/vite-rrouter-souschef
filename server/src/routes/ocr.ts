@@ -121,11 +121,19 @@ async function handleOcrUpload(req: any, res: any) {
     try {
       cleaned = await forwardToCleanService(parsed);
     } catch (err) {
-      console.warn("Forwarding to clean service failed, returning raw parse", err && (err as Error).message);
+      console.warn(
+        "Forwarding to clean service failed, returning raw parse",
+        err && (err as Error).message
+      );
       cleaned = parsed;
     }
 
-    res.json({ parsed: cleaned, rawParsed: parsed, text: combinedText || ocrText, meta: { files: stored } });
+    res.json({
+      parsed: cleaned,
+      rawParsed: parsed,
+      text: combinedText || ocrText,
+      meta: { files: stored },
+    });
   } catch (err) {
     console.error("OCR upload handler error:", err);
     res.status(500).json({ message: "OCR upload failed" });
@@ -164,12 +172,21 @@ router.post("/ocr/parse", async (req, res) => {
       let authSummary: string | null = null;
       if (hasAuth) {
         const a = String(req.headers.authorization || "");
-        authSummary = a.length > 40 ? `${a.slice(0,20)}...${a.slice(-12)}` : a;
+        authSummary = a.length > 40 ? `${a.slice(0, 20)}...${a.slice(-12)}` : a;
       }
-      console.log(`/ocr/parse called: ip=${req.ip || req.connection?.remoteAddress || 'unknown'} method=${req.method} url=${req.originalUrl || req.url} origin=${origin} cookie=${cookiePresent} content-length=${contentLength} authPresent=${hasAuth}`);
+      console.log(
+        `/ocr/parse called: ip=${
+          req.ip || req.connection?.remoteAddress || "unknown"
+        } method=${req.method} url=${
+          req.originalUrl || req.url
+        } origin=${origin} cookie=${cookiePresent} content-length=${contentLength} authPresent=${hasAuth}`
+      );
       if (authSummary) console.log(`/ocr/parse auth-summary: ${authSummary}`);
       // Body preview (trimmed) — avoid logging full tokens or very large payloads
-      const bodyPreview = typeof req.body === 'string' ? req.body.slice(0, 2048) : JSON.stringify(req.body || {}).slice(0, 2048);
+      const bodyPreview =
+        typeof req.body === "string"
+          ? req.body.slice(0, 2048)
+          : JSON.stringify(req.body || {}).slice(0, 2048);
       console.log(`/ocr/parse body-preview: ${bodyPreview}`);
     } catch (logErr) {
       console.warn("Failed to log /ocr/parse details:", logErr);
@@ -191,7 +208,10 @@ router.post("/ocr/parse", async (req, res) => {
       const cleaned = await forwardToCleanService(parsed);
       return res.json({ parsed: cleaned, text: ocrText });
     } catch (err) {
-      console.warn("/ocr/parse: clean service forwarding failed", err && (err as Error).message);
+      console.warn(
+        "/ocr/parse: clean service forwarding failed",
+        err && (err as Error).message
+      );
       return res.json({ parsed, text: ocrText });
     }
   } catch (err) {

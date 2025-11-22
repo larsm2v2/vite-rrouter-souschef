@@ -9,11 +9,18 @@ router.post("/clean-recipe", (req, res) => {
     const auth = req.headers.authorization;
     const hasAuth = !!auth;
     let authPreview = null;
-    if (hasAuth && typeof auth === 'string') {
-      authPreview = auth.length > 40 ? `${auth.slice(0, 20)}...${auth.slice(-12)}` : auth;
+    if (hasAuth && typeof auth === "string") {
+      authPreview =
+        auth.length > 40 ? `${auth.slice(0, 20)}...${auth.slice(-12)}` : auth;
     }
-    console.log(`/clean-recipe called: hasAuth=${hasAuth} authPreview=${authPreview || 'none'} origin=${req.headers.origin || 'none'} content-type=${req.headers['content-type'] || 'none'}`);
-    
+    console.log(
+      `/clean-recipe called: hasAuth=${hasAuth} authPreview=${
+        authPreview || "none"
+      } origin=${req.headers.origin || "none"} content-type=${
+        req.headers["content-type"] || "none"
+      }`
+    );
+
     const cleanedRecipe = cleanRecipe(req.body);
     res.status(200).json(cleanedRecipe);
   } catch (error) {
