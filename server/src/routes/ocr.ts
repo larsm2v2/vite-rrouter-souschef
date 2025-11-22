@@ -155,6 +155,14 @@ router.post("/ocr/upload", uploadHandlerWrapper(uploadAny, handleOcrUpload));
 // POST /api/ocr/parse - accept JSON { text } and return parsed recipe
 router.post("/ocr/parse", async (req, res) => {
   try {
+    // Diagnostic logging: record incoming parse requests for troubleshooting
+    try {
+      console.log("/ocr/parse called. headers:", req.headers);
+      // Avoid logging huge bodies in production, but useful for debugging now
+      console.log("/ocr/parse body preview:", typeof req.body === 'string' ? req.body.slice(0,1000) : JSON.stringify(req.body).slice(0,1000));
+    } catch (logErr) {
+      console.warn("Failed to log /ocr/parse details:", logErr);
+    }
     const ocrText = (req.body && (req.body.text || req.body.ocrText)) || "";
 
     // Minimal structured response: server-side parsing heuristics can be added later
