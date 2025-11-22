@@ -34,6 +34,25 @@ This ensures one-time schema work (like creating the `refresh_tokens` table) hap
 4. Start the server behind a reverse proxy (nginx) or a process manager. Set `CLEAN_RECIPE_SERVICE_URL` to the running microservice URL.
 5. Health checks: ensure `/health` or a lightweight endpoint responds (implement if missing).
 
+### Service authentication (recommended)
+
+- For production, prefer keeping the `clean-recipe-service` private (require IAM) and allow only the server's Cloud Run service account to invoke it.
+- If you deploy the clean service with Cloud Build, remove `--allow-unauthenticated` from the deploy step to require authentication.
+- Grant the server's service account the `roles/run.invoker` role on the clean-recipe-service. Example (replace placeholders):
+
+```powershell
+gcloud run services add-iam-policy-binding "clean-recipe-service" `
+  --region "us-central1" `
+  --platform managed `
+  --member="serviceAccount:<SERVER_SA_EMAIL>" `
+  --role="roles/run.invoker" `
+  --project "<PROJECT_ID>"
+```
+
+- On the server, set `CLEAN_RECIPE_SERVICE_URL` to the private service URL (for example `https://clean-recipe-service-XXXXX.run.app`) and optionally set `CLEAN_RECIPE_SERVICE_AUDIENCE` to the same URL. The server code will request an ID token and include it as `Authorization: Bearer <ID_TOKEN>` when calling the microservice.
+
+See `clean-recipe-service/AUTH.md` for a step-by-step guide and test commands.
+
 ## Running in Docker (suggested)
 
 - Build microservice and server images separately and run them in the same network.

@@ -9,7 +9,31 @@ import { cleanRecipe as localClean } from "../../services/recipe.service";
 // for the default service account by calling the metadata server. This token
 // can be used to authenticate to another Cloud Run service that requires
 // IAM-signed ID tokens.
+// Simple in-memory cache for an ID token and its expiry time.
+let cachedIdToken: string | null = null;
+let cachedIdTokenExpiry = 0; // epoch ms
+
+function parseJwtExpiry(token: string): number {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return 0;
+    const payload = JSON.parse(
+      Buffer.from(parts[1], "base64").toString("utf8")
+    );
+    if (payload && typeof payload.exp === "number") return payload.exp * 1000;
+  } catch (err) {
+    // ignore parse errors
+  }
+  return 0;
+}
+
 async function fetchIdToken(audience: string): Promise<string | null> {
+  // Return cached token if present and not expired (with 60s safety margin)
+  const now = Date.now();
+  if (cachedIdToken && cachedIdTokenExpiry - 60000 > now) {
+    return cachedIdToken;
+  }
+
   // Metadata endpoint - try both hosts commonly available in Cloud Run
   const mdUrls = [
     `http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=${encodeURIComponent(
@@ -24,8 +48,20 @@ async function fetchIdToken(audience: string): Promise<string | null> {
     try {
       const resp = await fetch(u, { headers: { "Metadata-Flavor": "Google" } });
       if (resp.ok) {
-        const token = await resp.text();
-        if (token && token.length > 0) return token.trim();
+        const token = (await resp.text()).trim();
+        if (token) {
+          // Parse expiry from JWT and cache it
+          const expMs = parseJwtExpiry(token);
+          if (expMs > 0) {
+            cachedIdToken = token;
+            cachedIdTokenExpiry = expMs;
+          } else {
+            // Fallback: cache for 50 minutes if we can't parse expiry
+            cachedIdToken = token;
+            cachedIdTokenExpiry = Date.now() + 50 * 60 * 1000;
+          }
+          return cachedIdToken;
+        }
       }
     } catch (err) {
       // ignore and try next
