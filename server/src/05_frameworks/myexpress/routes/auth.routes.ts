@@ -200,9 +200,23 @@ router.post("/register", async (req: Request, res: Response) => {
       user.display_name
     );
 
+    // Set refresh token as HttpOnly cookie for rotation flow
+    try {
+      const decoded: any = jwt.decode(refreshToken);
+      const expiresMs = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        ...(expiresMs ? { maxAge: expiresMs } : {}),
+        path: "/",
+      });
+    } catch (err) {
+      console.error("Failed to set refresh cookie on register:", err);
+    }
+
     res.status(201).json({
       accessToken,
-      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -265,9 +279,23 @@ router.post("/login", async (req: Request, res: Response) => {
       user.display_name
     );
 
+    // Set refresh token as HttpOnly cookie to support refresh flow
+    try {
+      const decoded: any = jwt.decode(refreshToken);
+      const expiresMs = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        ...(expiresMs ? { maxAge: expiresMs } : {}),
+        path: "/",
+      });
+    } catch (err) {
+      console.error("Failed to set refresh cookie on login:", err);
+    }
+
     res.json({
       accessToken,
-      refreshToken,
       user: {
         id: user.id,
         email: user.email,
