@@ -155,14 +155,26 @@ router.post("/ocr/upload", uploadHandlerWrapper(uploadAny, handleOcrUpload));
 // POST /api/ocr/parse - accept JSON { text } and return parsed recipe
 router.post("/ocr/parse", async (req, res) => {
   try {
-    // Diagnostic logging: record incoming parse requests for troubleshooting
+    // Concise diagnostic logging for troubleshooting requests reaching Express
     try {
-      console.log("/ocr/parse called. headers:", req.headers);
-      // Avoid logging huge bodies in production, but useful for debugging now
-      console.log("/ocr/parse body preview:", typeof req.body === 'string' ? req.body.slice(0,1000) : JSON.stringify(req.body).slice(0,1000));
+      const origin = req.headers?.origin || null;
+      const cookiePresent = !!req.headers?.cookie;
+      const contentLength = req.headers?.["content-length"] || null;
+      const hasAuth = !!req.headers?.authorization;
+      let authSummary: string | null = null;
+      if (hasAuth) {
+        const a = String(req.headers.authorization || "");
+        authSummary = a.length > 40 ? `${a.slice(0,20)}...${a.slice(-12)}` : a;
+      }
+      console.log(`/ocr/parse called: ip=${req.ip || req.connection?.remoteAddress || 'unknown'} method=${req.method} url=${req.originalUrl || req.url} origin=${origin} cookie=${cookiePresent} content-length=${contentLength} authPresent=${hasAuth}`);
+      if (authSummary) console.log(`/ocr/parse auth-summary: ${authSummary}`);
+      // Body preview (trimmed) — avoid logging full tokens or very large payloads
+      const bodyPreview = typeof req.body === 'string' ? req.body.slice(0, 2048) : JSON.stringify(req.body || {}).slice(0, 2048);
+      console.log(`/ocr/parse body-preview: ${bodyPreview}`);
     } catch (logErr) {
       console.warn("Failed to log /ocr/parse details:", logErr);
     }
+
     const ocrText = (req.body && (req.body.text || req.body.ocrText)) || "";
 
     // Minimal structured response: server-side parsing heuristics can be added later
