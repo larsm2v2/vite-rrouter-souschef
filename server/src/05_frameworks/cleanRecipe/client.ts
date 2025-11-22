@@ -49,8 +49,11 @@ export async function cleanRecipe(recipe: any): Promise<any> {
     // request an ID token from the metadata server and include it as a
     // Bearer token. The audience should be the service URL by default but can
     // be overridden with CLEAN_RECIPE_SERVICE_AUDIENCE env var.
-    const audience = process.env.CLEAN_RECIPE_SERVICE_AUDIENCE || url.replace(/\/$/, "");
-    let headers: Record<string, string> = { "Content-Type": "application/json" };
+    const audience =
+      process.env.CLEAN_RECIPE_SERVICE_AUDIENCE || url.replace(/\/$/, "");
+    let headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
     try {
       const idToken = await fetchIdToken(audience);
@@ -61,7 +64,10 @@ export async function cleanRecipe(recipe: any): Promise<any> {
       // If metadata request fails, continue without Authorization header.
       // The call will fail server-side if authentication is required.
       // eslint-disable-next-line no-console
-      console.warn("Failed to obtain ID token for clean service auth:", err && (err as Error).message);
+      console.warn(
+        "Failed to obtain ID token for clean service auth:",
+        err && (err as Error).message
+      );
     }
 
     const resp = await fetch(endpoint, {
