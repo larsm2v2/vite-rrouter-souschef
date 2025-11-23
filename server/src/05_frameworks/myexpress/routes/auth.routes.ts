@@ -13,9 +13,13 @@ import {
   revokeRefreshTokenByJti,
 } from "../../../utils/jwt";
 import { authenticateJWT } from "../jwtAuth";
+import { authLimiter } from "../gateway";
 
 console.log("📥 Importing auth.routes");
 const router = Router();
+
+// Apply auth rate limiter to all auth routes
+router.use(authLimiter);
 
 // Simple test endpoint to verify request body parsing
 router.post("/test-body", (req: Request, res: Response) => {
