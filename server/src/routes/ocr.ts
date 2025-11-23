@@ -5,13 +5,33 @@ import path from "path";
 import fs from "fs";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { randomUUID } from "crypto";
 // Import the clean-recipe-service client wrapper — it will POST to the
 // microservice when `CLEAN_RECIPE_SERVICE_URL` is configured, otherwise
 // it falls back to a local cleaning implementation.
 import { cleanRecipe as forwardToCleanService } from "../05_frameworks/cleanRecipe/client";
+import { ocrLimiter } from "../05_frameworks/myexpress/gateway";
+import { publishOcrJob, isPubSubAvailable } from "../05_frameworks/pubsub/client";
+import { ocrJobRepository } from "../03_adapters/repositories/OcrJobRepository";
+
 const execFileAsync = promisify(execFile);
 
 const router = Router();
+
+// Apply OCR rate limiter to all OCR routes
+router.use(ocrLimiter);
+
+// Check if async processing is enabled
+let asyncProcessingEnabled = false;
+(async () => {
+  asyncProcessingEnabled = await isPubSubAvailable();
+  if (asyncProcessingEnabled) {
+    console.log("OCR async processing enabled (Pub/Sub available)");
+  } else {
+    console.log("OCR async processing disabled (Pub/Sub unavailable, using sync mode)");
+  }
+})();
+
 const upload = multer({ dest: path.join(process.cwd(), "data/ocr_tmp") });
 // Use native tesseract binary via child_process for server-side OCR
 // The server environment (container) must have `tesseract` installed.
@@ -64,6 +84,51 @@ async function handleOcrUpload(req: any, res: any) {
       stored.push({ id, originalName: file.originalname, storedAt: destPath });
     }
 
+    const filePaths = stored.map(s => s.storedAt);
+
+    // If async processing is enabled, create job and publish to Pub/Sub
+    if (asyncProcessingEnabled) {
+      try {
+        const jobId = randomUUID();
+        const userId = (req as any).user?.id; // Assuming auth middleware sets req.user
+
+        // Create job in database
+        await ocrJobRepository.create({
+          jobId,
+          userId,
+          filePaths,
+          ocrText: ocrText || null,
+        });
+
+        // Publish to Pub/Sub
+        await publishOcrJob({
+          jobId,
+          userId,
+          filePaths,
+          ocrText: ocrText || undefined,
+        });
+
+        console.log(JSON.stringify({
+          type: "ocr-job-created",
+          jobId,
+          userId,
+          fileCount: filePaths.length,
+          timestamp: new Date().toISOString(),
+        }));
+
+        return res.json({
+          jobId,
+          status: "pending",
+          statusUrl: `/api/ocr/status/${jobId}`,
+          message: "OCR job submitted for processing",
+        });
+      } catch (pubsubError) {
+        console.error("Async OCR job creation failed, falling back to sync:", pubsubError);
+        // Fall through to synchronous processing
+      }
+    }
+
+    // Synchronous processing fallback (original behavior)
     // Run native tesseract binary on stored files and collect output
     const ocrTexts: string[] = [];
     async function runTesseract(filePath: string) {
@@ -246,6 +311,40 @@ router.delete("/ocr/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Delete failed" });
+  }
+});
+
+// GET /api/ocr/status/:jobId - check status of async OCR job
+router.get("/ocr/status/:jobId", async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    
+    const job = await ocrJobRepository.findByJobId(jobId);
+    
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    // Return job status without sensitive internal details
+    const response: any = {
+      jobId: job.jobId,
+      status: job.status,
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+    };
+
+    if (job.status === "completed") {
+      response.result = job.result;
+      response.ocrText = job.ocrText;
+      response.processingTimeMs = job.processingTimeMs;
+    } else if (job.status === "failed") {
+      response.error = job.error;
+    }
+
+    res.json(response);
+  } catch (err) {
+    console.error("Error fetching job status:", err);
+    res.status(500).json({ message: "Failed to fetch job status" });
   }
 });
 

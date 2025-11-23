@@ -3,6 +3,8 @@
     "build": "tsc",
     "start": "node dist/06_app/main.js",
     "dev": "ts-node src/06_app/main.ts",
+    "worker": "node dist/workers/ocr-worker.js",
+    "worker:dev": "ts-node src/workers/ocr-worker.ts",
     "check-env": "ts-node check-env.ts",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
     "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
@@ -10,6 +12,7 @@
     "migrate": "ts-node src/db-migration.ts"
   },
   "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
     "@google-cloud/secret-manager": "^4.0.0",
     "@google/generative-ai": "^0.24.1",
     "connect-pg-simple": "10.0.0",

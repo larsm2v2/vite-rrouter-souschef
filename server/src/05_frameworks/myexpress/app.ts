@@ -1,11 +1,12 @@
 import express from "express";
-import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 // Import the directory index explicitly to avoid importing the legacy
 // `routes.ts` file. This ensures the new combined router in
 // `./routes/index.ts` (which mounts /api/oauth etc.) is used in production.
 import routes from "./routes/index";
+// API Gateway Layer - Phase 1A
+import { createGatewayMiddleware, errorLoggingMiddleware } from "./gateway";
 // Passport is no longer used - replaced with openid-client for PKCE support
 // import passport from "passport";
 // import { configurePassport } from "../auth/passport";
@@ -30,27 +31,10 @@ const app = express();
 
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        process.env.CLIENT_URL,
-        "http://localhost:5173",
-        "http://localhost:5174",
-      ].filter(Boolean);
 
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true, // Enable credentials for cookies (OAuth state, refresh token)
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"], // Added Authorization header
-    exposedHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining"],
-  })
-);
+// API Gateway Layer - centralizes CORS, logging, rate limiting
+app.use(createGatewayMiddleware());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -85,5 +69,8 @@ try {
 } catch (e) {
   console.error("Failed to summarize app router stack:", e);
 }
+
+// Error logging middleware (must be after routes)
+app.use(errorLoggingMiddleware);
 
 export default app;

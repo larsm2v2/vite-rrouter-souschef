@@ -4,6 +4,7 @@
 // cleanRecipe implementation in `src/services/recipe.service.ts`.
 
 import { cleanRecipe as localClean } from "../../services/recipe.service";
+import { callWithCircuitBreaker, CircuitBreakerError } from "../myexpress/gateway/circuitBreaker";
 
 // Helper: when running on GCP (Cloud Run), the server can obtain an ID token
 // for the default service account by calling the metadata server. This token
@@ -106,24 +107,37 @@ export async function cleanRecipe(recipe: any): Promise<any> {
       );
     }
 
-    const resp = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(recipe),
-    });
+    // Wrap the call with circuit breaker to prevent cascade failures
+    const cleaned = await callWithCircuitBreaker(
+      "clean-recipe-service",
+      async () => {
+        const resp = await fetch(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(recipe),
+        });
 
-    if (!resp.ok) {
-      const body = await resp.text();
-      throw new Error(`Clean service error: ${resp.status} ${body}`);
-    }
+        if (!resp.ok) {
+          const body = await resp.text();
+          throw new Error(`Clean service error: ${resp.status} ${body}`);
+        }
 
-    const cleaned = await resp.json();
+        return await resp.json();
+      }
+    );
+
     return cleaned;
   } catch (err) {
-    console.warn(
-      "clean-recipe-service unavailable or auth failed, falling back to local clean:",
-      err && (err as Error).message
-    );
+    if (err instanceof CircuitBreakerError) {
+      console.warn(
+        "Circuit breaker open for clean-recipe-service, falling back to local clean"
+      );
+    } else {
+      console.warn(
+        "clean-recipe-service unavailable or auth failed, falling back to local clean:",
+        err && (err as Error).message
+      );
+    }
     return localClean(recipe);
   }
 }
