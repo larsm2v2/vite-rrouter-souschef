@@ -141,13 +141,16 @@ router.post("/google/token", (req, res) => __awaiter(void 0, void 0, void 0, fun
         const expiresMs = (decoded === null || decoded === void 0 ? void 0 : decoded.exp)
             ? decoded.exp * 1000 - Date.now()
             : 7 * 24 * 60 * 60 * 1000; // Default 7 days
-        res.cookie("refreshToken", refreshToken, {
+        const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: expiresMs,
             path: "/",
-        });
+        };
+        // Log cookie attributes for debugging (do not log token value)
+        console.log("Setting refreshToken cookie with options:", cookieOptions);
+        res.cookie("refreshToken", refreshToken, cookieOptions);
         // Return access token to client
         res.json({
             access_token: accessToken,

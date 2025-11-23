@@ -5,13 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 // Import the directory index explicitly to avoid importing the legacy
 // `routes.ts` file. This ensures the new combined router in
 // `./routes/index.ts` (which mounts /api/oauth etc.) is used in production.
 const index_1 = __importDefault(require("./routes/index"));
+// API Gateway Layer - Phase 1A
+const gateway_1 = require("./gateway");
 // Passport is no longer used - replaced with openid-client for PKCE support
 // import passport from "passport";
 // import { configurePassport } from "../auth/passport";
@@ -31,25 +32,8 @@ const app = (0, express_1.default)();
 // configurePassport();
 app.set("trust proxy", 1);
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        const allowedOrigins = [
-            process.env.CLIENT_URL,
-            "http://localhost:5173",
-            "http://localhost:5174",
-        ].filter(Boolean);
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        }
-        else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
-    credentials: true, // Enable credentials for cookies (OAuth state, refresh token)
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"], // Added Authorization header
-    exposedHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining"],
-}));
+// API Gateway Layer - centralizes CORS, logging, rate limiting
+app.use((0, gateway_1.createGatewayMiddleware)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
@@ -80,4 +64,6 @@ try {
 catch (e) {
     console.error("Failed to summarize app router stack:", e);
 }
+// Error logging middleware (must be after routes)
+app.use(gateway_1.errorLoggingMiddleware);
 exports.default = app;

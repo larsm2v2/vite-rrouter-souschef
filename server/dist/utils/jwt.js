@@ -65,11 +65,35 @@ exports.verifyToken = verifyToken;
 const isRefreshTokenValid = (token) => __awaiter(void 0, void 0, void 0, function* () {
     const payload = (0, exports.verifyToken)(token);
     if (!payload || payload.type !== "refresh" || !payload.jti) {
+        console.warn("isRefreshTokenValid: token failed basic verification or missing jti/type");
+        // Attempt to decode for additional diagnostics (do not trust decoded data)
+        const decodedAny = jsonwebtoken_1.default.decode(token);
+        console.log("isRefreshTokenValid: decoded (unverified) token summary:", {
+            jti: (decodedAny === null || decodedAny === void 0 ? void 0 : decodedAny.jti) || null,
+            exp: (decodedAny === null || decodedAny === void 0 ? void 0 : decodedAny.exp) ? new Date(decodedAny.exp * 1000).toISOString() : null,
+        });
         return { valid: false };
     }
     try {
         const res = yield connection_1.default.query(`SELECT 1 FROM refresh_tokens WHERE jti = $1 AND token = $2 AND revoked = false AND expires_at > NOW() LIMIT 1`, [payload.jti, token]);
-        return { valid: res.rows.length > 0, payload };
+        if (res.rows.length > 0) {
+            console.log(`isRefreshTokenValid: refresh token jti=${payload.jti} valid`);
+            return { valid: true, payload };
+        }
+        // Not valid — gather more info: check whether token record exists and its state
+        const lookup = yield connection_1.default.query(`SELECT revoked, expires_at FROM refresh_tokens WHERE jti = $1 LIMIT 1`, [payload.jti]);
+        if (lookup.rows.length === 0) {
+            console.warn(`isRefreshTokenValid: no refresh token record found for jti=${payload.jti}`);
+        }
+        else {
+            const row = lookup.rows[0];
+            console.warn("isRefreshTokenValid: refresh token record state:", {
+                jti: payload.jti,
+                revoked: row.revoked,
+                expires_at: row.expires_at,
+            });
+        }
+        return { valid: false, payload };
     }
     catch (err) {
         console.error("Error checking refresh token validity:", err);

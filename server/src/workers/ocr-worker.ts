@@ -98,7 +98,7 @@ async function processOcrJob(jobData: OcrJobMessage): Promise<void> {
     // Update job with completed status and result
     await ocrJobRepository.update(jobId, {
       status: "completed",
-      ocrText: combinedText || ocrText || null,
+      ocrText: combinedText || ocrText || undefined,
       result: cleaned,
       processingTimeMs,
     });
@@ -113,8 +113,7 @@ async function processOcrJob(jobData: OcrJobMessage): Promise<void> {
     );
   } catch (error) {
     const processingTimeMs = Date.now() - startTime;
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     console.error(
       JSON.stringify({

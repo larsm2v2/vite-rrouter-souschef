@@ -18,8 +18,11 @@ const password_1 = require("../../auth/password");
 const connection_1 = __importDefault(require("../../database/connection"));
 const jwt_1 = require("../../../utils/jwt");
 const jwtAuth_1 = require("../jwtAuth");
+const gateway_1 = require("../gateway");
 console.log("📥 Importing auth.routes");
 const router = (0, express_1.Router)();
+// Apply auth rate limiter to all auth routes
+router.use(gateway_1.authLimiter);
 // Simple test endpoint to verify request body parsing
 router.post("/test-body", (req, res) => {
     console.log("Test body endpoint hit");
@@ -61,8 +64,16 @@ router.post("/logout", (req, res) => __awaiter(void 0, void 0, void 0, function*
 // Token refresh endpoint: read refresh token from HttpOnly cookie, rotate, and return new access token
 router.post("/refresh", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    // Diagnostic logging to help debug refresh token behavior
+    console.log("/auth/refresh called. req.cookies:", req.cookies);
+    console.log("/auth/refresh headers:", {
+        origin: req.get("Origin"),
+        referer: req.get("Referer"),
+        cookieHeader: req.get("Cookie"),
+    });
     const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refreshToken;
     if (!refreshToken) {
+        console.warn("/auth/refresh: no refreshToken cookie present on request");
         return res.status(401).json({ error: "Refresh token required" });
     }
     const check = yield (0, jwt_1.isRefreshTokenValid)(refreshToken);
@@ -100,6 +111,15 @@ router.get("/check", jwtAuth_1.authenticateJWT, (req, res) => {
         user: req.user,
     });
 });
+// Diagnostic endpoint: echo cookies and raw Cookie header for debugging cross-site cookie behavior
+router.get("/debug/cookies", (req, res) => {
+    console.log("/auth/debug/cookies called. req.cookies:", req.cookies);
+    console.log("/auth/debug/cookies cookie header:", req.get("Cookie"));
+    res.json({
+        cookies: req.cookies || {},
+        cookieHeader: req.get("Cookie") || null,
+    });
+});
 // Registration route
 router.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -134,9 +154,17 @@ router.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, functio
         // Generate tokens for auto-login
         const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.email, user.display_name);
         const refreshToken = yield (0, jwt_1.generateRefreshToken)(user.id, user.email, user.display_name);
+        // Set refresh token as HttpOnly cookie for rotation flow
+        try {
+            const decoded = jsonwebtoken_1.default.decode(refreshToken);
+            const expiresMs = (decoded === null || decoded === void 0 ? void 0 : decoded.exp) ? decoded.exp * 1000 - Date.now() : undefined;
+            res.cookie("refreshToken", refreshToken, Object.assign(Object.assign({ httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" }, (expiresMs ? { maxAge: expiresMs } : {})), { path: "/" }));
+        }
+        catch (err) {
+            console.error("Failed to set refresh cookie on register:", err);
+        }
         res.status(201).json({
             accessToken,
-            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,
@@ -178,9 +206,17 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         // Generate tokens instead of creating session
         const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.email, user.display_name);
         const refreshToken = yield (0, jwt_1.generateRefreshToken)(user.id, user.email, user.display_name);
+        // Set refresh token as HttpOnly cookie to support refresh flow
+        try {
+            const decoded = jsonwebtoken_1.default.decode(refreshToken);
+            const expiresMs = (decoded === null || decoded === void 0 ? void 0 : decoded.exp) ? decoded.exp * 1000 - Date.now() : undefined;
+            res.cookie("refreshToken", refreshToken, Object.assign(Object.assign({ httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" }, (expiresMs ? { maxAge: expiresMs } : {})), { path: "/" }));
+        }
+        catch (err) {
+            console.error("Failed to set refresh cookie on login:", err);
+        }
         res.json({
             accessToken,
-            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,
