@@ -11,7 +11,10 @@ import { randomUUID } from "crypto";
 // it falls back to a local cleaning implementation.
 import { cleanRecipe as forwardToCleanService } from "../05_frameworks/cleanRecipe/client";
 import { ocrLimiter } from "../05_frameworks/myexpress/gateway";
-import { publishOcrJob, isPubSubAvailable } from "../05_frameworks/pubsub/client";
+import {
+  publishOcrJob,
+  isPubSubAvailable,
+} from "../05_frameworks/pubsub/client";
 import { ocrJobRepository } from "../03_adapters/repositories/OcrJobRepository";
 
 const execFileAsync = promisify(execFile);
@@ -28,7 +31,9 @@ let asyncProcessingEnabled = false;
   if (asyncProcessingEnabled) {
     console.log("OCR async processing enabled (Pub/Sub available)");
   } else {
-    console.log("OCR async processing disabled (Pub/Sub unavailable, using sync mode)");
+    console.log(
+      "OCR async processing disabled (Pub/Sub unavailable, using sync mode)"
+    );
   }
 })();
 
@@ -84,7 +89,7 @@ async function handleOcrUpload(req: any, res: any) {
       stored.push({ id, originalName: file.originalname, storedAt: destPath });
     }
 
-    const filePaths = stored.map(s => s.storedAt);
+    const filePaths = stored.map((s) => s.storedAt);
 
     // If async processing is enabled, create job and publish to Pub/Sub
     if (asyncProcessingEnabled) {
@@ -108,13 +113,15 @@ async function handleOcrUpload(req: any, res: any) {
           ocrText: ocrText || undefined,
         });
 
-        console.log(JSON.stringify({
-          type: "ocr-job-created",
-          jobId,
-          userId,
-          fileCount: filePaths.length,
-          timestamp: new Date().toISOString(),
-        }));
+        console.log(
+          JSON.stringify({
+            type: "ocr-job-created",
+            jobId,
+            userId,
+            fileCount: filePaths.length,
+            timestamp: new Date().toISOString(),
+          })
+        );
 
         return res.json({
           jobId,
@@ -123,7 +130,10 @@ async function handleOcrUpload(req: any, res: any) {
           message: "OCR job submitted for processing",
         });
       } catch (pubsubError) {
-        console.error("Async OCR job creation failed, falling back to sync:", pubsubError);
+        console.error(
+          "Async OCR job creation failed, falling back to sync:",
+          pubsubError
+        );
         // Fall through to synchronous processing
       }
     }
@@ -314,13 +324,31 @@ router.delete("/ocr/:id", async (req, res) => {
   }
 });
 
+// GET /api/ocr/health - check async processing status
+router.get("/ocr/health", async (req, res) => {
+  try {
+    const pubsubAvailable = await isPubSubAvailable();
+    res.json({
+      asyncProcessingEnabled,
+      pubsubCheckResult: pubsubAvailable,
+      gcpProjectId: process.env.GCP_PROJECT_ID || null,
+      ocrJobsTopic: process.env.OCR_JOBS_TOPIC || "ocr-jobs",
+    });
+  } catch (err) {
+    res.status(500).json({
+      asyncProcessingEnabled,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
 // GET /api/ocr/status/:jobId - check status of async OCR job
 router.get("/ocr/status/:jobId", async (req, res) => {
   try {
     const { jobId } = req.params;
-    
+
     const job = await ocrJobRepository.findByJobId(jobId);
-    
+
     if (!job) {
       return res.status(404).json({ message: "Job not found" });
     }

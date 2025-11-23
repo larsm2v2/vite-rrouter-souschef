@@ -298,6 +298,24 @@ router.delete("/ocr/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
         res.status(500).json({ message: "Delete failed" });
     }
 }));
+// GET /api/ocr/health - check async processing status
+router.get("/ocr/health", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const pubsubAvailable = yield (0, client_2.isPubSubAvailable)();
+        res.json({
+            asyncProcessingEnabled,
+            pubsubCheckResult: pubsubAvailable,
+            gcpProjectId: process.env.GCP_PROJECT_ID || null,
+            ocrJobsTopic: process.env.OCR_JOBS_TOPIC || "ocr-jobs",
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            asyncProcessingEnabled,
+            error: err instanceof Error ? err.message : String(err),
+        });
+    }
+}));
 // GET /api/ocr/status/:jobId - check status of async OCR job
 router.get("/ocr/status/:jobId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
