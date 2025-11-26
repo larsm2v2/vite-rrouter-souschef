@@ -32,12 +32,12 @@ export default function GoogleLoginButton({
       console.debug("WRITING PKCE", { verifierLength: verifier.length, state });
       console.debug("STORAGE NOW:", {
         session: {
-          verifier: sessionStorage.getItem("pkce_verifier") ? "present" : null,
+          verifier: sessionStorage.getItem("pkce_code_verifier") ? "present" : null,
           state: sessionStorage.getItem("oauth_state") ? "present" : null,
           length: sessionStorage.length,
         },
         local: {
-          verifier: localStorage.getItem("pkce_verifier") ? "present" : null,
+          verifier: localStorage.getItem("pkce_code_verifier") ? "present" : null,
           state: localStorage.getItem("oauth_state") ? "present" : null,
           length: localStorage.length,
         },
