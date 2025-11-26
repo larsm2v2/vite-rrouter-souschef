@@ -1,0 +1,395 @@
+{
+  "title": "PKCE OAuth Implementation Guide with Demo Mode",
+  "description": "Complete implementation guide for PKCE OAuth flow with Google and demo mode authentication",
+  "architecture": {
+    "overview": "Hybrid PKCE flow where frontend initiates OAuth with PKCE challenge, backend exchanges code with client_secret",
+    "components": {
+      "frontend": "React/Vite SPA hosted on Firebase Hosting",
+      "backend": "Node.js/Express API on Google Cloud Run",
+      "database": "PostgreSQL (Neon serverless)",
+      "authentication": "JWT tokens via Authorization header"
+    },
+    "reason_for_pkce": "Firebase Hosting proxy to Cloud Run strips cookies, making traditional session-based OAuth impossible. PKCE solves this by using Authorization headers instead."
+  },
+
+  "pkce_oauth_implementation": {
+    "step_1_frontend_utilities": {
+      "file": "client/src/utils/pkce.ts",
+      "purpose": "Cryptographic utilities for PKCE flow",
+      "functions": [
+        {
+          "name": "base64UrlEncode",
+          "description": "Converts ArrayBuffer to base64url string (URL-safe encoding)",
+          "code": "export function base64UrlEncode(buffer: ArrayBuffer): string {\n  const bytes = new Uint8Array(buffer);\n  let binary = '';\n  for (let i = 0; i < bytes.length; i++) {\n    binary += String.fromCharCode(bytes[i]);\n  }\n  return btoa(binary)\n    .replace(/\\+/g, '-')\n    .replace(/\\//g, '_')\n    .replace(/=/g, '');\n}"
+        },
+        {
+          "name": "sha256",
+          "description": "Generates SHA-256 hash using Web Crypto API",
+          "code": "export async function sha256(plain: string): Promise<ArrayBuffer> {\n  const encoder = new TextEncoder();\n  const data = encoder.encode(plain);\n  return await crypto.subtle.digest('SHA-256', data);\n}"
+        },
+        {
+          "name": "generateCodeVerifier",
+          "description": "Creates random 128-character verifier string",
+          "code": "export function generateCodeVerifier(): string {\n  const array = new Uint8Array(96);\n  crypto.getRandomValues(array);\n  return base64UrlEncode(array.buffer);\n}"
+        },
+        {
+          "name": "generateCodeChallenge",
+          "description": "Creates SHA-256 hash of verifier for PKCE challenge",
+          "code": "export async function generateCodeChallenge(verifier: string): Promise<string> {\n  const hashed = await sha256(verifier);\n  return base64UrlEncode(hashed);\n}"
+        }
+      ]
+    },
+
+    "step_2_oauth_service": {
+      "file": "client/src/utils/authService.ts",
+      "purpose": "Google OAuth service to initiate PKCE flow",
+      "configuration": {
+        "CLIENT_ID": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+        "REDIRECT_URI": "https://your-app.web.app/auth/callback",
+        "AUTH_ENDPOINT": "https://accounts.google.com/o/oauth2/v2/auth"
+      },
+      "function": {
+        "name": "startGoogleLogin",
+        "description": "Initiates OAuth flow with PKCE parameters",
+        "steps": [
+          "Generate code_verifier (random 128-char string)",
+          "Generate code_challenge (SHA-256 hash of verifier)",
+          "Generate random state for CSRF protection",
+          "Store verifier and state in sessionStorage",
+          "Redirect to Google OAuth with PKCE parameters"
+        ],
+        "code": "export async function startGoogleLogin() {\n  const code_verifier = generateCodeVerifier();\n  const code_challenge = await generateCodeChallenge(code_verifier);\n  const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))\n    .map((b) => b.toString(16).padStart(2, '0'))\n    .join('');\n\n  sessionStorage.setItem('pkce_code_verifier', code_verifier);\n  sessionStorage.setItem('oauth_state', state);\n\n  const params = new URLSearchParams({\n    client_id: CLIENT_ID,\n    redirect_uri: REDIRECT_URI,\n    response_type: 'code',\n    scope: 'openid profile email',\n    state,\n    code_challenge: code_challenge,\n    code_challenge_method: 'S256',\n    access_type: 'offline',\n    prompt: 'consent',\n  });\n\n  window.location.href = `${AUTH_ENDPOINT}?${params.toString()}`;\n}"
+      }
+    },
+
+    "step_3_login_component": {
+      "file": "client/src/components/pages/Login.tsx",
+      "changes": [
+        {
+          "import": "import { startGoogleLogin } from '../../utils/authService';",
+          "description": "Import OAuth service"
+        },
+        {
+          "handler": "const handleGoogleLogin = () => {\n  setLoading(true);\n  startGoogleLogin();\n};",
+          "description": "Call PKCE flow on button click"
+        },
+        {
+          "button": "<button\n  onClick={handleGoogleLogin}\n  className=\"provider-button google\"\n  disabled={loading}\n  type=\"button\"\n>\n  Continue with Google\n</button>",
+          "description": "Changed from <a> link to <button> with onClick handler"
+        }
+      ]
+    },
+
+    "step_4_callback_component": {
+      "file": "client/src/components/auth/AuthCallback.tsx",
+      "purpose": "Handle OAuth callback and exchange code for JWT",
+      "flow": [
+        "Extract code and state from URL query parameters",
+        "Retrieve stored state and verifier from sessionStorage",
+        "Validate state matches (CSRF protection)",
+        "Send code and verifier to backend /api/auth/verify",
+        "Backend exchanges code with Google (keeping client_secret secure)",
+        "Receive JWT token from backend",
+        "Store JWT in localStorage as 'authToken'",
+        "Clean up sessionStorage",
+        "Redirect to /profile"
+      ],
+      "code_snippet": "const code = searchParams.get('code');\nconst returnedState = searchParams.get('state');\nconst storedState = sessionStorage.getItem('oauth_state');\nconst verifier = sessionStorage.getItem('pkce_code_verifier');\n\nif (returnedState !== storedState) {\n  navigate('/login?error=state_mismatch', { replace: true });\n  return;\n}\n\nconst backendResp = await fetch('/api/auth/verify', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ code, code_verifier: verifier }),\n});\n\nconst { token: appJwt } = await backendResp.json();\nlocalStorage.setItem('authToken', appJwt);\n\nsessionStorage.removeItem('pkce_code_verifier');\nsessionStorage.removeItem('oauth_state');\n\nnavigate('/profile', { replace: true });"
+    },
+
+    "step_5_backend_dependencies": {
+      "packages": [
+        {
+          "name": "google-auth-library",
+          "version": "latest",
+          "purpose": "Verify Google id_token",
+          "install": "npm install google-auth-library"
+        },
+        {
+          "name": "jsonwebtoken",
+          "version": "9.0.2",
+          "purpose": "Generate app JWT tokens",
+          "install": "npm install jsonwebtoken"
+        }
+      ]
+    },
+
+    "step_6_backend_verify_endpoint": {
+      "file": "server/src/routes/auth.routes.ts",
+      "endpoint": "POST /api/auth/verify",
+      "purpose": "Exchange OAuth code for tokens, verify, and return app JWT",
+      "environment_variables": {
+        "GOOGLE_CLIENT_ID": "Your Google OAuth client ID",
+        "GOOGLE_CLIENT_SECRET": "Your Google OAuth client secret (KEEP SECRET)",
+        "JWT_SECRET": "Secret key for signing app JWT tokens"
+      },
+      "flow": [
+        "Receive code and code_verifier from frontend",
+        "Exchange code with Google token endpoint using client_secret",
+        "Receive id_token from Google",
+        "Verify id_token signature with google-auth-library",
+        "Extract user info (sub, email, name) from verified token",
+        "Find or create user in database",
+        "Generate app JWT token with user info",
+        "Return JWT to frontend"
+      ],
+      "code": "import { OAuth2Client } from 'google-auth-library';\n\nconst googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);\n\nrouter.post('/verify', async (req, res) => {\n  const { code, code_verifier } = req.body;\n\n  // Exchange code for tokens with Google\n  const tokenParams = new URLSearchParams({\n    grant_type: 'authorization_code',\n    code,\n    client_id: process.env.GOOGLE_CLIENT_ID,\n    client_secret: process.env.GOOGLE_CLIENT_SECRET,\n    redirect_uri: 'https://your-app.web.app/auth/callback',\n    code_verifier,\n  });\n\n  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n    body: tokenParams.toString(),\n  });\n\n  const tokens = await tokenResponse.json();\n  const { id_token } = tokens;\n\n  // Verify id_token\n  const ticket = await googleClient.verifyIdToken({\n    idToken: id_token,\n    audience: process.env.GOOGLE_CLIENT_ID,\n  });\n\n  const payload = ticket.getPayload();\n  const { sub: googleSub, email, name } = payload;\n\n  // Find or create user\n  let userResult = await pool.query(\n    'SELECT id, email, display_name FROM users WHERE google_sub = $1',\n    [googleSub]\n  );\n\n  let user;\n  if (userResult.rows.length === 0) {\n    const displayName = name || email.split('@')[0];\n    const createResult = await pool.query(\n      'INSERT INTO users (google_sub, email, display_name, password, password_salt) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, display_name',\n      [googleSub, email, displayName, null, null]\n    );\n    user = createResult.rows[0];\n    await pool.query('INSERT INTO game_stats (user_id) VALUES ($1)', [user.id]);\n  } else {\n    user = userResult.rows[0];\n  }\n\n  // Generate app JWT\n  const token = generateToken(user);\n\n  return res.json({\n    token,\n    user: {\n      id: user.id,\n      email: user.email,\n      displayName: user.display_name,\n    },\n  });\n});"
+    },
+
+    "step_7_jwt_utilities": {
+      "file": "server/src/utils/jwt.ts",
+      "purpose": "JWT token generation and verification",
+      "functions": [
+        {
+          "name": "generateToken",
+          "description": "Creates signed JWT with 7-day expiration",
+          "code": "import jwt from 'jsonwebtoken';\n\nexport function generateToken(user: any): string {\n  return jwt.sign(\n    {\n      id: user.id,\n      email: user.email,\n      displayName: user.display_name,\n    },\n    process.env.JWT_SECRET!,\n    { expiresIn: '7d' }\n  );\n}"
+        },
+        {
+          "name": "verifyToken",
+          "description": "Verifies JWT signature and returns payload",
+          "code": "export function verifyToken(token: string): any {\n  try {\n    return jwt.verify(token, process.env.JWT_SECRET!);\n  } catch (error) {\n    throw new Error('Invalid token');\n  }\n}"
+        }
+      ]
+    },
+
+    "step_8_google_console_setup": {
+      "steps": [
+        {
+          "step": 1,
+          "action": "Go to Google Cloud Console",
+          "url": "https://console.cloud.google.com/apis/credentials"
+        },
+        {
+          "step": 2,
+          "action": "Create OAuth 2.0 Client ID",
+          "type": "Web application"
+        },
+        {
+          "step": 3,
+          "action": "Add Authorized redirect URIs",
+          "uris": [
+            "https://your-app.web.app/auth/callback",
+            "http://localhost:5173/auth/callback (for development)"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Copy Client ID and Client Secret",
+          "note": "Client Secret must be stored securely in backend environment variables only"
+        }
+      ]
+    }
+  },
+
+  "demo_mode_implementation": {
+    "purpose": "Allow users to try the application without creating an account",
+    "architecture": "Creates/uses a special demo user account with predetermined credentials",
+
+    "frontend_implementation": {
+      "file": "client/src/components/pages/Login.tsx",
+      "handler": {
+        "name": "handleDemoLogin",
+        "description": "Calls backend demo endpoint and stores JWT",
+        "code": "const handleDemoLogin = async () => {\n  setFormError(null);\n  setLoading(true);\n\n  try {\n    const response = await apiClient.post(\n      '/auth/demo',\n      {},\n      { withCredentials: true }\n    );\n\n    if (response.status === 200 && response.data.token) {\n      localStorage.setItem('authToken', response.data.token);\n      navigate('/profile');\n    }\n  } catch (error) {\n    console.error('Demo login failed:', error);\n    setFormError('Demo mode is currently unavailable. Please try again later.');\n  } finally {\n    setLoading(false);\n  }\n};"
+      },
+      "button": {
+        "code": "<button\n  onClick={handleDemoLogin}\n  className=\"provider-button demo\"\n  disabled={loading}\n  type=\"button\"\n>\n  <span className=\"demo-icon\">🎮</span>\n  {loading ? 'Please wait...' : 'Try Demo (No Signup Required)'}\n</button>"
+      }
+    },
+
+    "backend_implementation": {
+      "file": "server/src/routes/auth.routes.ts",
+      "endpoint": "POST /api/auth/demo",
+      "demo_user_credentials": {
+        "email": "demo@portfolio.local",
+        "display_name": "Portfolio Demo User",
+        "google_sub": null,
+        "password": null,
+        "note": "No password required for demo user"
+      },
+      "flow": [
+        "Check if demo user exists in database",
+        "If not exists, create demo user with predetermined email",
+        "Create associated game_stats record",
+        "Generate JWT token for demo user",
+        "Return token and user info with isDemo: true flag"
+      ],
+      "code": "router.post('/demo', async (req, res) => {\n  try {\n    // Find or create demo user\n    let demoUserResult = await pool.query(\n      'SELECT id, email, display_name FROM users WHERE email = $1',\n      ['demo@portfolio.local']\n    );\n\n    let demoUser;\n\n    if (demoUserResult.rows.length === 0) {\n      // Create demo user\n      const createResult = await pool.query(\n        'INSERT INTO users (google_sub, email, display_name, password, password_salt) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, display_name',\n        [null, 'demo@portfolio.local', 'Portfolio Demo User', null, null]\n      );\n      demoUser = createResult.rows[0];\n\n      // Create game stats for demo user\n      await pool.query('INSERT INTO game_stats (user_id) VALUES ($1)', [demoUser.id]);\n    } else {\n      demoUser = demoUserResult.rows[0];\n    }\n\n    // Generate JWT token for demo user\n    const token = generateToken(demoUser);\n\n    return res.json({\n      message: 'Demo mode activated',\n      token,\n      user: {\n        id: demoUser.id,\n        email: demoUser.email,\n        displayName: demoUser.display_name,\n        isDemo: true,\n      },\n    });\n  } catch (err) {\n    console.error('Demo mode error:', err);\n    return res.status(500).json({ message: 'Internal server error' });\n  }\n});"
+    },
+
+    "database_schema": {
+      "users_table": {
+        "columns": [
+          {
+            "name": "id",
+            "type": "SERIAL PRIMARY KEY",
+            "description": "Auto-incrementing user ID"
+          },
+          {
+            "name": "google_sub",
+            "type": "VARCHAR(255)",
+            "nullable": true,
+            "description": "Google OAuth subject ID (null for demo/password users)"
+          },
+          {
+            "name": "email",
+            "type": "VARCHAR(255) UNIQUE NOT NULL",
+            "description": "User email address"
+          },
+          {
+            "name": "display_name",
+            "type": "VARCHAR(255)",
+            "description": "User display name"
+          },
+          {
+            "name": "password",
+            "type": "TEXT",
+            "nullable": true,
+            "description": "Hashed password (null for OAuth/demo users)"
+          },
+          {
+            "name": "password_salt",
+            "type": "TEXT",
+            "nullable": true,
+            "description": "Password salt (null for OAuth/demo users)"
+          }
+        ]
+      },
+      "game_stats_table": {
+        "columns": [
+          {
+            "name": "user_id",
+            "type": "INTEGER REFERENCES users(id)",
+            "description": "Foreign key to users table"
+          }
+        ],
+        "note": "Additional game-specific stats columns as needed"
+      }
+    },
+
+    "demo_mode_considerations": {
+      "benefits": [
+        "Allows users to try app without signup friction",
+        "Useful for portfolio/demo purposes",
+        "No email verification required",
+        "Instant access"
+      ],
+      "security_considerations": [
+        "Demo user data is shared across all demo sessions",
+        "Consider auto-resetting demo data periodically",
+        "May want to limit demo user capabilities",
+        "Consider adding rate limiting to prevent abuse"
+      ],
+      "optional_enhancements": [
+        "Add data reset timer (e.g., reset demo data every 24 hours)",
+        "Limit certain features for demo users",
+        "Add banner indicating demo mode",
+        "Implement session isolation using unique demo user IDs"
+      ]
+    }
+  },
+
+  "authentication_middleware": {
+    "file": "server/src/middleware/auth.ts",
+    "purpose": "Protect routes requiring authentication",
+    "implementation": {
+      "code": "import { Request, Response, NextFunction } from 'express';\nimport { verifyToken } from '../utils/jwt';\n\nexport function authenticateJWT(req: Request, res: Response, next: NextFunction) {\n  const authHeader = req.headers.authorization;\n\n  if (!authHeader || !authHeader.startsWith('Bearer ')) {\n    return res.status(401).json({ error: 'No token provided' });\n  }\n\n  const token = authHeader.substring(7);\n\n  try {\n    const payload = verifyToken(token);\n    req.user = payload;\n    next();\n  } catch (error) {\n    return res.status(403).json({ error: 'Invalid or expired token' });\n  }\n}"
+    },
+    "usage": "router.get('/profile', authenticateJWT, (req, res) => { ... });"
+  },
+
+  "frontend_auth_client": {
+    "file": "client/src/utils/apiClient.ts or similar",
+    "purpose": "Axios interceptor to attach JWT to requests",
+    "code": "import axios from 'axios';\n\nconst apiClient = axios.create({\n  baseURL: process.env.VITE_API_URL || 'http://localhost:8080',\n  withCredentials: true,\n});\n\n// Add JWT token to all requests\napiClient.interceptors.request.use((config) => {\n  const token = localStorage.getItem('authToken');\n  if (token) {\n    config.headers.Authorization = `Bearer ${token}`;\n  }\n  return config;\n});\n\n// Handle 401 responses (redirect to login)\napiClient.interceptors.response.use(\n  (response) => response,\n  (error) => {\n    if (error.response?.status === 401) {\n      localStorage.removeItem('authToken');\n      window.location.href = '/login';\n    }\n    return Promise.reject(error);\n  }\n);\n\nexport default apiClient;"
+  },
+
+  "deployment_checklist": {
+    "frontend": [
+      "Build app with production environment variables",
+      "Deploy to Firebase Hosting or similar",
+      "Ensure CORS allows requests from frontend domain",
+      "Set VITE_API_URL to backend URL"
+    ],
+    "backend": [
+      "Install dependencies: google-auth-library, jsonwebtoken",
+      "Set environment variables in Cloud Run/hosting:",
+      "  - GOOGLE_CLIENT_ID",
+      "  - GOOGLE_CLIENT_SECRET",
+      "  - JWT_SECRET",
+      "  - DATABASE_URL (for PostgreSQL)",
+      "Build and deploy to Cloud Run or similar",
+      "Ensure database migrations are run",
+      "Test /health endpoint"
+    ],
+    "google_console": [
+      "Add production redirect URI to OAuth client",
+      "Verify OAuth consent screen is configured",
+      "Test OAuth flow in production"
+    ]
+  },
+
+  "troubleshooting": {
+    "redirect_uri_mismatch": {
+      "error": "Error 400: redirect_uri_mismatch",
+      "solution": "Add exact redirect URI to Google Console Authorized redirect URIs",
+      "note": "URI must match exactly, including protocol (https://) and path"
+    },
+    "client_secret_missing": {
+      "error": "client_secret is missing",
+      "solution": "Ensure backend exchanges code with Google (not frontend)",
+      "note": "client_secret must never be exposed to frontend"
+    },
+    "state_mismatch": {
+      "error": "state_mismatch error during callback",
+      "solution": "Check sessionStorage persistence, ensure state generation is random",
+      "note": "This is CSRF protection - do not skip validation"
+    },
+    "invalid_token": {
+      "error": "403 Invalid or expired token",
+      "solution": "Check JWT_SECRET matches between token generation and verification",
+      "note": "Tokens expire after 7 days by default"
+    }
+  },
+
+  "key_differences_from_traditional_oauth": {
+    "traditional_server_oauth": {
+      "flow": "Backend handles entire OAuth flow",
+      "session": "Uses cookies and server sessions",
+      "problem": "Doesn't work with Firebase Hosting proxy (strips cookies)"
+    },
+    "pkce_hybrid_approach": {
+      "flow": "Frontend initiates, backend exchanges",
+      "authentication": "JWT in Authorization header",
+      "benefits": [
+        "Works with proxy architectures",
+        "More secure for SPAs (no client_secret exposure)",
+        "Stateless backend (no session storage needed)",
+        "Easier horizontal scaling"
+      ]
+    }
+  },
+
+  "security_best_practices": {
+    "pkce_flow": [
+      "Always validate state parameter (CSRF protection)",
+      "Generate cryptographically secure random values",
+      "Use SHA-256 for code_challenge",
+      "Clear sessionStorage after successful login"
+    ],
+    "jwt_tokens": [
+      "Use strong JWT_SECRET (min 32 random characters)",
+      "Set reasonable expiration (7 days recommended)",
+      "Store in localStorage (not sessionStorage for persistence)",
+      "Include minimal user info in payload",
+      "Verify signature on every protected route"
+    ],
+    "demo_mode": [
+      "Consider rate limiting demo endpoint",
+      "Regularly reset demo user data",
+      "Clearly mark demo sessions in UI",
+      "Limit sensitive operations for demo users"
+    ]
+  }
+}

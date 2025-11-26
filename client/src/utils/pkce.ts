@@ -64,11 +64,11 @@ export function generateState(): string {
 export function storePKCEParams(verifier: string, state: string): void {
   // Store in sessionStorage (per-tab), and localStorage (cross-tab) so that
   // the PKCE parameters are available if the callback is opened in a new tab.
-  sessionStorage.setItem("pkce_verifier", verifier);
+  sessionStorage.setItem("pkce_code_verifier", verifier);
   sessionStorage.setItem("oauth_state", state);
 
   try {
-    localStorage.setItem("pkce_verifier", verifier);
+    localStorage.setItem("pkce_code_verifier", verifier);
     localStorage.setItem("oauth_state", state);
   } catch (e) {
     void e;
@@ -89,19 +89,19 @@ export function retrieveAndClearPKCEParams(): {
 } | null {
   // Prefer sessionStorage (same-tab flow). If missing, fallback to
   // localStorage which can survive across tabs/windows.
-  let verifier = sessionStorage.getItem("pkce_verifier");
+  let verifier = sessionStorage.getItem("pkce_code_verifier");
   let state = sessionStorage.getItem("oauth_state");
 
   if (!verifier || !state) {
-    verifier = localStorage.getItem("pkce_verifier");
+    verifier = localStorage.getItem("pkce_code_verifier");
     state = localStorage.getItem("oauth_state");
   }
 
   // Clear immediately from both storages after retrieval (one-time use)
-  sessionStorage.removeItem("pkce_verifier");
+  sessionStorage.removeItem("pkce_code_verifier");
   sessionStorage.removeItem("oauth_state");
   try {
-    localStorage.removeItem("pkce_verifier");
+    localStorage.removeItem("pkce_code_verifier");
     localStorage.removeItem("oauth_state");
   } catch (e) {
     void e;
