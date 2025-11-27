@@ -5,6 +5,18 @@
 notes.txt
 check-env.ts
 keycommands.txt
+
+# Dependencies
 node_modules
 **/node_modules/**
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+*.lcov
+
+# Secrets
 **/secrets/**

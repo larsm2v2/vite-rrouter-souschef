@@ -36,7 +36,8 @@ These files should be deleted as they are no longer needed or have been supersed
 
    - **Reason:** Static data files not used in current implementation
    - **Action:** MOVED to `server/data/` on 2025-11-10: `server/data/Recipes.json` and `server/data/IngredientSynonyms.json`.
-     - These files are retained as project seed/reference data; consider deleting if they become unused.
+     - **UPDATE (2025-11-27):** IngredientSynonyms.json has been superseded by the TypeScript synonym module in `clean-recipe-service/src/synonyms.ts`. The synonym map is now integrated into the cleaning pipeline with ~75 canonical ingredients and ~350 variants. The JSON file can be deleted.
+     - Recipes.json is retained as project seed/reference data; consider deleting if it becomes unused.
    - **Risk:** Low
 
 5. **Structure.txt** (root level)
@@ -233,7 +234,30 @@ src/05_frameworks/
 - Implement consistent error responses
 - Add error logging
 
-### 6.2 Add Validation Layer
+### 6.2 Ingredient Synonym System
+
+**Status:** ✅ COMPLETED (2025-11-27)
+
+The ingredient synonym canonicalization system has been fully integrated into the clean-recipe-service:
+
+- **Location:** `clean-recipe-service/src/synonyms.ts`
+- **Coverage:** ~75 canonical ingredients, ~350 variants
+- **Categories:** Seasonings, oils, dairy, proteins, vegetables, herbs, pantry staples, condiments, liquids, baking supplies
+- **Integration:** Automatically applied during recipe cleaning
+- **API Endpoints:**
+  - `POST /canonicalize` - Single ingredient canonicalization
+  - `POST /canonicalize-batch` - Batch processing
+  - `GET /synonym-stats` - Statistics about the synonym map
+- **Benefits:**
+  - Consistent ingredient naming across all recipes
+  - Flexible input (accepts many variations)
+  - Type-safe TypeScript implementation
+  - In-memory lookup (no database queries)
+  - Easy to extend with new synonyms
+
+**Result:** No need for separate ingredient-synonyms endpoint on the main server. All synonym logic is encapsulated in the microservice.
+
+### 6.3 Add Validation Layer
 
 - Input validation for all endpoints
 - Schema validation using Zod or Joi

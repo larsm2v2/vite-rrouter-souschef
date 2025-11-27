@@ -56,9 +56,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 		isDone: false,
 		toTransfer: false,
 	}) */
-  const [ingredientSynonyms, setIngredientSynonyms] = useState<{
-    [key: string]: string[];
-  }>({});
   //Clean and Fetch Backend Recipes
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -78,25 +75,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     };
 
     fetchRecipes(); // Fetch recipes on component mount
-  }, []);
-  // Fetch Ingredient Synonyms
-  useEffect(() => {
-    const fetchIngredientSynonyms = async () => {
-      try {
-        const response = await apiClient.get<{ [key: string]: string[] }>(
-          `/api/ingredient-synonyms`
-        );
-        if (response.status === 200) {
-          setIngredientSynonyms(response.data);
-        } else {
-          throw new Error("Failed to fetch ingredient synonyms.");
-        }
-      } catch (error) {
-        console.error("Error fetching ingredient synonyms:", error);
-      }
-    };
-
-    fetchIngredientSynonyms();
   }, []);
   // Helper function to consolidate ingredients
   /* 	const consolidateIngredients = (
@@ -165,29 +143,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
             newRecipeIngredients[recipeId] = Object.values(recipe.ingredients)
               .flat()
               .map((ingredient) => {
-                // Check for synonyms
-                const standardizedName = Object.keys(ingredientSynonyms).find(
-                  (key) => {
-                    const normalizedIngredientName = ingredient.name
-                      .toLowerCase()
-                      .trim(); // Normalize for better matching
-                    // Get the array of synonyms for the current key
-                    const synonymsForIngredient = ingredientSynonyms[key];
-                    return (
-                      Array.isArray(synonymsForIngredient) && // Ensure it's an array
-                      synonymsForIngredient.some(
-                        (synonym) =>
-                          synonym.toLowerCase().trim() ===
-                          normalizedIngredientName
-                      )
-                    );
-                  }
-                );
+                // Ingredient names are already canonicalized by the clean-recipe-service
                 return {
                   id: Date.now() + Math.random(), // Generate a unique ID
                   quantity: ingredient.quantity || 0,
                   unit: ingredient.unit || "",
-                  listItem: standardizedName || ingredient.name,
+                  listItem: ingredient.name,
                   isDone: false,
                   toTransfer: false,
                 };
@@ -219,7 +180,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     };
 
     updateShoppingList();
-  }, [selectedRecipeIds, recipes, ingredientSynonyms]);
+  }, [selectedRecipeIds, recipes]);
 
   return (
     <div className="shoppinglist-container">

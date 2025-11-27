@@ -1,3 +1,5 @@
+import { canonicalizeIngredient } from "./synonyms";
+
 export function cleanRecipe(recipe: any): any {
   if (!recipe || !recipe.name) {
     throw new Error("Recipe name is required");
@@ -59,7 +61,7 @@ export function cleanRecipe(recipe: any): any {
     }
   }
 
-  // ingredients: ensure object with arrays and numeric quantities
+  // ingredients: ensure object with arrays, numeric quantities, and canonicalized names
   if (!out.ingredients || typeof out.ingredients !== "object") {
     out.ingredients = { dish: [] };
   }
@@ -70,6 +72,8 @@ export function cleanRecipe(recipe: any): any {
         (item: any) => ({
           ...item,
           quantity: typeof item.quantity === "number" ? item.quantity : 0,
+          // Canonicalize ingredient name using synonym map
+          name: item.name ? canonicalizeIngredient(item.name) : item.name,
         })
       );
     } else {
