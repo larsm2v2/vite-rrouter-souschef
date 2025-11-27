@@ -23,8 +23,8 @@ router.get(
       SELECT 
         r.*,
         rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
-        json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) AS ingredients,
-        json_agg(DISTINCT jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) AS instructions,
+        json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) FILTER (WHERE ri.category IS NOT NULL) AS ingredients,
+        json_agg(jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) FILTER (WHERE inst.step_number IS NOT NULL) AS instructions,
         json_agg(DISTINCT rn.note) FILTER (WHERE rn.note IS NOT NULL) AS notes,
         rnut.nutrition_data
       FROM recipes r
@@ -55,8 +55,8 @@ router.get(
       SELECT 
         r.*,
         rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
-        json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) AS ingredients,
-        json_agg(DISTINCT jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) AS instructions,
+        json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) FILTER (WHERE ri.category IS NOT NULL) AS ingredients,
+        json_agg(jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) FILTER (WHERE inst.step_number IS NOT NULL) AS instructions,
         json_agg(DISTINCT rn.note) FILTER (WHERE rn.note IS NOT NULL) AS notes,
         rnut.nutrition_data
       FROM recipes r

@@ -99,7 +99,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return () => {
       isActive = false; // Mark component as unmounted
     };
-  }, [location.pathname, isAuthenticated]); // Only recheck when the path or auth state changes
+  }, [isAuthenticated]); // Only check once on mount - cache handles subsequent checks
 
   // While checking authentication status, show loading
   if (isLoading) {

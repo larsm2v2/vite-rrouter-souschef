@@ -19,7 +19,7 @@ const MainLayout = () => {
     null
   );
   const [showOcrModal, setShowOcrModal] = useState(false);
-  const { user } = useAuth() || { user: null };
+  const { user } = useAuth();
 
   const openOcr = () => setShowOcrModal(true);
   const closeOcr = () => setShowOcrModal(false);
