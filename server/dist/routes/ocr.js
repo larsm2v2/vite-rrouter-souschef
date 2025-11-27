@@ -92,7 +92,7 @@ function handleOcrUpload(req, res) {
                 }
                 stored.push({ id, originalName: file.originalname, storedAt: destPath });
             }
-            const filePaths = stored.map(s => s.storedAt);
+            const filePaths = stored.map((s) => s.storedAt);
             // If async processing is enabled, create job and publish to Pub/Sub
             if (asyncProcessingEnabled) {
                 try {

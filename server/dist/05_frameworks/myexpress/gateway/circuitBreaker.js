@@ -18,7 +18,7 @@ exports.checkCircuit = checkCircuit;
 exports.callWithCircuitBreaker = callWithCircuitBreaker;
 const circuits = new Map();
 const FAILURE_THRESHOLD = 5; // Open circuit after 5 failures
-const TIMEOUT_MS = 60000; // Keep circuit open for 60 seconds
+const TIMEOUT_MS = 15000; // Keep circuit open for 15 seconds (tolerance for cold starts)
 const HALF_OPEN_ATTEMPTS = 1; // Allow 1 attempt in half-open state
 class CircuitBreakerError extends Error {
     constructor(serviceName) {

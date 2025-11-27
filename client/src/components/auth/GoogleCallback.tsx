@@ -84,46 +84,21 @@ export default function GoogleCallback() {
           );
         }
 
-        const { access_token } = await response.json();
+        const { access_token, user } = await response.json();
 
         // Persist the access token under the expected key
         const accessToken = access_token;
         localStorage.setItem("accessToken", accessToken);
 
-        // Try to fetch the authenticated user from the API, then populate auth context
-        try {
-          const apiUrl =
-            import.meta.env.VITE_API_URL || "http://localhost:8080";
-          const checkResp = await fetch(`${apiUrl}/auth/check`, {
-            method: "GET",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-          });
-
-          if (checkResp.ok) {
-            const checkData = await checkResp.json();
-            if (checkData && checkData.authenticated && checkData.user) {
-              // Populate AuthContext and localStorage
-              try {
-                // Use context login if available
-                if (typeof login === "function") {
-                  login(accessToken, checkData.user);
-                }
-              } catch {
-                // Fallback: store user in localStorage
-                localStorage.setItem("user", JSON.stringify(checkData.user));
-              }
-
-              // Navigate to profile
-              navigate("/profile", { replace: true });
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("Failed to fetch user after token exchange:", err);
+        // If server provided user data, populate AuthContext immediately
+        if (user && typeof login === "function") {
+          login(accessToken, user);
+        } else {
+          // Fallback: store just the access token, let ProtectedRoute/AuthContext handle user fetch
+          console.debug("No user data in token response, will fetch via /profile or /auth/check");
         }
 
-        // Fallback: navigate to profile so app can attempt refresh/check
+        // Navigate to profile - ProtectedRoute will verify authentication
         navigate("/profile", { replace: true });
       } catch (err) {
         console.error("OAuth callback error:", err);

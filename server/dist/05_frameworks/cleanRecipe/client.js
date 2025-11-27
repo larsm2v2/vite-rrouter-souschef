@@ -86,26 +86,21 @@ function cleanRecipe(recipe) {
         }
         try {
             const endpoint = `${url.replace(/\/$/, "")}/clean-recipe`;
-            // If the target service requires IAM authentication (Cloud Run private),
-            // request an ID token from the metadata server and include it as a
+            // For internal-only Cloud Run service calls, we require IAM authentication.
+            // Request an ID token from the metadata server and include it as a
             // Bearer token. The audience should be the service URL by default but can
             // be overridden with CLEAN_RECIPE_SERVICE_AUDIENCE env var.
             const audience = process.env.CLEAN_RECIPE_SERVICE_AUDIENCE || url.replace(/\/$/, "");
-            let headers = {
+            // Fetch ID token - fail loudly if not available (enforces internal-only constraint)
+            const idToken = yield fetchIdToken(audience);
+            if (!idToken) {
+                throw new Error(`Failed to obtain ID token for clean service authentication. ` +
+                    `Service URL: ${url}, Audience: ${audience}`);
+            }
+            const headers = {
                 "Content-Type": "application/json",
+                Authorization: `Bearer ${idToken}`,
             };
-            try {
-                const idToken = yield fetchIdToken(audience);
-                if (idToken) {
-                    headers["Authorization"] = `Bearer ${idToken}`;
-                }
-            }
-            catch (err) {
-                // If metadata request fails, continue without Authorization header.
-                // The call will fail server-side if authentication is required.
-                // eslint-disable-next-line no-console
-                console.warn("Failed to obtain ID token for clean service auth:", err && err.message);
-            }
             // Wrap the call with circuit breaker to prevent cascade failures
             const cleaned = yield (0, circuitBreaker_1.callWithCircuitBreaker)("clean-recipe-service", () => __awaiter(this, void 0, void 0, function* () {
                 const resp = yield fetch(endpoint, {
@@ -115,7 +110,18 @@ function cleanRecipe(recipe) {
                 });
                 if (!resp.ok) {
                     const body = yield resp.text();
-                    throw new Error(`Clean service error: ${resp.status} ${body}`);
+                    const errorMsg = `Clean service error: ${resp.status} ${body}`;
+                    // Log specific status codes to help identify auth misconfigurations
+                    if (resp.status === 401) {
+                        console.error(`[Clean Service] Authentication failed (401): ${body}`);
+                    }
+                    else if (resp.status === 403) {
+                        console.error(`[Clean Service] Authorization forbidden (403): ${body}`);
+                    }
+                    else if (resp.status === 404) {
+                        console.error(`[Clean Service] Endpoint not found (404): ${endpoint}`);
+                    }
+                    throw new Error(errorMsg);
                 }
                 return yield resp.json();
             }));
