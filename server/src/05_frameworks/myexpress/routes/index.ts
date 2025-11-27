@@ -32,8 +32,8 @@ console.log(
   authRoutes?.stack?.length
 );
 
-console.log("  Mounting /api → recipes routes");
-router.use("/api", recipesRoutes);
+console.log("  Mounting /api/recipes → recipes routes");
+router.use("/api/recipes", recipesRoutes);
 console.log(
   "    -> recipesRoutes loaded?",
   typeof recipesRoutes,
