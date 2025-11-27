@@ -10,6 +10,11 @@ import { randomUUID } from "crypto";
 // microservice when `CLEAN_RECIPE_SERVICE_URL` is configured, otherwise
 // it falls back to a local cleaning implementation.
 import { cleanRecipe as forwardToCleanService } from "../05_frameworks/cleanRecipe/client";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { ocrParsePrompt } from "../utils/prompts";
+
+const apiKey = process.env.GEMINI_API_KEY;
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 import { ocrLimiter } from "../05_frameworks/myexpress/gateway";
 import {
   publishOcrJob,
@@ -269,14 +274,56 @@ router.post("/ocr/parse", async (req, res) => {
 
     const ocrText = (req.body && (req.body.text || req.body.ocrText)) || "";
 
-    // Minimal structured response: server-side parsing heuristics can be added later
-    const parsed = {
+    if (!ocrText || ocrText.trim().length === 0) {
+      return res.status(400).json({ message: "No text provided for parsing" });
+    }
+
+    // Use AI to parse the recipe text
+    let parsed: any = {
       name: undefined,
       cuisine: undefined,
       ingredients: { "from-ocr": [] },
       instructions: [{ number: 1, text: ocrText }],
       notes: ["Parsed via /ocr/parse"],
-    } as any;
+    };
+
+    if (genAI) {
+      try {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // Use the improved prompt from prompts.ts
+        const prompt = ocrParsePrompt(ocrText);
+
+        const result = await model.generateContent(prompt);
+        const response = result.response.text();
+
+        // Clean up response - remove markdown code blocks if present
+        let jsonText = response.trim();
+        if (jsonText.startsWith("```json")) {
+          jsonText = jsonText.slice(7);
+        } else if (jsonText.startsWith("```")) {
+          jsonText = jsonText.slice(3);
+        }
+        if (jsonText.endsWith("```")) {
+          jsonText = jsonText.slice(0, -3);
+        }
+        jsonText = jsonText.trim();
+
+        const aiParsed = JSON.parse(jsonText);
+        parsed = { ...parsed, ...aiParsed };
+        console.log("/ocr/parse: Successfully parsed recipe with AI");
+      } catch (aiErr) {
+        console.warn(
+          "/ocr/parse: AI parsing failed, using fallback:",
+          aiErr instanceof Error ? aiErr.message : aiErr
+        );
+        // Continue with basic parsed structure
+      }
+    } else {
+      console.warn(
+        "/ocr/parse: GEMINI_API_KEY not configured, skipping AI parsing"
+      );
+    }
 
     // Try to forward to clean-recipe-service; wrapper handles fallback.
     try {
