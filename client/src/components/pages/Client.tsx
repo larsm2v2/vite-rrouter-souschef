@@ -30,8 +30,10 @@ apiClient.interceptors.request.use(
   (config) => {
     // Add JWT token to requests
     const accessToken = localStorage.getItem("accessToken");
+    console.log("API Request Interceptor - Token present:", !!accessToken);
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+      console.log("API Request Interceptor - Authorization header set");
     }
 
     // Log requests in development
@@ -81,7 +83,9 @@ apiClient.interceptors.response.use(
     }
 
     // Add retry flag
-    const requestWithRetry = originalRequest as typeof originalRequest & { _retry?: boolean };
+    const requestWithRetry = originalRequest as typeof originalRequest & {
+      _retry?: boolean;
+    };
 
     // Handle network errors - connection refused, server not running
     if (
@@ -99,7 +103,7 @@ apiClient.interceptors.response.use(
 
     // Handle unauthorized - token expired or not logged in
     if (error.response?.status === 401 && !requestWithRetry._retry) {
-        console.warn("API client received 401, attempting refresh...");
+      console.warn("API client received 401, attempting refresh...");
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -150,8 +154,8 @@ apiClient.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
 
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("user");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
 
         const now = Date.now();
         if (now - lastAuthRedirect > redirectDebounceTime) {
@@ -172,4 +176,3 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-

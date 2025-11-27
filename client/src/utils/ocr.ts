@@ -7,7 +7,6 @@ export async function extractTextWithTesseract(file: File): Promise<string> {
       logger: (m: { status: string; progress: number }) =>
         console.debug("tesseract", m),
     });
-    await worker.load();
     await worker.loadLanguage("eng");
     await worker.initialize("eng");
     const { data } = await worker.recognize(file);

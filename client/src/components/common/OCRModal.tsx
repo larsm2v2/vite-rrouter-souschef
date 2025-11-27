@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./OCRModal.css";
 import { extractTextWithTesseract } from "../../utils/ocr";
-import axios from "axios";
+import apiClient from "../pages/Client";
 import ImageGallery from "./ImageGallery";
 
 interface Props {
@@ -80,6 +80,14 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       alert("Please choose one or more images first");
       return;
     }
+
+    // Check if user is authenticated
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      alert("You must be logged in to use OCR upload. Please log in first.");
+      return;
+    }
+
     setLoading(true);
     try {
       const form = new FormData();
@@ -89,8 +97,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       }
       form.append("ocrText", ocrText || "");
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const resp = await axios.post(`${apiUrl}/api/ocr`, form, {
+      const resp = await apiClient.post(`/api/ocr`, form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const parsed = (resp.data as OCRResponse)?.parsed;
@@ -144,11 +151,18 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       alert("Please paste or enter some text to parse first.");
       return;
     }
+
+    // Check if user is authenticated
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      alert("You must be logged in to use OCR parsing. Please log in first.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
       // POST as JSON { text: string }
-      const resp = await axios.post(`${apiUrl}/api/ocr/parse`, {
+      const resp = await apiClient.post(`/api/ocr/parse`, {
         text: ocrText,
       });
       const parsed = (resp.data as OCRResponse)?.parsed;
