@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import apiClient from "../pages/Client";
 
 interface ProtectedRouteProps {
@@ -18,31 +19,45 @@ const authCache = {
  * A wrapper component that protects routes requiring authentication
  */
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const { isAuthenticated: authContextAuthenticated } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(
     authCache.isAuthenticated
   );
   const [isLoading, setIsLoading] = useState(
-    authCache.isAuthenticated === null
+    authCache.isAuthenticated === null && !authContextAuthenticated
   );
   const [error, setError] = useState<string | null>(null);
   const location = useLocation();
 
   useEffect(() => {
-    // If we have a recent auth check in cache, use it
+    // PRIORITY 1: Check AuthContext first (set by login/OAuth)
+    if (authContextAuthenticated) {
+      console.log("Using AuthContext authentication");
+      setIsAuthenticated(true);
+      authCache.isAuthenticated = true;
+      authCache.lastChecked = Date.now();
+      setIsLoading(false);
+      return;
+    }
+
+    // PRIORITY 2: If we have a recent auth check in cache, use it
     const now = Date.now();
     if (
       authCache.isAuthenticated !== null &&
       now - authCache.lastChecked < authCache.expiryTime
     ) {
+      console.log("Using cached auth status");
       setIsAuthenticated(authCache.isAuthenticated);
       setIsLoading(false);
       return;
     }
 
+    // PRIORITY 3: Make server call only if needed
     let isActive = true; // Flag to track if component is still mounted
 
     const checkAuth = async () => {
       try {
+        console.log("Making /auth/check call to server");
         const response = await apiClient.get<{ authenticated: boolean }>(
           "/auth/check"
         );
@@ -99,7 +114,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return () => {
       isActive = false; // Mark component as unmounted
     };
-  }, [isAuthenticated]); // Only check once on mount - cache handles subsequent checks
+  }, [isAuthenticated, authContextAuthenticated]); // Re-check if AuthContext changes
 
   // While checking authentication status, show loading
   if (isLoading) {

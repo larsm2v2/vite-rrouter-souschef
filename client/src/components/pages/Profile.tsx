@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import apiClient from "./Client";
 import "./Profile.css";
 
@@ -17,6 +18,7 @@ interface RecipeIndexItem {
 }
 
 const Profile: React.FC = () => {
+  const { user: authUser, logout: authLogout } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [recipes, setRecipes] = useState<RecipeIndexItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,9 +30,22 @@ const Profile: React.FC = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const profileResp = await apiClient.get<{ user?: User }>("/profile");
-        if (!mounted) return;
-        if (profileResp.data?.user) setUser(profileResp.data.user);
+        
+        // First, try to use AuthContext user if available
+        if (authUser) {
+          console.log("Using AuthContext user:", authUser);
+          setUser({
+            id: parseInt(authUser.id),
+            display_name: authUser.display_name,
+            email: authUser.email,
+          });
+        } else {
+          // Fallback to fetching from server
+          console.log("Fetching user from /profile endpoint");
+          const profileResp = await apiClient.get<{ user?: User }>("/profile");
+          if (!mounted) return;
+          if (profileResp.data?.user) setUser(profileResp.data.user);
+        }
 
         try {
           const r = await apiClient.get<{ items: RecipeIndexItem[] }>(
@@ -52,14 +67,17 @@ const Profile: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [authUser]);
 
   const handleLogout = async () => {
     try {
       await apiClient.post("/auth/logout");
+      authLogout(); // Clear AuthContext
       navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);
+      authLogout(); // Clear AuthContext even if server call fails
+      navigate("/login");
     }
   };
 

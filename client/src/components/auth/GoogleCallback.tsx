@@ -19,10 +19,21 @@ export default function GoogleCallback() {
     const handleCallback = async () => {
       try {
         // Parse URL parameters
+        console.log("Full URL:", window.location.href);
+        console.log("Search params:", window.location.search);
+
+        // Only proceed if we're actually at the callback URL with a code
+        if (!window.location.pathname.includes("/auth/callback")) {
+          console.log("Not at callback path, skipping OAuth handling");
+          return;
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get("code");
         const state = urlParams.get("state");
         const errorParam = urlParams.get("error");
+
+        console.log("Parsed params:", { code, state, errorParam });
 
         // Check for OAuth errors
         if (errorParam) {
@@ -30,6 +41,7 @@ export default function GoogleCallback() {
         }
 
         if (!code) {
+          console.error("No code found. Full search:", window.location.search);
           throw new Error("No authorization code received from Google");
         }
 
@@ -65,6 +77,11 @@ export default function GoogleCallback() {
         // Exchange code + verifier for tokens via backend
         // Match server default (client/.env uses 8000 locally) and other client code
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+        console.log(
+          "Exchanging code with server at:",
+          `${apiUrl}/api/oauth/google/token`
+        );
+
         const response = await fetch(`${apiUrl}/api/oauth/google/token`, {
           method: "POST",
           headers: {
@@ -77,14 +94,18 @@ export default function GoogleCallback() {
           }),
         });
 
+        console.log("Token exchange response status:", response.status);
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          console.error("Token exchange failed:", errorData);
           throw new Error(
             errorData.error || "Failed to exchange authorization code"
           );
         }
 
         const { access_token, user } = await response.json();
+        console.log("Token exchange successful! User:", user);
 
         // Persist the access token under the expected key
         const accessToken = access_token;
@@ -95,7 +116,9 @@ export default function GoogleCallback() {
           login(accessToken, user);
         } else {
           // Fallback: store just the access token, let ProtectedRoute/AuthContext handle user fetch
-          console.debug("No user data in token response, will fetch via /profile or /auth/check");
+          console.debug(
+            "No user data in token response, will fetch via /profile or /auth/check"
+          );
         }
 
         // Navigate to profile - ProtectedRoute will verify authentication
@@ -110,7 +133,8 @@ export default function GoogleCallback() {
     };
 
     handleCallback();
-  }, [navigate, login]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   if (loading) {
     return (
