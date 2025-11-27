@@ -30,7 +30,8 @@ router.post("/clean-recipe", (req, res) => {
     const cleanedRecipe = cleanRecipe(req.body);
     res.status(200).json(cleanedRecipe);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(400).json({ error: message });
   }
 });
 
@@ -40,9 +41,10 @@ router.post("/canonicalize", (req, res) => {
     const { ingredient } = req.body;
 
     if (!ingredient || typeof ingredient !== "string") {
-      return res.status(400).json({
+      res.status(400).json({
         error: "Missing or invalid 'ingredient' field",
       });
+      return;
     }
 
     const canonical = canonicalizeIngredient(ingredient);
@@ -58,7 +60,8 @@ router.post("/canonicalize", (req, res) => {
         canonical.toLowerCase() !== ingredient.toLowerCase().trim(),
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
   }
 });
 
@@ -68,9 +71,10 @@ router.post("/canonicalize-batch", (req, res) => {
     const { ingredients } = req.body;
 
     if (!Array.isArray(ingredients)) {
-      return res.status(400).json({
+      res.status(400).json({
         error: "Expected 'ingredients' array",
       });
+      return;
     }
 
     const results = ingredients.map((ingredient) => ({
@@ -80,7 +84,8 @@ router.post("/canonicalize-batch", (req, res) => {
 
     res.status(200).json({ results });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
   }
 });
 
@@ -90,7 +95,8 @@ router.get("/synonym-stats", (req, res) => {
     const stats = getSynonymStats();
     res.status(200).json(stats);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
   }
 });
 
