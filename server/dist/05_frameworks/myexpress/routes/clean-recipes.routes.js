@@ -47,19 +47,19 @@ router.post("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0
             var _a, _b, _c;
             try {
                 const cleaned = yield (0, client_1.cleanRecipe)(recipe);
-                // Ensure meal_type is mapped to "meal type" for frontend compatibility
-                return Object.assign(Object.assign({}, cleaned), { "meal type": cleaned.mealType ||
-                        cleaned["meal type"] ||
+                // Return snake_case format to match frontend interfaces
+                return Object.assign(Object.assign({}, cleaned), { meal_type: cleaned.mealType ||
+                        cleaned.meal_type ||
                         recipe.meal_type ||
-                        "Other", id: ((_a = cleaned.id) === null || _a === void 0 ? void 0 : _a.toString()) || ((_b = recipe.id) === null || _b === void 0 ? void 0 : _b.toString()), "unique id": cleaned.uniqueId || cleaned["unique id"] || recipe.unique_id, "dietary restrictions and designations": cleaned.dietaryRestrictions ||
-                        cleaned["dietary restrictions and designations"] ||
+                        "Other", id: ((_a = cleaned.id) === null || _a === void 0 ? void 0 : _a.toString()) || ((_b = recipe.id) === null || _b === void 0 ? void 0 : _b.toString()), unique_id: cleaned.uniqueId || cleaned.unique_id || recipe.unique_id, dietary_restrictions: cleaned.dietaryRestrictions ||
+                        cleaned.dietary_restrictions ||
                         recipe.dietary_restrictions ||
                         [] });
             }
             catch (error) {
                 console.error(`Failed to clean recipe ${recipe.id}:`, error);
-                // Return recipe with frontend-compatible format
-                return Object.assign(Object.assign({}, recipe), { id: (_c = recipe.id) === null || _c === void 0 ? void 0 : _c.toString(), "unique id": recipe.unique_id, "meal type": recipe.meal_type || "Other", "dietary restrictions and designations": recipe.dietary_restrictions || [] });
+                // Return recipe with snake_case format
+                return Object.assign(Object.assign({}, recipe), { id: (_c = recipe.id) === null || _c === void 0 ? void 0 : _c.toString(), unique_id: recipe.unique_id, meal_type: recipe.meal_type || "Other", dietary_restrictions: recipe.dietary_restrictions || [] });
             }
         })));
         res.json({ data: cleanedRecipes });

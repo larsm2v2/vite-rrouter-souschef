@@ -3,6 +3,7 @@ import { RecipeModel } from "../Models/Models";
 import RecipeDetails from "../Recipes/Recipe Details/RecipeDetails"; // Import your RecipeDetails component
 import "../Recipes/Recipes.css"; // Import your CSS for styling
 import Chef from "../../assets/Chef"; // Import your Chef SVG component
+import apiClient from "../pages/Client";
 
 interface RecipeDisplayProps {
   setWillTryAgain: (willTryAgain: boolean) => void;
@@ -56,17 +57,10 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({
 
   const fetchRecipes = async () => {
     try {
-      const response = await fetch(`/api/recipes`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await apiClient.get<RecipeModel[]>(`/api/recipes`);
 
-      if (response.ok) {
-        const data = await response.json();
-        setRecipes(data);
+      if (response.status === 200) {
+        setRecipes(response.data);
       } else {
         throw new Error("Failed to fetch recipes.");
       }

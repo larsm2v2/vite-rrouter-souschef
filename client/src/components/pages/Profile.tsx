@@ -30,10 +30,10 @@ const Profile: React.FC = () => {
     const load = async () => {
       try {
         setLoading(true);
-        
+
         // First, try to use AuthContext user if available
         if (authUser) {
-          console.log("Using AuthContext user:", authUser);
+          // console.log("Using AuthContext user:", authUser);
           setUser({
             id: parseInt(authUser.id),
             display_name: authUser.display_name,
