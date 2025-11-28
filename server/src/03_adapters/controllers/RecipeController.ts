@@ -12,7 +12,9 @@ export class RecipeController {
 
   async create(req: Request, res: Response): Promise<void> {
     const recipeData = req.body;
-    const newRecipe = await this.createRecipe.execute(recipeData);
+    // Get user ID from JWT token (set by authenticateJWT middleware)
+    const userId = (req as any).user?.sub;
+    const newRecipe = await this.createRecipe.execute(recipeData, userId);
     res.status(200).json(newRecipe);
   }
 

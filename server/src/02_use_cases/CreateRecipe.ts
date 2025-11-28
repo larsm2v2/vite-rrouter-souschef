@@ -13,7 +13,7 @@ export class CreateRecipe {
    * unavailable. Post-process to ensure the entity shape expected by the
    * repository/use-case (e.g. `uniqueId`, `slug`, `dietaryRestrictions`).
    */
-  async execute(recipeData: Partial<Recipe>): Promise<Recipe> {
+  async execute(recipeData: Partial<Recipe>, userId?: number): Promise<Recipe> {
     // Preserve original validation behavior: name is required
     if (!recipeData || !recipeData.name) {
       throw new Error("Recipe name is required");
@@ -24,6 +24,6 @@ export class CreateRecipe {
     // dietaryRestrictions, servingInfo, instructions.stepNumber); we forward
     // the cleaned payload directly to the repository.
     const cleaned: any = await remoteClean(recipeData as any);
-    return this.recipeRepository.create(cleaned as Recipe);
+    return this.recipeRepository.create(cleaned as Recipe, userId);
   }
 }
