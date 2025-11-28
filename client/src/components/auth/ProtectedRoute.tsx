@@ -57,7 +57,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
     const checkAuth = async () => {
       try {
-        console.log("Making /auth/check call to server");
+        // console.log("Making /auth/check call to server");
         const response = await apiClient.get<{ authenticated: boolean }>(
           "/auth/check"
         );
