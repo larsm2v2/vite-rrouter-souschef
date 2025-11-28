@@ -289,13 +289,19 @@ router.post("/ocr/parse", async (req, res) => {
 
     if (genAI) {
       try {
+        console.log("/ocr/parse: Attempting AI parsing with Gemini...");
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Use the improved prompt from prompts.ts
         const prompt = ocrParsePrompt(ocrText);
+        console.log(`/ocr/parse: OCR text length: ${ocrText.length} chars`);
 
         const result = await model.generateContent(prompt);
         const response = result.response.text();
+        console.log(`/ocr/parse: AI response length: ${response.length} chars`);
+        console.log(
+          `/ocr/parse: AI response preview: ${response.slice(0, 200)}...`
+        );
 
         // Clean up response - remove markdown code blocks if present
         let jsonText = response.trim();
@@ -309,19 +315,34 @@ router.post("/ocr/parse", async (req, res) => {
         }
         jsonText = jsonText.trim();
 
-        const aiParsed = JSON.parse(jsonText);
-        parsed = { ...parsed, ...aiParsed };
-        console.log("/ocr/parse: Successfully parsed recipe with AI");
-      } catch (aiErr) {
-        console.warn(
-          "/ocr/parse: AI parsing failed, using fallback:",
-          aiErr instanceof Error ? aiErr.message : aiErr
+        console.log(
+          `/ocr/parse: Cleaned JSON length: ${jsonText.length} chars`
         );
+        console.log(`/ocr/parse: Attempting to parse JSON...`);
+
+        const aiParsed = JSON.parse(jsonText);
+        console.log(
+          `/ocr/parse: Successfully parsed JSON. Keys: ${Object.keys(
+            aiParsed
+          ).join(", ")}`
+        );
+
+        // Merge AI parsed data with defaults
+        parsed = { ...parsed, ...aiParsed };
+        console.log("/ocr/parse: ✅ Successfully parsed recipe with AI");
+      } catch (aiErr) {
+        console.error(
+          "/ocr/parse: ❌ AI parsing failed:",
+          aiErr instanceof Error ? aiErr.message : String(aiErr)
+        );
+        if (aiErr instanceof Error && aiErr.stack) {
+          console.error("/ocr/parse: Error stack:", aiErr.stack);
+        }
         // Continue with basic parsed structure
       }
     } else {
       console.warn(
-        "/ocr/parse: GEMINI_API_KEY not configured, skipping AI parsing"
+        "/ocr/parse: ⚠️ GEMINI_API_KEY not configured, skipping AI parsing"
       );
     }
 
