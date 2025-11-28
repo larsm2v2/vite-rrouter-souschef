@@ -3,7 +3,6 @@ import authRoutes from "./auth.routes";
 import oauthGoogleRoutes from "./oauth-google.routes";
 import profileRoutes from "./profile";
 import recipesRoutes from "./recipes.routes";
-import cleanRecipesRoutes from "./clean-recipes.routes";
 import groceryRoutes from "./grocery.routes";
 import profileFeatures from "./profileFeatures.routes";
 import ocrRoutes from "../../../routes/ocr";
@@ -41,14 +40,7 @@ console.log(
   recipesRoutes?.stack?.length
 );
 
-console.log("  Mounting /api/clean-recipes → clean recipes routes");
-router.use("/api/clean-recipes", cleanRecipesRoutes);
-console.log(
-  "    -> cleanRecipesRoutes loaded?",
-  typeof cleanRecipesRoutes,
-  "stackLength",
-  cleanRecipesRoutes?.stack?.length
-);
+// Note: /api/clean-recipes endpoint removed - cleaning now only happens when creating new recipes
 
 console.log("  Mounting /api → grocery routes");
 router.use("/api", groceryRoutes);

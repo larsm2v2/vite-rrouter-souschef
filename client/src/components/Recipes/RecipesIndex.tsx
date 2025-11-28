@@ -36,12 +36,12 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
     setRecipes: React.Dispatch<React.SetStateAction<RecipeModel[]>>
   ) => {
     try {
-      const response = await apiClient.post<{ data: RecipeModel[] }>(
-        `/api/clean-recipes`
+      const response = await apiClient.get<RecipeModel[]>(
+        `/api/recipes`
       );
       if (response.status === 200) {
-        setRecipes(response.data.data); // Assuming the server sends the cleaned recipes in `data.data`
-        console.log("JSON retrieved: ", response.data.data);
+        setRecipes(response.data); // Server returns recipes directly from database
+        console.log("JSON retrieved: ", response.data);
       } else {
         throw new Error("Failed to fetch recipes.");
       }
@@ -59,9 +59,11 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
   // Filtering based on search and showSelected
   // Group recipes by meal type
   const recipesByMealType = recipes.reduce((acc, recipe) => {
+    // Safety check for meal type
+    const mealTypeRaw = recipe.meal_type || "Other";
     const mealType =
-      recipe["meal type"].charAt(0).toUpperCase() +
-      recipe["meal type"].slice(1); // Capitalize
+      mealTypeRaw.charAt(0).toUpperCase() +
+      mealTypeRaw.slice(1); // Capitalize
     if (!acc[mealType]) {
       acc[mealType] = [];
     }

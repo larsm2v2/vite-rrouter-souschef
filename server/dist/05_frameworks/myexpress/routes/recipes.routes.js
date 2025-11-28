@@ -44,7 +44,29 @@ router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0,
       GROUP BY r.id, rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings, rnut.nutrition_data
       ORDER BY r.created_at DESC
     `);
-        res.json(result.rows);
+        // Transform snake_case to frontend format
+        const transformedRecipes = result.rows.map((row) => ({
+            id: row.id.toString(),
+            name: row.name || "",
+            "unique id": row.unique_id,
+            cuisine: row.cuisine || "",
+            "meal type": row.meal_type || "",
+            "dietary restrictions and designations": row.dietary_restrictions || [],
+            "serving info": {
+                "prep time": row.prep_time,
+                "cook time": row.cook_time,
+                "total time": row.total_time,
+                "number of people served": row.servings,
+            },
+            ingredients: row.ingredients || [],
+            instructions: (row.instructions || []).map((inst) => ({
+                number: inst.step_number,
+                text: inst.instruction,
+            })),
+            notes: row.notes || [],
+            nutrition: row.nutrition_data || {},
+        }));
+        res.json(transformedRecipes);
     }
     catch (error) {
         next(error);

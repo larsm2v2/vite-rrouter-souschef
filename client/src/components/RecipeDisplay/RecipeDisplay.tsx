@@ -56,16 +56,17 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({
 
   const fetchRecipes = async () => {
     try {
-      const response = await fetch(`/api/clean-recipes`, {
-        method: "POST",
+      const response = await fetch(`/api/recipes`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setRecipes(data.data);
+        setRecipes(data);
       } else {
         throw new Error("Failed to fetch recipes.");
       }

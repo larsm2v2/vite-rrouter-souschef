@@ -44,13 +44,22 @@ router.post("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0
       `);
         // Clean each recipe using the microservice
         const cleanedRecipes = yield Promise.all(result.rows.map((recipe) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b, _c;
             try {
-                return yield (0, client_1.cleanRecipe)(recipe);
+                const cleaned = yield (0, client_1.cleanRecipe)(recipe);
+                // Ensure meal_type is mapped to "meal type" for frontend compatibility
+                return Object.assign(Object.assign({}, cleaned), { "meal type": cleaned.mealType ||
+                        cleaned["meal type"] ||
+                        recipe.meal_type ||
+                        "Other", id: ((_a = cleaned.id) === null || _a === void 0 ? void 0 : _a.toString()) || ((_b = recipe.id) === null || _b === void 0 ? void 0 : _b.toString()), "unique id": cleaned.uniqueId || cleaned["unique id"] || recipe.unique_id, "dietary restrictions and designations": cleaned.dietaryRestrictions ||
+                        cleaned["dietary restrictions and designations"] ||
+                        recipe.dietary_restrictions ||
+                        [] });
             }
             catch (error) {
                 console.error(`Failed to clean recipe ${recipe.id}:`, error);
-                // Return original recipe if cleaning fails
-                return recipe;
+                // Return recipe with frontend-compatible format
+                return Object.assign(Object.assign({}, recipe), { id: (_c = recipe.id) === null || _c === void 0 ? void 0 : _c.toString(), "unique id": recipe.unique_id, "meal type": recipe.meal_type || "Other", "dietary restrictions and designations": recipe.dietary_restrictions || [] });
             }
         })));
         res.json({ data: cleanedRecipes });

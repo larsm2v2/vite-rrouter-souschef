@@ -56,16 +56,16 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 		isDone: false,
 		toTransfer: false,
 	}) */
-  //Clean and Fetch Backend Recipes
+  //Fetch Backend Recipes
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const response = await apiClient.post<{ data: RecipeModel[] }>(
-          `/api/clean-recipes`
+        const response = await apiClient.get<RecipeModel[]>(
+          `/api/recipes`
         );
 
         if (response.status === 200) {
-          setRecipes(response.data.data); // Update recipes state
+          setRecipes(response.data); // Update recipes state
         } else {
           throw new Error("Failed to fetch recipes.");
         }
@@ -143,7 +143,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
             newRecipeIngredients[recipeId] = Object.values(recipe.ingredients)
               .flat()
               .map((ingredient) => {
-                // Ingredient names are already canonicalized by the clean-recipe-service
+                // Ingredient names are already stored in canonical form in the database
                 return {
                   id: Date.now() + Math.random(), // Generate a unique ID
                   quantity: ingredient.quantity || 0,

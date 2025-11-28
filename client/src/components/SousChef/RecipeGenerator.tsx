@@ -212,25 +212,25 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
             </p>
             <p>
               <strong>Meal Type:</strong>{" "}
-              {String(generatedRecipe["meal type"] ?? "")}
+              {String(generatedRecipe.meal_type ?? "")}
             </p>
             {(() => {
-              const serving = generatedRecipe["serving info"] as
+              const serving = generatedRecipe.serving_info as
                 | Record<string, unknown>
                 | undefined;
               return (
                 <>
                   <p>
                     <strong>Prep Time:</strong>{" "}
-                    {String(serving?.["prep time"] ?? "")}
+                    {String(serving?.prep_time ?? "")}
                   </p>
                   <p>
                     <strong>Cook Time:</strong>{" "}
-                    {String(serving?.["cook time"] ?? "")}
+                    {String(serving?.cook_time ?? "")}
                   </p>
                   <p>
                     <strong>Servings:</strong>{" "}
-                    {String(serving?.["number of people served"] ?? "")}
+                    {String(serving?.servings ?? "")}
                   </p>
                 </>
               );
