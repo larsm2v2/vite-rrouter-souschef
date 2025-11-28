@@ -23,10 +23,17 @@ export interface Recipe {
     }[];
   };
   instructions?: {
-    stepNumber: number;
-    instruction: string;
+    stepNumber?: number;
+    number?: number;
+    instruction?: string;
+    text?: string;
   }[];
   notes?: string[];
+  images?: {
+    imageUrl?: string;
+    image_url?: string;
+    isPrimary?: boolean;
+  }[];
   nutrition?: {
     [key: string]: string;
   };

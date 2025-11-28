@@ -9,16 +9,32 @@ interface Props {
   onClose: () => void;
 }
 
+interface Ingredient {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
 interface ParsedRecipe {
   name?: string;
   cuisine?: string;
-  ingredients: { [key: string]: string[] };
+  ingredients: { [key: string]: (string | Ingredient)[] };
   instructions: { number: number; text: string }[];
   notes: string[];
+  servingInfo?: {
+    prepTime?: string;
+    cookTime?: string;
+    totalTime?: string;
+    servings?: number;
+  };
+  mealType?: string;
+  images?: { imageUrl: string; isPrimary: boolean }[];
 }
 
 interface OCRResponse {
   parsed?: ParsedRecipe;
+  imageUrls?: string[];
 }
 
 export default function OCRModal({ isOpen, onClose }: Props) {
@@ -29,6 +45,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [parsedResult, setParsedResult] = useState<ParsedRecipe | null>(null);
   const [previewMode, setPreviewMode] = useState<"json" | "pretty">("pretty");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   if (!isOpen) return null;
@@ -97,11 +114,18 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       }
       form.append("ocrText", ocrText || "");
 
+      // Use longer timeout for AI parsing (60 seconds)
       const resp = await apiClient.post(`/api/ocr`, form, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
       });
-      const parsed = (resp.data as OCRResponse)?.parsed;
+      const data = resp.data as OCRResponse;
+      const parsed = data?.parsed;
       if (parsed) {
+        // Track uploaded image URLs
+        if (data.imageUrls && data.imageUrls.length > 0) {
+          setUploadedImages(data.imageUrls);
+        }
         // Show preview so user can confirm before importing
         setParsedResult(parsed);
         setTab("preview");
@@ -162,9 +186,16 @@ export default function OCRModal({ isOpen, onClose }: Props) {
     setLoading(true);
     try {
       // POST as JSON { text: string }
-      const resp = await apiClient.post(`/api/ocr/parse`, {
-        text: ocrText,
-      });
+      // Use longer timeout for AI parsing (60 seconds)
+      const resp = await apiClient.post(
+        `/api/ocr/parse`,
+        {
+          text: ocrText,
+        },
+        {
+          timeout: 60000,
+        }
+      );
       const parsed = (resp.data as OCRResponse)?.parsed;
       if (parsed) {
         // Show preview so user can confirm before importing
@@ -196,13 +227,46 @@ export default function OCRModal({ isOpen, onClose }: Props) {
     }
   };
 
-  const acceptParsed = () => {
+  const acceptParsed = async () => {
     if (!parsedResult) return;
-    window.dispatchEvent(
-      new CustomEvent("ocr:import", { detail: parsedResult })
-    );
-    setParsedResult(null);
-    onClose();
+
+    setLoading(true);
+    try {
+      // Prepare recipe data with images
+      const recipeToSave = {
+        ...parsedResult,
+        images: uploadedImages.map((url, idx) => ({
+          imageUrl: url,
+          isPrimary: idx === 0, // First image is primary
+        })),
+      };
+
+      // Save the recipe to the database
+      await apiClient.post("/api/recipes", recipeToSave);
+      alert("Recipe saved successfully!");
+
+      // Also dispatch event for any listeners (like RecipeGenerator)
+      window.dispatchEvent(
+        new CustomEvent("ocr:import", { detail: parsedResult })
+      );
+
+      setParsedResult(null);
+      onClose();
+    } catch (err: unknown) {
+      console.error("Failed to save recipe:", err);
+      const msg =
+        (
+          err as {
+            response?: { data?: { message?: string } };
+            message?: string;
+          }
+        )?.response?.data?.message ||
+        (err as { message?: string })?.message ||
+        "Unknown error";
+      alert(`Failed to save recipe: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const cancelPreview = () => {
@@ -363,42 +427,58 @@ export default function OCRModal({ isOpen, onClose }: Props) {
                               </div>
                             )}
                             <ul className="ingredient-list">
-                              {items.map((it, idx) => (
-                                <li key={idx} className="ingredient-item">
-                                  <input
-                                    className="preview-input"
-                                    value={it}
-                                    onChange={(e) =>
-                                      setParsedResult((p) => {
-                                        if (!p) return p;
-                                        const next = { ...p } as ParsedRecipe;
-                                        next.ingredients = { ...p.ingredients };
-                                        next.ingredients[group] = [...items];
-                                        next.ingredients[group][idx] =
-                                          e.target.value;
-                                        return next;
-                                      })
-                                    }
-                                  />
-                                  <button
-                                    className="tiny-btn"
-                                    onClick={() =>
-                                      setParsedResult((p) => {
-                                        if (!p) return p;
-                                        const next = { ...p } as ParsedRecipe;
-                                        next.ingredients = { ...p.ingredients };
-                                        next.ingredients[group] = [
-                                          ...items.filter((_, i) => i !== idx),
-                                        ];
-                                        return next;
-                                      })
-                                    }
-                                    aria-label="Remove ingredient"
-                                  >
-                                    ✕
-                                  </button>
-                                </li>
-                              ))}
+                              {items.map((it, idx) => {
+                                // Handle both string format (legacy) and object format (new API)
+                                const displayText =
+                                  typeof it === "string"
+                                    ? it
+                                    : `${it.quantity || ""} ${it.unit || ""} ${
+                                        it.name
+                                      }`.trim();
+
+                                return (
+                                  <li key={idx} className="ingredient-item">
+                                    <input
+                                      className="preview-input"
+                                      value={displayText}
+                                      onChange={(e) =>
+                                        setParsedResult((p) => {
+                                          if (!p) return p;
+                                          const next = { ...p } as ParsedRecipe;
+                                          next.ingredients = {
+                                            ...p.ingredients,
+                                          };
+                                          next.ingredients[group] = [...items];
+                                          next.ingredients[group][idx] = e
+                                            .target.value as any;
+                                          return next;
+                                        })
+                                      }
+                                    />
+                                    <button
+                                      className="tiny-btn"
+                                      onClick={() =>
+                                        setParsedResult((p) => {
+                                          if (!p) return p;
+                                          const next = { ...p } as ParsedRecipe;
+                                          next.ingredients = {
+                                            ...p.ingredients,
+                                          };
+                                          next.ingredients[group] = [
+                                            ...items.filter(
+                                              (_, i) => i !== idx
+                                            ),
+                                          ];
+                                          return next;
+                                        })
+                                      }
+                                      aria-label="Remove ingredient"
+                                    >
+                                      ✕
+                                    </button>
+                                  </li>
+                                );
+                              })}
                             </ul>
                             <div className="ingredient-add">
                               <button
@@ -407,7 +487,11 @@ export default function OCRModal({ isOpen, onClose }: Props) {
                                     if (!p) return p;
                                     const next = { ...p } as ParsedRecipe;
                                     next.ingredients = { ...p.ingredients };
-                                    next.ingredients[group] = [...items, ""];
+                                    // Add a new ingredient - use string for backward compatibility
+                                    next.ingredients[group] = [
+                                      ...items,
+                                      "" as any,
+                                    ];
                                     return next;
                                   })
                                 }
