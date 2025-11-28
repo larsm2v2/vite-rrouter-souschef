@@ -95,7 +95,9 @@ export async function down() {
   try {
     await client.query("BEGIN");
 
-    console.log("Rolling back migration: add_recipe_images_update_grocery_list");
+    console.log(
+      "Rolling back migration: add_recipe_images_update_grocery_list"
+    );
 
     // Drop new tables
     await client.query(`DROP TABLE IF EXISTS recipe_images CASCADE;`);
