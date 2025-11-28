@@ -38,7 +38,7 @@ router.get(
     `);
 
       // Transform snake_case to frontend format
-      const transformedRecipes = result.rows.map(row => ({
+      const transformedRecipes = result.rows.map((row) => ({
         id: row.id.toString(),
         name: row.name || "",
         "unique id": row.unique_id,
@@ -49,15 +49,15 @@ router.get(
           "prep time": row.prep_time,
           "cook time": row.cook_time,
           "total time": row.total_time,
-          "number of people served": row.servings
+          "number of people served": row.servings,
         },
         ingredients: row.ingredients || [],
         instructions: (row.instructions || []).map((inst: any) => ({
           number: inst.step_number,
-          text: inst.instruction
+          text: inst.instruction,
         })),
         notes: row.notes || [],
-        nutrition: row.nutrition_data || {}
+        nutrition: row.nutrition_data || {},
       }));
 
       res.json(transformedRecipes);
