@@ -43,49 +43,49 @@ export const RECIPE_SCHEMA = `{
  * @returns Formatted prompt string for AI model
  */
 export function ocrParsePrompt(ocrText: string): string {
-  return `You are a recipe parser specializing in extracting structured recipe data from OCR text.
+  return `Extract recipe data from OCR text and return ONLY valid JSON. NO markdown, NO code blocks, NO explanations.
 
-Parse the following recipe text into structured JSON format. Extract:
+The OCR text contains noise (headers, footers, URLs, timestamps). IGNORE all non-recipe content.
 
-1. **name**: Recipe name (string)
-2. **cuisine**: Type of cuisine (string, e.g., "Italian", "Mexican", "French")
-3. **mealType**: One of: "breakfast", "lunch", "brunch", "dinner", "dessert"
-4. **ingredients**: Object with categories as keys and arrays of ingredient objects as values
-   - Separate ingredients by category (e.g., "dish", "sauce", "marinade", "dough")
-   - Look for phrases like "For the sauce", "For the marinade" to identify categories
-   - Each ingredient must have:
-     * **id**: number (sequential starting at 1 within each category)
-     * **name**: string (ingredient name, lowercase, without quantities)
-     * **quantity**: number (as decimal, e.g., 0.25 for 1/4, 1.5 for 1½)
-     * **unit**: string (e.g., "cup", "tablespoon", "teaspoon", "lbs", "cloves")
-5. **instructions**: Array of step objects with:
-   - **number**: step number (sequential starting at 1)
-   - **text**: instruction text (string)
-6. **servingInfo**: Object with:
-   - **prepTime**: string (e.g., "15 minutes")
-   - **cookTime**: string (e.g., "30 minutes")
-   - **totalTime**: string (e.g., "45 minutes")
-   - **servings**: number of servings
-7. **notes**: Array of additional notes or tips (string[])
+Return this exact structure:
+{
+  "name": "Recipe Name",
+  "cuisine": "Cuisine Type",
+  "mealType": "dinner",
+  "servingInfo": {
+    "prepTime": "10 minutes",
+    "cookTime": "30 minutes",
+    "totalTime": "40 minutes",
+    "servings": 4
+  },
+  "ingredients": {
+    "chicken": [
+      {"id": 1, "name": "garlic", "quantity": 6, "unit": "cloves"},
+      {"id": 2, "name": "soy sauce", "quantity": 3, "unit": "tablespoon"}
+    ],
+    "sauce": [
+      {"id": 1, "name": "cilantro", "quantity": 1, "unit": "cup"}
+    ]
+  },
+  "instructions": [
+    {"number": 1, "text": "In a large bowl, whisk together garlic, soy sauce..."},
+    {"number": 2, "text": "Add chicken halves, turning to coat..."}
+  ],
+  "notes": ["Optional tip or note"]
+}
 
-**Ingredient Parsing Rules:**
-- Convert fractions to decimals: 1/4 → 0.25, 1/2 → 0.5, 1/3 → 0.33, 2/3 → 0.67
-- Separate quantity, unit, and name: "2 cups flour" → {quantity: 2, unit: "cup", name: "flour"}
-- Remove descriptors from name: "chopped onions" → {name: "onions"}
-- Standardize units: tbsp → tablespoon, tsp → teaspoon, oz → ounce
-- Handle ranges: "1-2 cups" → use midpoint (1.5)
+RULES:
+1. Convert fractions: ¼→0.25, ½→0.5, ⅓→0.33, ¾→0.75, 1½→1.5
+2. Group ingredients by category from headers: "For the Chicken", "For the Sauce"
+3. Clean ingredient names: "finely grated garlic" → "garlic", "chopped onions" → "onions"
+4. Standardize units: tbsp→tablespoon, tsp→teaspoon, oz→ounce, lbs→pound
+5. Ignore OCR noise: URLs (cooking.nytimes.com), UI text, timestamps
+6. Return ONLY JSON - no markdown, no \`\`\`json blocks, no extra text
 
-**Important:**
-- Return ONLY valid JSON, no markdown formatting, no code blocks
-- If information is missing, use reasonable defaults or null
-- Preserve the original instruction order and wording
-- Ensure all quantities are numeric (not strings)
-- Group related ingredients by category when possible
-
-Recipe text:
+OCR Text:
 ${ocrText}
 
-Return the parsed recipe as JSON:`;
+JSON:`;
 }
 
 /**
