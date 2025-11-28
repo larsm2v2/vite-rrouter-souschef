@@ -38,11 +38,34 @@ router.post(
       const cleanedRecipes = await Promise.all(
         result.rows.map(async (recipe) => {
           try {
-            return await cleanRecipe(recipe);
+            const cleaned = await cleanRecipe(recipe);
+            // Return snake_case format to match frontend interfaces
+            return {
+              ...cleaned,
+              meal_type:
+                cleaned.mealType ||
+                cleaned.meal_type ||
+                recipe.meal_type ||
+                "Other",
+              id: cleaned.id?.toString() || recipe.id?.toString(),
+              unique_id:
+                cleaned.uniqueId || cleaned.unique_id || recipe.unique_id,
+              dietary_restrictions:
+                cleaned.dietaryRestrictions ||
+                cleaned.dietary_restrictions ||
+                recipe.dietary_restrictions ||
+                [],
+            };
           } catch (error) {
             console.error(`Failed to clean recipe ${recipe.id}:`, error);
-            // Return original recipe if cleaning fails
-            return recipe;
+            // Return recipe with snake_case format
+            return {
+              ...recipe,
+              id: recipe.id?.toString(),
+              unique_id: recipe.unique_id,
+              meal_type: recipe.meal_type || "Other",
+              dietary_restrictions: recipe.dietary_restrictions || [],
+            };
           }
         })
       );
