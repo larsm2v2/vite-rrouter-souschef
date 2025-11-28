@@ -24,6 +24,10 @@ const crypto_1 = require("crypto");
 // microservice when `CLEAN_RECIPE_SERVICE_URL` is configured, otherwise
 // it falls back to a local cleaning implementation.
 const client_1 = require("../05_frameworks/cleanRecipe/client");
+const generative_ai_1 = require("@google/generative-ai");
+const prompts_1 = require("../utils/prompts");
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+const genAI = apiKey ? new generative_ai_1.GoogleGenerativeAI(apiKey) : null;
 const gateway_1 = require("../05_frameworks/myexpress/gateway");
 const client_2 = require("../05_frameworks/pubsub/client");
 const OcrJobRepository_1 = require("../03_adapters/repositories/OcrJobRepository");
@@ -185,11 +189,14 @@ function handleOcrUpload(req, res) {
                 console.warn("Forwarding to clean service failed, returning raw parse", err && err.message);
                 cleaned = parsed;
             }
+            // Generate image URLs for stored files (relative to server)
+            const imageUrls = stored.map((s) => `/api/ocr/images/${path_1.default.basename(s.storedAt)}`);
             res.json({
                 parsed: cleaned,
                 rawParsed: parsed,
                 text: combinedText || ocrText,
                 meta: { files: stored },
+                imageUrls, // Include image URLs for frontend to save with recipe
             });
         }
         catch (err) {
@@ -244,14 +251,59 @@ router.post("/ocr/parse", (req, res) => __awaiter(void 0, void 0, void 0, functi
             console.warn("Failed to log /ocr/parse details:", logErr);
         }
         const ocrText = (req.body && (req.body.text || req.body.ocrText)) || "";
-        // Minimal structured response: server-side parsing heuristics can be added later
-        const parsed = {
+        if (!ocrText || ocrText.trim().length === 0) {
+            return res.status(400).json({ message: "No text provided for parsing" });
+        }
+        // Use AI to parse the recipe text
+        let parsed = {
             name: undefined,
             cuisine: undefined,
             ingredients: { "from-ocr": [] },
             instructions: [{ number: 1, text: ocrText }],
             notes: ["Parsed via /ocr/parse"],
         };
+        if (genAI) {
+            try {
+                console.log("/ocr/parse: Attempting AI parsing with Gemini...");
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                // Use the improved prompt from prompts.ts
+                const prompt = (0, prompts_1.ocrParsePrompt)(ocrText);
+                console.log(`/ocr/parse: OCR text length: ${ocrText.length} chars`);
+                const result = yield model.generateContent(prompt);
+                const response = result.response.text();
+                console.log(`/ocr/parse: AI response length: ${response.length} chars`);
+                console.log(`/ocr/parse: AI response preview: ${response.slice(0, 200)}...`);
+                // Clean up response - remove markdown code blocks if present
+                let jsonText = response.trim();
+                if (jsonText.startsWith("```json")) {
+                    jsonText = jsonText.slice(7);
+                }
+                else if (jsonText.startsWith("```")) {
+                    jsonText = jsonText.slice(3);
+                }
+                if (jsonText.endsWith("```")) {
+                    jsonText = jsonText.slice(0, -3);
+                }
+                jsonText = jsonText.trim();
+                console.log(`/ocr/parse: Cleaned JSON length: ${jsonText.length} chars`);
+                console.log(`/ocr/parse: Attempting to parse JSON...`);
+                const aiParsed = JSON.parse(jsonText);
+                console.log(`/ocr/parse: Successfully parsed JSON. Keys: ${Object.keys(aiParsed).join(", ")}`);
+                // Merge AI parsed data with defaults
+                parsed = Object.assign(Object.assign({}, parsed), aiParsed);
+                console.log("/ocr/parse: ✅ Successfully parsed recipe with AI");
+            }
+            catch (aiErr) {
+                console.error("/ocr/parse: ❌ AI parsing failed:", aiErr instanceof Error ? aiErr.message : String(aiErr));
+                if (aiErr instanceof Error && aiErr.stack) {
+                    console.error("/ocr/parse: Error stack:", aiErr.stack);
+                }
+                // Continue with basic parsed structure
+            }
+        }
+        else {
+            console.warn("/ocr/parse: ⚠️ GEMINI_API_KEY not configured, skipping AI parsing");
+        }
         // Try to forward to clean-recipe-service; wrapper handles fallback.
         try {
             const cleaned = yield (0, client_1.cleanRecipe)(parsed);
@@ -281,6 +333,26 @@ router.get("/ocr/gallery", (_req, res) => __awaiter(void 0, void 0, void 0, func
     catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to read gallery" });
+    }
+}));
+// GET /api/ocr/images/:filename - serve uploaded images
+router.get("/ocr/images/:filename", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const filename = req.params.filename;
+        const dir = path_1.default.join(process.cwd(), "data/ocr");
+        const filePath = path_1.default.join(dir, filename);
+        // Security: prevent directory traversal
+        if (!filePath.startsWith(dir)) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+        if (!fs_1.default.existsSync(filePath)) {
+            return res.status(404).json({ message: "Image not found" });
+        }
+        res.sendFile(filePath);
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to serve image" });
     }
 }));
 // DELETE /api/ocr/:id

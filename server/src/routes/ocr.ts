@@ -208,11 +208,17 @@ async function handleOcrUpload(req: any, res: any) {
       cleaned = parsed;
     }
 
+    // Generate image URLs for stored files (relative to server)
+    const imageUrls = stored.map(
+      (s) => `/api/ocr/images/${path.basename(s.storedAt)}`
+    );
+
     res.json({
       parsed: cleaned,
       rawParsed: parsed,
       text: combinedText || ocrText,
       meta: { files: stored },
+      imageUrls, // Include image URLs for frontend to save with recipe
     });
   } catch (err) {
     console.error("OCR upload handler error:", err);
@@ -375,6 +381,29 @@ router.get("/ocr/gallery", async (_req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to read gallery" });
+  }
+});
+
+// GET /api/ocr/images/:filename - serve uploaded images
+router.get("/ocr/images/:filename", async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const dir = path.join(process.cwd(), "data/ocr");
+    const filePath = path.join(dir, filename);
+    
+    // Security: prevent directory traversal
+    if (!filePath.startsWith(dir)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+    
+    res.sendFile(filePath);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to serve image" });
   }
 });
 
