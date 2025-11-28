@@ -4,7 +4,7 @@ import { injectable } from "tsyringe";
 
 @injectable()
 export class RecipeRepository {
-  async create(recipe: Partial<Recipe>): Promise<Recipe> {
+  async create(recipe: Partial<Recipe>, userId?: number): Promise<Recipe> {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
@@ -15,7 +15,7 @@ export class RecipeRepository {
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
         [
-          recipe.userId,
+          userId || recipe.userId,
           recipe.uniqueId,
           recipe.name,
           recipe.slug,

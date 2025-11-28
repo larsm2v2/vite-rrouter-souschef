@@ -9,7 +9,8 @@
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
     "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
     "clean": "rm -rf dist/*",
-    "migrate": "ts-node src/db-migration.ts"
+    "migrate": "ts-node src/db-migration.ts",
+    "migrate:new": "npx tsx src/scripts/run-migration.ts"
   },
   "dependencies": {
     "@google-cloud/pubsub": "^5.2.0",

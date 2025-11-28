@@ -92,17 +92,37 @@ async function createTables() {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS recipe_images (
+        id SERIAL PRIMARY KEY,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        is_primary BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_recipe_images_recipe ON recipe_images(recipe_id);
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS grocery_list (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         item_name TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
+        category TEXT,
+        total_quantity DECIMAL(10,2),
         unit TEXT,
         is_checked BOOLEAN DEFAULT FALSE,
+        recipe_sources JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, item_name)
       );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_grocery_list_user ON grocery_list(user_id, is_checked);
     `);
 
     // Add profile-related columns to recipes and users if they don't exist

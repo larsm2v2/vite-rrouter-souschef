@@ -32,8 +32,11 @@ let RecipeController = class RecipeController {
     }
     create(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const recipeData = req.body;
-            const newRecipe = yield this.createRecipe.execute(recipeData);
+            // Get user ID from JWT token (set by authenticateJWT middleware)
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.sub;
+            const newRecipe = yield this.createRecipe.execute(recipeData, userId);
             res.status(200).json(newRecipe);
         });
     }

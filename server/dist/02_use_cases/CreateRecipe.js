@@ -35,7 +35,7 @@ let CreateRecipe = class CreateRecipe {
      * unavailable. Post-process to ensure the entity shape expected by the
      * repository/use-case (e.g. `uniqueId`, `slug`, `dietaryRestrictions`).
      */
-    execute(recipeData) {
+    execute(recipeData, userId) {
         return __awaiter(this, void 0, void 0, function* () {
             // Preserve original validation behavior: name is required
             if (!recipeData || !recipeData.name) {
@@ -46,7 +46,7 @@ let CreateRecipe = class CreateRecipe {
             // dietaryRestrictions, servingInfo, instructions.stepNumber); we forward
             // the cleaned payload directly to the repository.
             const cleaned = yield (0, client_1.cleanRecipe)(recipeData);
-            return this.recipeRepository.create(cleaned);
+            return this.recipeRepository.create(cleaned, userId);
         });
     }
 };

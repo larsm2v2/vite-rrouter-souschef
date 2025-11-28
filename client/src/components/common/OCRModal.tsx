@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
 import "./OCRModal.css";
-import { extractTextWithTesseract } from "../../utils/ocr";
 import apiClient from "../pages/Client";
 import ImageGallery from "./ImageGallery";
 
@@ -54,7 +53,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate per-file size (5 MB) and collect files
+    // Validate per-file size (20 MB) and collect files
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       if (f.size > 20 * 1024 * 1024) {
@@ -63,31 +62,9 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       }
     }
 
-    // Run OCR locally on all selected files sequentially and concatenate results
-    setLoading(true);
-    try {
-      const texts: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        try {
-          const text = await extractTextWithTesseract(f);
-          texts.push(`=== ${f.name} ===\n${text.trim()}`);
-        } catch (err) {
-          console.error(`OCR failed for ${f.name}:`, err);
-          texts.push(`=== ${f.name} ===\n[OCR failed for this file]\n`);
-        }
-      }
-      setOcrText(texts.join("\n\n"));
-      setTab("text");
-    } catch (err) {
-      console.error(err);
-      alert(
-        "OCR failed locally. You can still upload the image(s) for server parsing."
-      );
-      setTab("upload");
-    } finally {
-      setLoading(false);
-    }
+    // Skip client-side OCR - just show upload button
+    // Server-side OCR with Gemini AI is more reliable
+    console.log(`${files.length} file(s) selected, ready for server upload`);
   };
 
   const onUpload = async () => {
@@ -324,9 +301,9 @@ export default function OCRModal({ isOpen, onClose }: Props) {
               />
               <div className="ocr-upload-actions">
                 <button onClick={onUpload} disabled={loading}>
-                  {loading ? "Uploading..." : "Upload to Server"}
+                  {loading ? "Processing with AI..." : "Upload & Parse with AI"}
                 </button>
-                <small>Max file size: 20 MB</small>
+                <small>Max file size: 20 MB per image</small>
               </div>
             </div>
           )}

@@ -22,7 +22,7 @@ exports.RecipeRepository = void 0;
 const connection_1 = __importDefault(require("../../05_frameworks/database/connection"));
 const tsyringe_1 = require("tsyringe");
 let RecipeRepository = class RecipeRepository {
-    create(recipe) {
+    create(recipe, userId) {
         return __awaiter(this, void 0, void 0, function* () {
             const client = yield connection_1.default.connect();
             try {
@@ -31,7 +31,7 @@ let RecipeRepository = class RecipeRepository {
                 const recipeResult = yield client.query(`INSERT INTO recipes (user_id, unique_id, name, slug, cuisine, meal_type, dietary_restrictions)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`, [
-                    recipe.userId,
+                    userId || recipe.userId,
                     recipe.uniqueId,
                     recipe.name,
                     recipe.slug,
