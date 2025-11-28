@@ -19,8 +19,8 @@ export default function GoogleCallback() {
     const handleCallback = async () => {
       try {
         // Parse URL parameters
-        console.log("Full URL:", window.location.href);
-        console.log("Search params:", window.location.search);
+        // console.log("Full URL:", window.location.href);
+        // console.log("Search params:", window.location.search);
 
         // Only proceed if we're actually at the callback URL with a code
         if (!window.location.pathname.includes("/auth/callback")) {
@@ -33,7 +33,7 @@ export default function GoogleCallback() {
         const state = urlParams.get("state");
         const errorParam = urlParams.get("error");
 
-        console.log("Parsed params:", { code, state, errorParam });
+        // console.log("Parsed params:", { code, state, errorParam });
 
         // Check for OAuth errors
         if (errorParam) {
@@ -77,10 +77,10 @@ export default function GoogleCallback() {
         // Exchange code + verifier for tokens via backend
         // Match server default (client/.env uses 8000 locally) and other client code
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-        console.log(
-          "Exchanging code with server at:",
-          `${apiUrl}/api/oauth/google/token`
-        );
+        // console.log(
+        //   "Exchanging code with server at:",
+        //   `${apiUrl}/api/oauth/google/token`
+        // );
 
         const response = await fetch(`${apiUrl}/api/oauth/google/token`, {
           method: "POST",
@@ -94,7 +94,7 @@ export default function GoogleCallback() {
           }),
         });
 
-        console.log("Token exchange response status:", response.status);
+        // console.log("Token exchange response status:", response.status);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -105,7 +105,7 @@ export default function GoogleCallback() {
         }
 
         const { access_token, user } = await response.json();
-        console.log("Token exchange successful! User:", user);
+        // console.log("Token exchange successful! User:", user);
 
         // Persist the access token under the expected key
         const accessToken = access_token;
