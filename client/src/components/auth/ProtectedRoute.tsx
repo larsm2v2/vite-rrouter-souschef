@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   useEffect(() => {
     // PRIORITY 1: Check AuthContext first (set by login/OAuth)
     if (authContextAuthenticated) {
-      console.log("Using AuthContext authentication");
+      // console.log("Using AuthContext authentication");
       setIsAuthenticated(true);
       authCache.isAuthenticated = true;
       authCache.lastChecked = Date.now();

@@ -30,15 +30,15 @@ apiClient.interceptors.request.use(
   (config) => {
     // Add JWT token to requests
     const accessToken = localStorage.getItem("accessToken");
-    console.log("API Request Interceptor - Token present:", !!accessToken);
+    // console.log("API Request Interceptor - Token present:", !!accessToken);
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
-      console.log("API Request Interceptor - Authorization header set");
+      // console.log("API Request Interceptor - Authorization header set");
     }
 
     // Log requests in development
     if (import.meta.env.DEV) {
-      console.log(`Request: ${config.method?.toUpperCase()} ${config.url}`);
+      // console.log(`Request: ${config.method?.toUpperCase()} ${config.url}`);
     }
     return config;
   },
