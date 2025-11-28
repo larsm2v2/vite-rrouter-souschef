@@ -13,7 +13,7 @@ import { cleanRecipe as forwardToCleanService } from "../05_frameworks/cleanReci
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ocrParsePrompt } from "../utils/prompts";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 import { ocrLimiter } from "../05_frameworks/myexpress/gateway";
 import {
@@ -290,7 +290,7 @@ router.post("/ocr/parse", async (req, res) => {
     if (genAI) {
       try {
         console.log("/ocr/parse: Attempting AI parsing with Gemini...");
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         // Use the improved prompt from prompts.ts
         const prompt = ocrParsePrompt(ocrText);
