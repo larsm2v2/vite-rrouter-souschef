@@ -37,7 +37,30 @@ router.get(
       ORDER BY r.created_at DESC
     `);
 
-      res.json(result.rows);
+      // Transform snake_case to frontend format
+      const transformedRecipes = result.rows.map(row => ({
+        id: row.id.toString(),
+        name: row.name || "",
+        "unique id": row.unique_id,
+        cuisine: row.cuisine || "",
+        "meal type": row.meal_type || "",
+        "dietary restrictions and designations": row.dietary_restrictions || [],
+        "serving info": {
+          "prep time": row.prep_time,
+          "cook time": row.cook_time,
+          "total time": row.total_time,
+          "number of people served": row.servings
+        },
+        ingredients: row.ingredients || [],
+        instructions: (row.instructions || []).map((inst: any) => ({
+          number: inst.step_number,
+          text: inst.instruction
+        })),
+        notes: row.notes || [],
+        nutrition: row.nutrition_data || {}
+      }));
+
+      res.json(transformedRecipes);
     } catch (error) {
       next(error);
     }
