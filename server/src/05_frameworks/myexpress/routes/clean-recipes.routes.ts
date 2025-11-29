@@ -17,20 +17,28 @@ router.post(
     try {
       // Fetch all recipes from database
       const result = await db.query(`
-        SELECT 
+        SELECT
           r.*,
           rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
-          json_agg(DISTINCT jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients)) FILTER (WHERE ri.category IS NOT NULL) AS ingredients,
-          json_agg(jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number) FILTER (WHERE inst.step_number IS NOT NULL) AS instructions,
-          json_agg(DISTINCT rn.note) FILTER (WHERE rn.note IS NOT NULL) AS notes,
+          (
+            SELECT json_agg(jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients))
+            FROM recipe_ingredients ri
+            WHERE ri.recipe_id = r.id
+          ) AS ingredients,
+          (
+            SELECT json_agg(jsonb_build_object('step_number', inst.step_number, 'instruction', inst.instruction) ORDER BY inst.step_number)
+            FROM recipe_instructions inst
+            WHERE inst.recipe_id = r.id
+          ) AS instructions,
+          (
+            SELECT json_agg(rn.note)
+            FROM recipe_notes rn
+            WHERE rn.recipe_id = r.id
+          ) AS notes,
           rnut.nutrition_data
         FROM recipes r
         LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
-        LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
-        LEFT JOIN recipe_instructions inst ON r.id = inst.recipe_id
-        LEFT JOIN recipe_notes rn ON r.id = rn.recipe_id
         LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
-        GROUP BY r.id, rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings, rnut.nutrition_data
         ORDER BY r.created_at DESC
       `);
 
