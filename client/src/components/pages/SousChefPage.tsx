@@ -31,6 +31,7 @@ function SousChefPage() {
   );
   const [, setSelectedRecipe] = useState<RecipeModel | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const [mode, setMode] = useState<"generator" | "souschef">("souschef");
 
   const handleRecipeGenerated = (recipe: RecipeModel | null) => {
     setGeneratedRecipe(recipe);
@@ -59,14 +60,35 @@ function SousChefPage() {
         showAddToSelectedRecipes={showAddToSelectedRecipes}
         setShowAddToSelectedRecipes={setShowAddToSelectedRecipes}
       />
-      <RecipeGenerator />
-      <SousChef
-        willTryAgain={willTryAgain}
-        setWillTryAgain={setWillTryAgain}
-        onRecipeGenerated={handleRecipeGenerated}
-        isLoading={isLoading}
-        setIsLoading={setIsLoading}
-      />
+
+      <div className="souschef-container">
+        <div className="souschef-mode-toggle">
+          <button
+            className={mode === "generator" ? "mode-active" : "mode-inactive"}
+            onClick={() => setMode("generator")}
+          >
+            Recipe Generator
+          </button>
+          <button
+            className={mode === "souschef" ? "mode-active" : "mode-inactive"}
+            onClick={() => setMode("souschef")}
+          >
+            Ask mySousChef
+          </button>
+        </div>
+
+        {mode === "generator" ? (
+          <RecipeGenerator />
+        ) : (
+          <SousChef
+            willTryAgain={willTryAgain}
+            setWillTryAgain={setWillTryAgain}
+            onRecipeGenerated={handleRecipeGenerated}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+          />
+        )}
+      </div>
     </div>
   );
 }
