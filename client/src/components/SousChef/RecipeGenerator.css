@@ -1,6 +1,7 @@
 .recipe-generator {
   flex-direction: column;
-  max-width: 80%;
+  max-width: 800px;
+  width: 100%;
   margin: 0 auto;
   padding: 20px;
 }

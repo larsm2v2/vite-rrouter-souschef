@@ -55,7 +55,7 @@
 }
 
 .app-main {
-  padding: 0px;
+  padding: 20px;
   /* allow the main area to shrink inside the grid and scroll when content overflows */
   min-height: 0;
   overflow: auto;

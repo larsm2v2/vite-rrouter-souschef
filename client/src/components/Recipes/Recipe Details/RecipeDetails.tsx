@@ -43,25 +43,21 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
     onSelectedRecipesChange(showRecipe);
   };
 
-  // 1. Organize Ingredients by Subheading (including "Selected Recipes" if checked)
+  // 1. Organize Ingredients by Subheading - use backend structure directly
   const ingredientGroups: IngredientGroup[] | null = showRecipe
-    ? Object.entries(showRecipe.ingredients).map(([name, ingredients]) => {
-        // Handle all ingredient categories consistently (including "dish")
-        if (Array.isArray(ingredients)) {
-          return {
-            name,
-            // Ensure the ingredient objects match the IngredientGroup interface
-            ingredients: {
-              [name]: ingredients,
-            },
-          };
-        } else {
-          return {
-            name: "No Ingredients",
-            ingredients: {},
-          };
-        }
-      })
+    ? Object.entries(showRecipe.ingredients)
+        .map(([name, ingredients]) => {
+          if (Array.isArray(ingredients) && ingredients.length > 0) {
+            return {
+              name,
+              ingredients: {
+                [name]: ingredients,
+              },
+            };
+          }
+          return null;
+        })
+        .filter((group): group is IngredientGroup => group !== null)
     : null;
   /* 	if (isSelected && ingredientGroups) {
 		ingredientGroups.unshift({
@@ -95,8 +91,6 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
               <strong>{capitalizeHeading("Cuisine")}:</strong>{" "}
               {showRecipe.cuisine}
             </p>
-            {/* </div>
-					<div> */}
             <p>
               <strong>{capitalizeHeading("Meal Type")}:</strong>{" "}
               {capitalizeHeading(showRecipe.meal_type)}

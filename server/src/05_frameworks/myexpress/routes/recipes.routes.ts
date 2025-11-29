@@ -38,27 +38,39 @@ router.get(
     `);
 
       // Return snake_case format matching frontend interfaces
-      const transformedRecipes = result.rows.map((row) => ({
-        id: row.id.toString(),
-        name: row.name || "",
-        unique_id: row.unique_id,
-        cuisine: row.cuisine || "",
-        meal_type: row.meal_type || "",
-        dietary_restrictions: row.dietary_restrictions || [],
-        serving_info: {
-          prep_time: row.prep_time,
-          cook_time: row.cook_time,
-          total_time: row.total_time,
-          servings: row.servings,
-        },
-        ingredients: row.ingredients || [],
-        instructions: (row.instructions || []).map((inst: any) => ({
-          number: inst.step_number,
-          text: inst.instruction,
-        })),
-        notes: row.notes || [],
-        nutrition: row.nutrition_data || {},
-      }));
+      const transformedRecipes = result.rows.map((row) => {
+        // Transform ingredients from array to object with category keys
+        const ingredientsObj: any = {};
+        if (row.ingredients && Array.isArray(row.ingredients)) {
+          row.ingredients.forEach((item: any) => {
+            if (item.category && item.ingredients) {
+              ingredientsObj[item.category] = item.ingredients;
+            }
+          });
+        }
+
+        return {
+          id: row.id.toString(),
+          name: row.name || "",
+          unique_id: row.unique_id,
+          cuisine: row.cuisine || "",
+          meal_type: row.meal_type || "",
+          dietary_restrictions: row.dietary_restrictions || [],
+          serving_info: {
+            prep_time: row.prep_time,
+            cook_time: row.cook_time,
+            total_time: row.total_time,
+            servings: row.servings,
+          },
+          ingredients: ingredientsObj,
+          instructions: (row.instructions || []).map((inst: any) => ({
+            number: inst.step_number,
+            text: inst.instruction,
+          })),
+          notes: row.notes || [],
+          nutrition: row.nutrition_data || {},
+        };
+      });
 
       res.json(transformedRecipes);
     } catch (error) {
@@ -98,7 +110,41 @@ router.get(
         return res.status(404).json({ error: "Recipe not found" });
       }
 
-      res.json(result.rows[0]);
+      const row = result.rows[0];
+
+      // Transform ingredients from array to object with category keys
+      const ingredientsObj: any = {};
+      if (row.ingredients && Array.isArray(row.ingredients)) {
+        row.ingredients.forEach((item: any) => {
+          if (item.category && item.ingredients) {
+            ingredientsObj[item.category] = item.ingredients;
+          }
+        });
+      }
+
+      const transformedRecipe = {
+        id: row.id.toString(),
+        name: row.name || "",
+        unique_id: row.unique_id,
+        cuisine: row.cuisine || "",
+        meal_type: row.meal_type || "",
+        dietary_restrictions: row.dietary_restrictions || [],
+        serving_info: {
+          prep_time: row.prep_time,
+          cook_time: row.cook_time,
+          total_time: row.total_time,
+          servings: row.servings,
+        },
+        ingredients: ingredientsObj,
+        instructions: (row.instructions || []).map((inst: any) => ({
+          number: inst.step_number,
+          text: inst.instruction,
+        })),
+        notes: row.notes || [],
+        nutrition: row.nutrition_data || {},
+      };
+
+      res.json(transformedRecipe);
     } catch (error) {
       next(error);
     }
