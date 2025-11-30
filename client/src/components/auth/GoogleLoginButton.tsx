@@ -5,6 +5,7 @@ import {
   storePKCEParams,
   buildGoogleAuthUrl,
 } from "../../utils/pkce";
+import "./GoogleLoginButton.css";
 
 interface GoogleLoginButtonProps {
   className?: string;

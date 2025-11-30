@@ -108,11 +108,12 @@ export class RecipeRepository {
 
   async update(
     recipeId: number,
-    recipeData: Partial<Recipe>
+    recipeData: Partial<Recipe>,
+    userId?: number
   ): Promise<Recipe | null> {
     const result = await pool.query(
       `UPDATE recipes SET name = $2, slug = $3, cuisine = $4, meal_type = $5, dietary_restrictions = $6
-       WHERE id = $1 RETURNING *`,
+       WHERE id = $1 AND user_id = $7 RETURNING *`,
       [
         recipeId,
         recipeData.name,
@@ -120,14 +121,16 @@ export class RecipeRepository {
         recipeData.cuisine,
         recipeData.mealType,
         recipeData.dietaryRestrictions,
+        userId,
       ]
     );
     return result.rows[0] || null;
   }
 
-  async delete(recipeId: number): Promise<boolean> {
-    const result = await pool.query("DELETE FROM recipes WHERE id = $1", [
+  async delete(recipeId: number, userId?: number): Promise<boolean> {
+    const result = await pool.query("DELETE FROM recipes WHERE id = $1 AND user_id = $2", [
       recipeId,
+      userId,
     ]);
     return (result.rowCount ?? 0) > 0;
   }
