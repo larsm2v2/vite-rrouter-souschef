@@ -39,8 +39,9 @@ router.post(
         FROM recipes r
         LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
         LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
+        WHERE r.user_id = $1
         ORDER BY r.created_at DESC
-      `);
+      `, [req.user?.id]);
 
       // Clean each recipe using the microservice
       const cleanedRecipes = await Promise.all(

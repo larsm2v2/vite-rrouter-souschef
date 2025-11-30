@@ -28,9 +28,9 @@ let UpdateRecipe = class UpdateRecipe {
     constructor(recipeRepository) {
         this.recipeRepository = recipeRepository;
     }
-    execute(recipeId, recipeData) {
+    execute(recipeId, recipeData, userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.recipeRepository.update(recipeId, recipeData);
+            return this.recipeRepository.update(recipeId, recipeData, userId);
         });
     }
 };

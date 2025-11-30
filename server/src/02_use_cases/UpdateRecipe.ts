@@ -8,8 +8,9 @@ export class UpdateRecipe {
 
   async execute(
     recipeId: number,
-    recipeData: Partial<Recipe>
+    recipeData: Partial<Recipe>,
+    userId?: number
   ): Promise<Recipe | null> {
-    return this.recipeRepository.update(recipeId, recipeData);
+    return this.recipeRepository.update(recipeId, recipeData, userId);
   }
 }

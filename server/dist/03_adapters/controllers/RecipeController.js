@@ -35,16 +35,18 @@ let RecipeController = class RecipeController {
             var _a;
             const recipeData = req.body;
             // Get user ID from JWT token (set by authenticateJWT middleware)
-            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.sub;
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
             const newRecipe = yield this.createRecipe.execute(recipeData, userId);
             res.status(200).json(newRecipe);
         });
     }
     update(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const recipeId = Number(req.params.id);
             const recipeData = req.body;
-            const updatedRecipe = yield this.updateRecipe.execute(recipeId, recipeData);
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const updatedRecipe = yield this.updateRecipe.execute(recipeId, recipeData, userId);
             if (!updatedRecipe) {
                 res.status(404).json({ error: "Recipe not found" });
             }
@@ -55,8 +57,10 @@ let RecipeController = class RecipeController {
     }
     delete(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const recipeId = Number(req.params.id);
-            const success = yield this.deleteRecipe.execute(recipeId);
+            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const success = yield this.deleteRecipe.execute(recipeId, userId);
             if (!success) {
                 res.status(404).json({ error: "Recipe not found" });
             }

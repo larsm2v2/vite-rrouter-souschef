@@ -26,6 +26,7 @@ if (!apiKey) {
 const genAI = apiKey ? new generative_ai_1.GoogleGenerativeAI(apiKey) : null;
 // Get all recipes
 router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const result = yield connection_1.default.query(`
       SELECT
@@ -50,8 +51,9 @@ router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0,
       FROM recipes r
       LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
       LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
+      WHERE r.user_id = $1
       ORDER BY r.created_at DESC
-    `);
+    `, [(_a = req.user) === null || _a === void 0 ? void 0 : _a.id]);
         // Return snake_case format matching frontend interfaces
         const transformedRecipes = result.rows.map((row) => {
             // Transform ingredients from array to object with category keys
@@ -93,6 +95,7 @@ router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0,
 }));
 // Get a specific recipe by ID
 router.get("/:id", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const result = yield connection_1.default.query(`
       SELECT
@@ -117,8 +120,8 @@ router.get("/:id", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void
       FROM recipes r
       LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
       LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
-      WHERE r.id = $1
-    `, [req.params.id]);
+      WHERE r.id = $1 AND r.user_id = $2
+    `, [req.params.id, (_a = req.user) === null || _a === void 0 ? void 0 : _a.id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: "Recipe not found" });
         }

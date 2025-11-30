@@ -1,0 +1,6 @@
+.google-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--tertiary-color);
+}

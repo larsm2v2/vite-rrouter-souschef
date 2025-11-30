@@ -102,25 +102,27 @@ let RecipeRepository = class RecipeRepository {
             }
         });
     }
-    update(recipeId, recipeData) {
+    update(recipeId, recipeData, userId) {
         return __awaiter(this, void 0, void 0, function* () {
             const result = yield connection_1.default.query(`UPDATE recipes SET name = $2, slug = $3, cuisine = $4, meal_type = $5, dietary_restrictions = $6
-       WHERE id = $1 RETURNING *`, [
+       WHERE id = $1 AND user_id = $7 RETURNING *`, [
                 recipeId,
                 recipeData.name,
                 recipeData.slug,
                 recipeData.cuisine,
                 recipeData.mealType,
                 recipeData.dietaryRestrictions,
+                userId,
             ]);
             return result.rows[0] || null;
         });
     }
-    delete(recipeId) {
+    delete(recipeId, userId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            const result = yield connection_1.default.query("DELETE FROM recipes WHERE id = $1", [
+            const result = yield connection_1.default.query("DELETE FROM recipes WHERE id = $1 AND user_id = $2", [
                 recipeId,
+                userId,
             ]);
             return ((_a = result.rowCount) !== null && _a !== void 0 ? _a : 0) > 0;
         });

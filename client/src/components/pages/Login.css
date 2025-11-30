@@ -6,11 +6,11 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--tertiary-color);
 }
 
 .login-card {
-  background-color: white;
+  background-color: var(--primary-terra-color);
   flex-direction: column;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -25,7 +25,7 @@
 }
 
 .logo-container h1 {
-  color: #333;
+  color: var(--primary-text-color);
   font-size: 2rem;
   margin: 0;
 }
@@ -39,11 +39,11 @@
 
 .header h2 {
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--primary-text-color);
 }
 
 .subtext {
-  color: #666;
+  color: var(--tertiary-terra-color);
   margin: 0;
 }
 
@@ -75,6 +75,9 @@
   color: #757575;
 }
 
+input {
+  background-color: var(--tertiary-color);
+}
 .provider-icon {
   width: 24px;
   height: 24px;
@@ -147,8 +150,8 @@
 }
 
 .tab-button.active {
-  color: #007bff;
-  border-bottom: 2px solid #007bff;
+  color: var(--quaternary-color);
+  border-bottom: 2px solid var(--quaternary-color);
 }
 
 .auth-form {
@@ -185,7 +188,7 @@
 
 .submit-button {
   padding: 0.75vw;
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 4px;

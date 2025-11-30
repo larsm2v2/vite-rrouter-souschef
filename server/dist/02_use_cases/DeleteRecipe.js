@@ -28,9 +28,9 @@ let DeleteRecipe = class DeleteRecipe {
     constructor(recipeRepository) {
         this.recipeRepository = recipeRepository;
     }
-    execute(recipeId) {
+    execute(recipeId, userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.recipeRepository.delete(recipeId);
+            return this.recipeRepository.delete(recipeId, userId);
         });
     }
 };

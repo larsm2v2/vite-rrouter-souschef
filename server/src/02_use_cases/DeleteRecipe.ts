@@ -5,7 +5,7 @@ import { injectable, inject } from "tsyringe";
 export class DeleteRecipe {
   constructor(@inject(RecipeRepository) private recipeRepository: RecipeRepository) {}
 
-  async execute(recipeId: number): Promise<boolean> {
-    return this.recipeRepository.delete(recipeId);
+  async execute(recipeId: number, userId?: number): Promise<boolean> {
+    return this.recipeRepository.delete(recipeId, userId);
   }
 }

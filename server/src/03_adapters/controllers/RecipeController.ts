@@ -13,7 +13,7 @@ export class RecipeController {
   async create(req: Request, res: Response): Promise<void> {
     const recipeData = req.body;
     // Get user ID from JWT token (set by authenticateJWT middleware)
-    const userId = (req as any).user?.sub;
+    const userId = (req as any).user?.id;
     const newRecipe = await this.createRecipe.execute(recipeData, userId);
     res.status(200).json(newRecipe);
   }
@@ -21,7 +21,8 @@ export class RecipeController {
   async update(req: Request, res: Response): Promise<void> {
     const recipeId = Number(req.params.id);
     const recipeData = req.body;
-    const updatedRecipe = await this.updateRecipe.execute(recipeId, recipeData);
+    const userId = (req as any).user?.id;
+    const updatedRecipe = await this.updateRecipe.execute(recipeId, recipeData, userId);
 
     if (!updatedRecipe) {
       res.status(404).json({ error: "Recipe not found" });
@@ -31,7 +32,8 @@ export class RecipeController {
   }
   async delete(req: Request, res: Response): Promise<void> {
     const recipeId = Number(req.params.id);
-    const success = await this.deleteRecipe.execute(recipeId);
+    const userId = (req as any).user?.id;
+    const success = await this.deleteRecipe.execute(recipeId, userId);
 
     if (!success) {
       res.status(404).json({ error: "Recipe not found" });
