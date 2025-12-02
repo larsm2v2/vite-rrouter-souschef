@@ -10,6 +10,7 @@ function RecipesPage() {
     setSelectedRecipeIds,
     recipeToDisplay,
     setRecipeToDisplay,
+    setRecipes,
   } = useOutletContext<{
     selectedRecipeIds: string[];
     setSelectedRecipeIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -17,6 +18,8 @@ function RecipesPage() {
     setRecipeToDisplay: React.Dispatch<
       React.SetStateAction<RecipeModel | null>
     >;
+    recipes: RecipeModel[];
+    setRecipes: React.Dispatch<React.SetStateAction<RecipeModel[]>>;
   }>();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +61,7 @@ function RecipesPage() {
         setSelectedRecipeIds={setSelectedRecipeIds}
         isLoading={isLoading}
         setIsLoading={setIsLoading}
+        setRecipes={setRecipes}
       />
     </>
   );

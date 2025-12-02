@@ -9,6 +9,7 @@ interface RecipesIndexProps {
   selectedRecipeIds: string[];
   setSelectedRecipeIds: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedRecipeId: (recipeId: string | null) => void;
+  setRecipes: React.Dispatch<React.SetStateAction<RecipeModel[]>>;
 }
 /* 	selectedRecipe: RecipeModel | null
 	setSelectedRecipe: React.Dispatch<React.SetStateAction<RecipeModel | null>> */
@@ -17,6 +18,7 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
   selectedRecipeIds,
   setSelectedRecipeIds,
   setSelectedRecipeId,
+  setRecipes: setRecipesInContext,
   /* 	selectedRecipe,
 	setSelectedRecipe, */
 }) => {
@@ -36,11 +38,10 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
     setRecipes: React.Dispatch<React.SetStateAction<RecipeModel[]>>
   ) => {
     try {
-      const response = await apiClient.get<RecipeModel[]>(
-        `/api/recipes`
-      );
+      const response = await apiClient.get<RecipeModel[]>(`/api/recipes`);
       if (response.status === 200) {
         setRecipes(response.data); // Server returns recipes directly from database
+        setRecipesInContext(response.data); // Also update context
         console.log("JSON retrieved: ", response.data);
       } else {
         throw new Error("Failed to fetch recipes.");
@@ -55,15 +56,14 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
   useEffect(() => {
     // Fetch recipes when the component mounts
     fetchRecipes(setRecipes); // Call the function here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Filtering based on search and showSelected
   // Group recipes by meal type
   const recipesByMealType = recipes.reduce((acc, recipe) => {
     // Safety check for meal type
     const mealTypeRaw = recipe.meal_type || "Other";
-    const mealType =
-      mealTypeRaw.charAt(0).toUpperCase() +
-      mealTypeRaw.slice(1); // Capitalize
+    const mealType = mealTypeRaw.charAt(0).toUpperCase() + mealTypeRaw.slice(1); // Capitalize
     if (!acc[mealType]) {
       acc[mealType] = [];
     }
@@ -110,12 +110,14 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
     },
     {} as { [mealType: string]: RecipeModel[] }
   );
-  const orderedMealTypes = mealTypeOrder.filter((mealType) => {
-    return (
-      mealType &&
-      Object.prototype.hasOwnProperty.call(filteredRecipesByMealType, mealType)
-    );
-  });
+  // Keep preferred ordering from mealTypeOrder, then append any additional meal types found
+  const preferred = mealTypeOrder.filter((mealType) =>
+    Object.prototype.hasOwnProperty.call(filteredRecipesByMealType, mealType)
+  );
+  const remaining = Object.keys(filteredRecipesByMealType)
+    .filter((mt) => !preferred.includes(mt))
+    .sort();
+  const orderedMealTypes = [...preferred, ...remaining];
   // Handling recipe selection
   const handleRecipeClick = (recipeId: string) => {
     setSelectedRecipeId(recipeId || null);
@@ -282,7 +284,7 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
               {orderedMealTypes.map((mealType) => (
                 <div className="mealType" key={mealType}>
                   <h3>{mealType}</h3>
-                  <ul>
+                  <ul className="recipe-list">
                     {filteredRecipesByMealType[mealType].map((recipe) => (
                       <li
                         key={recipe.id}

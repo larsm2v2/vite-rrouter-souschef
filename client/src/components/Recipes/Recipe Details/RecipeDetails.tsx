@@ -3,6 +3,7 @@ import React from "react";
 import { RecipeModel } from "../../Models/Models";
 import "../Recipes.css";
 import "../../SousChef/SousChef.css";
+import "./RecipeDetails.css";
 
 // Interface for ingredient groups
 interface IngredientGroup {
@@ -59,18 +60,11 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
         })
         .filter((group): group is IngredientGroup => group !== null)
     : null;
-  /* 	if (isSelected && ingredientGroups) {
-		ingredientGroups.unshift({
-			// Add "Selected Recipes" group to the beginning
-			name: "Selected",
-			ingredients: { dish: showRecipe!.ingredients.dish },
-		})
-	}
- */
+
   return (
-    <div className="recipes-container">
+    <div className="recipe-content">
       {showRecipe && ingredientGroups && (
-        <>
+        <div className="recipes-container">
           <h2>{capitalizeHeading(showRecipe.name)}</h2>
 
           {/* Checkbox for selecting recipe */}
@@ -98,43 +92,61 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
           </div>
 
           {/* 3. Display Ingredients by Subheading (with capitalized headings) */}
-          <h2>{capitalizeHeading("Ingredients")}</h2>
-          {ingredientGroups?.map((group) => (
-            <div className="eachIngredientSet" key={group.name}>
-              <h3 className="eachIngredientSetTitle">
-                {capitalizeHeading(group.name)}
-              </h3>
-              <ul>
-                {/* Access the ingredients array for the specific group */}
-                {Object.values(group.ingredients).flatMap((ingredientsArray) =>
-                  Array.isArray(ingredientsArray) // Check if ingredientsArray is an array
-                    ? ingredientsArray
-                        .filter(
-                          (ingredient) => ingredient.name && ingredient.quantity
-                        )
-                        .map((ingredient) => (
-                          <li key={ingredient.id}>
-                            {`${ingredient.quantity} ${
-                              ingredient.unit ? ingredient.unit : ""
-                            } ${ingredient.name}`}
-                          </li>
-                        ))
-                    : []
-                )}
-              </ul>
-            </div>
-          ))}
+          <section id="ingredients">
+            <h2>{capitalizeHeading("Ingredients")}</h2>
+            {ingredientGroups?.map((group) => (
+              <div className="eachIngredientSet" key={group.name}>
+                <h3 className="eachIngredientSetTitle">
+                  {capitalizeHeading(group.name)}
+                </h3>
+                <ul>
+                  {/* Access the ingredients array for the specific group */}
+                  {Object.values(group.ingredients).flatMap(
+                    (ingredientsArray) =>
+                      Array.isArray(ingredientsArray) // Check if ingredientsArray is an array
+                        ? ingredientsArray
+                            .filter(
+                              (ingredient) =>
+                                ingredient.name && ingredient.quantity
+                            )
+                            .map((ingredient) => (
+                              <li key={ingredient.id}>
+                                {`${ingredient.quantity} ${
+                                  ingredient.unit ? ingredient.unit : ""
+                                } ${ingredient.name}`}
+                              </li>
+                            ))
+                        : []
+                  )}
+                </ul>
+              </div>
+            ))}
+          </section>
 
           {/* 4. Display Instructions (with capitalized heading) */}
-          <h2>{capitalizeHeading("Instructions")}</h2>
-          <ol className="instructionSet">
-            {showRecipe.instructions.map((instruction) => (
-              <li className="singleInstructions" key={instruction.number}>
-                {instruction.text}
-              </li>
-            ))}
-          </ol>
-        </>
+          <section id="instructions">
+            <h2>{capitalizeHeading("Instructions")}</h2>
+            <ol className="instructionSet">
+              {showRecipe.instructions.map((instruction) => (
+                <li className="singleInstructions" key={instruction.number}>
+                  {instruction.text}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* 5. Display Notes if available */}
+          {showRecipe.notes && showRecipe.notes.length > 0 && (
+            <section id="notes">
+              <h2>{capitalizeHeading("Notes")}</h2>
+              <ul>
+                {showRecipe.notes.map((note, index) => (
+                  <li key={index}>{note}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       )}
     </div>
   );

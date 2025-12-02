@@ -18,7 +18,7 @@ interface RecipeIndexItem {
 }
 
 const Profile: React.FC = () => {
-  const { user: authUser, logout: authLogout } = useAuth();
+  const { user: authUser, logout: authLogout, updateUser, displayName: contextDisplayName } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [recipes, setRecipes] = useState<RecipeIndexItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,25 +81,7 @@ const Profile: React.FC = () => {
     }
   };
 
-  const prettifyName = (raw: string) => {
-    if (!raw) return raw;
-    // Replace common separators with spaces, collapse multiple spaces
-    const parts = raw
-      .replace(/[._\-+]/g, " ")
-      .split(/\s+/)
-      .filter(Boolean);
-    // Capitalize each word
-    const words = parts.map((w) => w.charAt(0).toUpperCase() + w.slice(1));
-    return words.join(" ");
-  };
-
-  const displayName = user
-    ? user.display_name && user.display_name.trim().length > 0
-      ? user.display_name
-      : user.email
-      ? prettifyName(user.email.split("@")[0])
-      : "User"
-    : "User";
+  const displayName = contextDisplayName || "User";
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -108,7 +90,7 @@ const Profile: React.FC = () => {
   // Keep the input in sync when the user object changes
   useEffect(() => {
     setNameInput(displayName || "");
-  }, [displayName]);
+  }, [displayName, contextDisplayName]);
 
   if (loading) return <div className="loading">Loading profile...</div>;
 
@@ -159,10 +141,14 @@ const Profile: React.FC = () => {
                         await apiClient.put("/profile", {
                           display_name: nameInput,
                         });
-                        // Update local user state
-                        setUser((prev) =>
-                          prev ? { ...prev, display_name: nameInput } : prev
-                        );
+                        // Update local user state and AuthContext so Navbar updates
+                        const updatedUser = user ? { ...user, display_name: nameInput } : null;
+                        setUser(updatedUser);
+                        if (updatedUser && updateUser) updateUser({
+                          id: String(updatedUser.id),
+                          display_name: updatedUser.display_name,
+                          email: updatedUser.email || "",
+                        });
                         setIsEditing(false);
                       } catch (err: unknown) {
                         console.error("Failed to save display name:", err);

@@ -11,6 +11,7 @@ import { RecipeActivityLogRepository } from "../03_adapters/repositories/RecipeA
 
 // Use-cases
 import { GetUserProfile } from "../02_use_cases/GetUserProfile";
+import { UpdateUserProfile } from "../02_use_cases/UpdateUserProfile";
 import { GetGroceryList } from "../02_use_cases/GetGroceryList";
 import { GetMealPlan } from "../02_use_cases/GetMealPlan";
 import { CreateMealPlan } from "../02_use_cases/CreateMealPlan";
@@ -48,6 +49,7 @@ container.registerSingleton(
 
 // Register use-cases
 container.registerSingleton(GetUserProfile, GetUserProfile);
+container.registerSingleton(UpdateUserProfile, UpdateUserProfile);
 container.registerSingleton(GetGroceryList, GetGroceryList);
 container.registerSingleton(GetMealPlan, GetMealPlan);
 container.registerSingleton(CreateMealPlan, CreateMealPlan);
@@ -67,7 +69,10 @@ container.registerSingleton(LogoutUser, LogoutUser);
 container.registerSingleton(CreateRecipe, CreateRecipe);
 container.registerSingleton(UpdateRecipe, UpdateRecipe);
 container.registerSingleton(DeleteRecipe, DeleteRecipe);
-container.registerSingleton(require("../03_adapters/controllers/RecipeController").RecipeController, require("../03_adapters/controllers/RecipeController").RecipeController);
+container.registerSingleton(
+  require("../03_adapters/controllers/RecipeController").RecipeController,
+  require("../03_adapters/controllers/RecipeController").RecipeController
+);
 
 // Register controllers
 container.registerSingleton(UserController, UserController);
