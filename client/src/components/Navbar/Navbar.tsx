@@ -11,11 +11,13 @@ interface NavbarProps {
     React.SetStateAction<"recipes" | "sousChef">
   >;
   setRecipeToDisplay?: React.Dispatch<React.SetStateAction<RecipeModel | null>>;
+  displayName?: string;
 }
 
 const Navbar: React.FC<NavbarProps> = ({
   sidebarToggled,
   setSidebarToggled,
+  displayName,
 }) => {
   // Toggle handler is provided by parent via setSidebarToggled; helper removed to avoid unused function
 
@@ -70,17 +72,6 @@ const Navbar: React.FC<NavbarProps> = ({
         />
       )}
       <nav className={"nav"}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button
-            className={`sidebar-toggle ${sidebarToggled ? "open" : ""}`}
-            aria-controls="App-sidebar"
-            aria-label={sidebarToggled ? "Close sidebar" : "Open sidebar"}
-            aria-expanded={sidebarToggled}
-            onClick={() => setSidebarToggled((s) => !s)}
-          >
-            ☰
-          </button>
-        </div>
 
         <ul className="nav-links">
           <li>
@@ -107,7 +98,9 @@ const Navbar: React.FC<NavbarProps> = ({
           </li> */}
           <li>
             <Link to="/profile" title="My Profile" aria-label="My Profile">
-              <span className="nav-compact avatar">U</span>
+              <span className="nav-compact avatar">
+                {(displayName?.charAt(0) || "U").toUpperCase()}
+              </span>
             </Link>
           </li>
         </ul>

@@ -23,10 +23,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const GetUserProfile_1 = require("../../02_use_cases/GetUserProfile");
+const UpdateUserProfile_1 = require("../../02_use_cases/UpdateUserProfile");
 const tsyringe_1 = require("tsyringe");
 let UserController = class UserController {
-    constructor(getUserProfile) {
+    constructor(getUserProfile, updateUserProfile) {
         this.getUserProfile = getUserProfile;
+        this.updateUserProfile = updateUserProfile;
     }
     getProfile(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -44,10 +46,32 @@ let UserController = class UserController {
             }
         });
     }
+    updateProfile(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!req.user) {
+                res.status(401).json({ error: "Unauthorized" });
+                return;
+            }
+            const userId = req.user.id;
+            const update = {};
+            if (typeof req.body.display_name !== "undefined")
+                update.displayName = req.body.display_name;
+            if (typeof req.body.avatar !== "undefined")
+                update.avatar = req.body.avatar;
+            const updated = yield this.updateUserProfile.execute(userId, update);
+            if (!updated) {
+                res.status(404).json({ error: "User not found" });
+                return;
+            }
+            res.status(200).json({ user: updated });
+        });
+    }
 };
 exports.UserController = UserController;
 exports.UserController = UserController = __decorate([
     (0, tsyringe_1.injectable)(),
     __param(0, (0, tsyringe_1.inject)(GetUserProfile_1.GetUserProfile)),
-    __metadata("design:paramtypes", [GetUserProfile_1.GetUserProfile])
+    __param(1, (0, tsyringe_1.inject)(UpdateUserProfile_1.UpdateUserProfile)),
+    __metadata("design:paramtypes", [GetUserProfile_1.GetUserProfile,
+        UpdateUserProfile_1.UpdateUserProfile])
 ], UserController);

@@ -23,4 +23,13 @@ const userController = tsyringe_1.container.resolve(UserController_1.UserControl
 router.get("/profile", jwtAuth_1.authenticateJWT, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield userController.getProfile(req, res);
 }));
+router.put("/profile", jwtAuth_1.authenticateJWT, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield userController.updateProfile(req, res);
+    }
+    catch (err) {
+        console.error("Failed to update profile", err);
+        res.status(500).json({ error: "Update failed" });
+    }
+}));
 exports.default = router;

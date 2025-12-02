@@ -36,6 +36,27 @@ let UserRepository = class UserRepository {
             return result.rows[0];
         });
     }
+    update(userId, update) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const fields = [];
+            const values = [];
+            let idx = 1;
+            if (typeof update.displayName !== "undefined") {
+                fields.push(`display_name = $${idx++}`);
+                values.push(update.displayName);
+            }
+            if (typeof update.avatar !== "undefined") {
+                fields.push(`avatar = $${idx++}`);
+                values.push(update.avatar);
+            }
+            if (fields.length === 0)
+                return this.findById(userId);
+            const sql = `UPDATE users SET ${fields.join(", ")} WHERE id = $${idx} RETURNING id, email, display_name, avatar`;
+            values.push(userId);
+            const result = yield connection_1.default.query(sql, values);
+            return result.rows[0] || null;
+        });
+    }
 };
 exports.UserRepository = UserRepository;
 exports.UserRepository = UserRepository = __decorate([

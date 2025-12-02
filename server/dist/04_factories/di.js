@@ -11,6 +11,7 @@ const ShoppingListVersionRepository_1 = require("../03_adapters/repositories/Sho
 const RecipeActivityLogRepository_1 = require("../03_adapters/repositories/RecipeActivityLogRepository");
 // Use-cases
 const GetUserProfile_1 = require("../02_use_cases/GetUserProfile");
+const UpdateUserProfile_1 = require("../02_use_cases/UpdateUserProfile");
 const GetGroceryList_1 = require("../02_use_cases/GetGroceryList");
 const GetMealPlan_1 = require("../02_use_cases/GetMealPlan");
 const CreateMealPlan_1 = require("../02_use_cases/CreateMealPlan");
@@ -39,6 +40,7 @@ tsyringe_1.container.registerSingleton(ShoppingListVersionRepository_1.ShoppingL
 tsyringe_1.container.registerSingleton(RecipeActivityLogRepository_1.RecipeActivityLogRepository, RecipeActivityLogRepository_1.RecipeActivityLogRepository);
 // Register use-cases
 tsyringe_1.container.registerSingleton(GetUserProfile_1.GetUserProfile, GetUserProfile_1.GetUserProfile);
+tsyringe_1.container.registerSingleton(UpdateUserProfile_1.UpdateUserProfile, UpdateUserProfile_1.UpdateUserProfile);
 tsyringe_1.container.registerSingleton(GetGroceryList_1.GetGroceryList, GetGroceryList_1.GetGroceryList);
 tsyringe_1.container.registerSingleton(GetMealPlan_1.GetMealPlan, GetMealPlan_1.GetMealPlan);
 tsyringe_1.container.registerSingleton(CreateMealPlan_1.CreateMealPlan, CreateMealPlan_1.CreateMealPlan);

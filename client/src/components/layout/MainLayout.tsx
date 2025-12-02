@@ -4,6 +4,7 @@ import { RecipeModel } from "../Models/Models"; // Adjust the path as needed
 import { Outlet } from "react-router-dom";
 import Navbar from "../Navbar/Navbar";
 import Sidebar from "../Sidebar/Sidebar";
+import RecipeIndexSidebar from "../Recipes/Recipe Details/RecipeIndexSidebar";
 import FloatingActionButton from "../common/FloatingActionButton";
 import OCRModal from "../common/OCRModal";
 import { useAuth } from "../../contexts/AuthContext";
@@ -11,6 +12,7 @@ import "./MainLayout.css";
 
 const MainLayout = () => {
   const [sidebarToggled, setSidebarToggled] = useState(false);
+  const [indexSidebarToggled, setIndexSidebarToggled] = useState(false);
   const [activeContent, setActiveContent] = useState<"recipes" | "sousChef">(
     "sousChef"
   );
@@ -18,8 +20,9 @@ const MainLayout = () => {
   const [recipeToDisplay, setRecipeToDisplay] = useState<RecipeModel | null>(
     null
   );
+  const [recipes, setRecipes] = useState<RecipeModel[]>([]);
   const [showOcrModal, setShowOcrModal] = useState(false);
-  const { user } = useAuth();
+  const { user, displayName } = useAuth();
 
   const openOcr = () => setShowOcrModal(true);
   const closeOcr = () => setShowOcrModal(false);
@@ -95,6 +98,7 @@ const MainLayout = () => {
             setSidebarToggled={setSidebarToggled}
             setActiveContent={setActiveContent}
             setRecipeToDisplay={setRecipeToDisplay}
+            displayName={displayName || undefined}
           />
         </header>
 
@@ -108,6 +112,16 @@ const MainLayout = () => {
             }}
           >
             <aside className={`app-sidebar`} id="App-sidebar">
+              <button
+                className="sidebar-toggle-tab left-toggle"
+                onClick={() => setSidebarToggled((s) => !s)}
+                aria-label={
+                  sidebarToggled ? "Close grocery list" : "Open grocery list"
+                }
+              >
+                <span className="toggle-full">Grocery List</span>
+                <span className="toggle-compact">G</span>
+              </button>
               <Sidebar selectedRecipeIds={selectedRecipeIds} />
             </aside>
           </FocusTrap>
@@ -121,9 +135,41 @@ const MainLayout = () => {
                 setActiveContent,
                 recipeToDisplay,
                 setRecipeToDisplay,
+                recipes,
+                setRecipes,
               }}
             />
           </main>
+
+          {recipeToDisplay && (
+            <>
+              <button
+                className={`sidebar-toggle-tab right-toggle ${
+                  indexSidebarToggled ? "open" : ""
+                }`}
+                onClick={() => setIndexSidebarToggled((s) => !s)}
+                aria-label={
+                  indexSidebarToggled
+                    ? "Close recipe index"
+                    : "Open recipe index"
+                }
+              >
+                <span className="toggle-full">Recipe Index</span>
+                <span className="toggle-compact">I</span>
+              </button>
+              <aside
+                className={`recipe-index-sidebar ${
+                  indexSidebarToggled ? "open" : ""
+                }`}
+                id="recipe-index-sidebar"
+              >
+                <RecipeIndexSidebar
+                  recipe={recipeToDisplay}
+                  recipesIndex={recipes}
+                />
+              </aside>
+            </>
+          )}
         </div>
 
         {/* Floating action and OCR modal mounted at layout level */}

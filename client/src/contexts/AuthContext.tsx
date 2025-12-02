@@ -20,6 +20,8 @@ interface AuthContextType {
   login: (accessToken: string, user: User) => void;
   logout: () => void;
   refreshAccessToken: () => Promise<boolean>;
+  updateUser?: (user: User) => void;
+  displayName?: string | null;
   isAuthenticated: boolean;
 }
 
@@ -70,6 +72,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [refreshAccessToken]);
 
+  const formatDisplayName = (user?: User | null) => {
+    if (!user) return null;
+    if (user.display_name && user.display_name.trim().length > 0) return user.display_name;
+    if (user.email) {
+      const username = user.email.split("@")[0];
+      return username.replace(/[._\-+]/g, " ")
+        .split(/\s+/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    }
+    return "User";
+  };
+
   const login = (newAccessToken: string, userData: User) => {
     setAccessToken(newAccessToken);
     setUser(userData);
@@ -77,6 +92,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("accessToken", newAccessToken);
     localStorage.setItem("user", JSON.stringify(userData));
   };
+
+  const updateUser = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
+  const displayName = formatDisplayName(user);
 
   return (
     <AuthContext.Provider
@@ -86,6 +108,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         refreshAccessToken,
+        updateUser,
+        displayName,
         isAuthenticated: !!user && !!accessToken,
       }}
     >

@@ -21,4 +21,27 @@ export class UserRepository {
     );
     return result.rows[0];
   }
+
+  async update(userId: number, update: Partial<User>): Promise<User | null> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+      if (typeof update.displayName !== "undefined") {
+        fields.push(`display_name = $${idx++}`);
+        values.push(update.displayName);
+    }
+    if (typeof update.avatar !== "undefined") {
+      fields.push(`avatar = $${idx++}`);
+      values.push(update.avatar);
+    }
+    if (fields.length === 0) return this.findById(userId);
+
+    const sql = `UPDATE users SET ${fields.join(
+      ", "
+    )} WHERE id = $${idx} RETURNING id, email, display_name, avatar`;
+    values.push(userId);
+    const result = await pool.query(sql, values);
+    return result.rows[0] || null;
+  }
 }

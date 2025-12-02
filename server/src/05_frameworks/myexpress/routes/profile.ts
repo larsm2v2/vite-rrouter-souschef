@@ -13,5 +13,13 @@ const userController = container.resolve(UserController);
 router.get("/profile", authenticateJWT, async (req, res) => {
   await userController.getProfile(req, res);
 });
+router.put("/profile", authenticateJWT, async (req, res) => {
+  try {
+    await userController.updateProfile(req, res);
+  } catch (err) {
+    console.error("Failed to update profile", err);
+    res.status(500).json({ error: "Update failed" });
+  }
+});
 
 export default router;
