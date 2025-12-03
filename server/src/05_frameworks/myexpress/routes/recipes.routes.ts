@@ -295,7 +295,7 @@ router.post(
 
       // Get the current grocery list version
       const versionResult = await db.query(
-        `SELECT id, items FROM shopping_list_versions 
+        `SELECT id, list_data FROM shopping_list_versions 
          WHERE user_id = $1 
          ORDER BY created_at DESC 
          LIMIT 1`,
@@ -304,7 +304,7 @@ router.post(
 
       let currentItems: any[] = [];
       if (versionResult.rows.length > 0) {
-        currentItems = versionResult.rows[0].items || [];
+        currentItems = versionResult.rows[0].list_data || [];
       }
 
       // Extract all ingredients from all categories
@@ -348,9 +348,9 @@ router.post(
 
       // Create a new grocery list version
       await db.query(
-        `INSERT INTO shopping_list_versions (user_id, items, created_at) 
-         VALUES ($1, $2, NOW())`,
-        [userId, JSON.stringify(mergedItems)]
+        `INSERT INTO shopping_list_versions (user_id, version, list_data, created_at) 
+         VALUES ($1, $2, $3, NOW())`,
+        [userId, 1, JSON.stringify(mergedItems)]
       );
 
       res.json({
