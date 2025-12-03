@@ -41,6 +41,7 @@ const GroceryList: React.FC<GroceryListProps> = ({
   const [recipes, setRecipes] = useState<RecipeModel[]>([]);
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saveTimer, setSaveTimer] = useState<number | null>(null);
 
   // Fetch backend grocery list version
   const fetchGroceryList = useCallback(async () => {
@@ -93,6 +94,47 @@ const GroceryList: React.FC<GroceryListProps> = ({
   useEffect(() => {
     fetchGroceryList();
   }, [fetchGroceryList]);
+
+  // Persist grocery list edits/deletions by creating a new backend version
+  useEffect(() => {
+    if (loading) return; // don't persist during initial load
+
+    // Debounce rapid changes to avoid spamming the server
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+    }
+
+    const timerId = window.setTimeout(async () => {
+      try {
+        // Prepare payload in backend expected format
+        const payload = {
+          listData: listItems.map((item) => ({
+            name: item.listItem,
+            quantity: item.quantity,
+            unit: item.unit,
+            checked: item.isDone,
+          })),
+        };
+
+        // Create a new shopping list version marked current on the server
+        // Endpoint: POST /api/grocery-list/version
+        const resp = await apiClient.post("/api/grocery-list/version", payload);
+        if (resp.status >= 200 && resp.status < 300) {
+          // Notify other components to refresh if needed
+          window.dispatchEvent(new Event("groceryListUpdated"));
+        }
+      } catch (err) {
+        console.error("Failed to persist grocery list changes:", err);
+      }
+    }, 500); // 500ms debounce
+
+    setSaveTimer(timerId);
+
+    // Cleanup if list changes again quickly
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [listItems, loading]);
 
   // Listen for custom event when grocery list is updated
   useEffect(() => {
