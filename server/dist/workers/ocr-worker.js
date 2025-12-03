@@ -18,8 +18,10 @@ const OcrJobRepository_1 = require("../03_adapters/repositories/OcrJobRepository
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
 const projectId = process.env.GCP_PROJECT_ID || "souschef4me";
 const subscriptionName = process.env.OCR_JOBS_SUBSCRIPTION || "ocr-worker-sub";
-const pubsub = new pubsub_1.PubSub({ projectId });
-const subscription = pubsub.subscription(subscriptionName);
+// Pub/Sub client and subscription are created lazily to avoid throwing during
+// module import when Google Application Default Credentials are not configured.
+let pubsub = null;
+let subscription = null;
 // Tesseract OCR execution
 function runTesseract(filePath) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -151,19 +153,33 @@ function messageHandler(message) {
 // Start worker
 function startOcrWorker() {
     console.log(`Starting OCR worker... (subscription: ${subscriptionName}, project: ${projectId})`);
-    subscription.on("message", messageHandler);
-    subscription.on("error", (error) => {
-        console.error("Subscription error:", error);
-    });
+    try {
+        pubsub = new pubsub_1.PubSub({ projectId });
+        subscription = pubsub.subscription(subscriptionName);
+        subscription.on("message", messageHandler);
+        subscription.on("error", (error) => {
+            console.error("Subscription error:", error);
+        });
+    }
+    catch (err) {
+        // If Pub/Sub credentials are not available, don't crash the process.
+        console.error("Failed to initialize Pub/Sub subscription for OCR worker:", err);
+        console.warn("OCR worker will not start. Run the worker with proper GCP credentials.");
+        return; // Do not start the worker if Pub/Sub is unavailable
+    }
     // Graceful shutdown
     process.on("SIGINT", () => {
         console.log("Shutting down OCR worker...");
-        subscription.close();
+        if (subscription) {
+            subscription.close();
+        }
         process.exit(0);
     });
     process.on("SIGTERM", () => {
         console.log("Shutting down OCR worker...");
-        subscription.close();
+        if (subscription) {
+            subscription.close();
+        }
         process.exit(0);
     });
     console.log("OCR worker started successfully");

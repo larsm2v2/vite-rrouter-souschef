@@ -1,6 +1,6 @@
 import { EntitySchema } from "typeorm";
 
-export interface GroceryListVersion {
+export interface ShoppingListVersion {
   id: number;
   userId: number;
   version: number;
@@ -9,8 +9,8 @@ export interface GroceryListVersion {
   isCurrent?: boolean;
 }
 
-export const GroceryListVersionSchema = new EntitySchema<GroceryListVersion>({
-  name: "GroceryListVersion",
+export const ShoppingListVersionSchema = new EntitySchema<ShoppingListVersion>({
+  name: "ShoppingListVersion",
   columns: {
     id: { type: Number, primary: true, generated: true },
     userId: { type: Number },

@@ -186,21 +186,30 @@ export function startOcrWorker() {
     });
   } catch (err) {
     // If Pub/Sub credentials are not available, don't crash the process.
-    console.error("Failed to initialize Pub/Sub subscription for OCR worker:", err);
-    console.warn("OCR worker will not start. Run the worker with proper GCP credentials.");
+    console.error(
+      "Failed to initialize Pub/Sub subscription for OCR worker:",
+      err
+    );
+    console.warn(
+      "OCR worker will not start. Run the worker with proper GCP credentials."
+    );
     return; // Do not start the worker if Pub/Sub is unavailable
   }
 
   // Graceful shutdown
   process.on("SIGINT", () => {
     console.log("Shutting down OCR worker...");
-    subscription.close();
+    if (subscription) {
+      subscription.close();
+    }
     process.exit(0);
   });
 
   process.on("SIGTERM", () => {
     console.log("Shutting down OCR worker...");
-    subscription.close();
+    if (subscription) {
+      subscription.close();
+    }
     process.exit(0);
   });
 

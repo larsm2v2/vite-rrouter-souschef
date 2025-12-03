@@ -13,12 +13,21 @@ exports.publishOcrJob = publishOcrJob;
 exports.isPubSubAvailable = isPubSubAvailable;
 const pubsub_1 = require("@google-cloud/pubsub");
 const projectId = process.env.GCP_PROJECT_ID || "souschef4me";
-const pubsub = new pubsub_1.PubSub({ projectId });
+let pubsub = null;
 let ocrTopic = null;
 function getOcrTopic() {
     return __awaiter(this, void 0, void 0, function* () {
         if (!ocrTopic) {
             const topicName = process.env.OCR_JOBS_TOPIC || "ocr-jobs";
+            if (!pubsub) {
+                try {
+                    pubsub = new pubsub_1.PubSub({ projectId });
+                }
+                catch (err) {
+                    console.error("Failed to create Pub/Sub client:", err);
+                    throw err;
+                }
+            }
             ocrTopic = pubsub.topic(topicName);
             try {
                 const [exists] = yield ocrTopic.exists();

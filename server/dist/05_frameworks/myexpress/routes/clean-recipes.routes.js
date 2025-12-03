@@ -23,7 +23,6 @@ const router = (0, express_1.Router)();
  * Fetch all recipes and clean them using the clean-recipe microservice
  */
 router.post("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         // Fetch all recipes from database
         const result = yield connection_1.default.query(`
@@ -51,7 +50,7 @@ router.post("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0
         LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
         WHERE r.user_id = $1
         ORDER BY r.created_at DESC
-      `, [(_a = req.user) === null || _a === void 0 ? void 0 : _a.id]);
+      `, [req.user.id]);
         // Clean each recipe using the microservice
         const cleanedRecipes = yield Promise.all(result.rows.map((recipe) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c;

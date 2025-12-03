@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { RecipeModel } from "../Models/Models";
 import apiClient from "./Client";
 import "./Profile.css";
 
@@ -11,18 +12,27 @@ interface User {
   avatar?: string | null;
 }
 
-interface RecipeIndexItem {
-  id: number;
-  title: string;
-  created_at?: string;
-}
-
 const Profile: React.FC = () => {
-  const { user: authUser, logout: authLogout, updateUser, displayName: contextDisplayName } = useAuth();
+  const {
+    user: authUser,
+    logout: authLogout,
+    updateUser,
+    displayName: contextDisplayName,
+  } = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [recipes, setRecipes] = useState<RecipeIndexItem[]>([]);
+  const [recipes, setRecipes] = useState<RecipeModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState<"all" | "favorites">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+
+  // Get setRecipeToDisplay from outlet context if available
+  const outletContext = useOutletContext<{
+    setRecipeToDisplay?: React.Dispatch<
+      React.SetStateAction<RecipeModel | null>
+    >;
+  }>();
+  const setRecipeToDisplay = outletContext?.setRecipeToDisplay;
 
   useEffect(() => {
     let mounted = true;
@@ -48,10 +58,8 @@ const Profile: React.FC = () => {
         }
 
         try {
-          const r = await apiClient.get<{ items: RecipeIndexItem[] }>(
-            "/api/recipes?owned=true&limit=100"
-          );
-          if (mounted && Array.isArray(r.data?.items)) setRecipes(r.data.items);
+          const r = await apiClient.get<RecipeModel[]>("/api/recipes");
+          if (mounted && Array.isArray(r.data)) setRecipes(r.data);
         } catch (err) {
           console.debug("Profile: unable to fetch recipes index:", err);
           if (mounted) setRecipes([]);
@@ -142,13 +150,16 @@ const Profile: React.FC = () => {
                           display_name: nameInput,
                         });
                         // Update local user state and AuthContext so Navbar updates
-                        const updatedUser = user ? { ...user, display_name: nameInput } : null;
+                        const updatedUser = user
+                          ? { ...user, display_name: nameInput }
+                          : null;
                         setUser(updatedUser);
-                        if (updatedUser && updateUser) updateUser({
-                          id: String(updatedUser.id),
-                          display_name: updatedUser.display_name,
-                          email: updatedUser.email || "",
-                        });
+                        if (updatedUser && updateUser)
+                          updateUser({
+                            id: String(updatedUser.id),
+                            display_name: updatedUser.display_name,
+                            email: updatedUser.email || "",
+                          });
                         setIsEditing(false);
                       } catch (err: unknown) {
                         console.error("Failed to save display name:", err);
@@ -197,41 +208,123 @@ const Profile: React.FC = () => {
               Sign out
             </button>
           </div>
-          <div className="profile-actions">
-            <button className="btn" onClick={() => navigate("/recipes")}>
-              My Recipes
-            </button>
-            <button className="btn" onClick={() => navigate("/favorites")}>
-              Favorites
-            </button>
-          </div>
         </div>
 
         <div className="profile-body">
-          <div className="recipes-summary">
-            <h2>My Recipes</h2>
-            <p className="count">Total: {recipes.length}</p>
+          <div className="recipe-index-header">
+            <input
+              type="text"
+              placeholder="Search recipes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            <div className="view-toggle">
+              <button
+                className={`toggle-btn ${activeView === "all" ? "active" : ""}`}
+                onClick={() => setActiveView("all")}
+              >
+                My Recipes
+              </button>
+              <button
+                className={`toggle-btn ${
+                  activeView === "favorites" ? "active" : ""
+                }`}
+                onClick={() => setActiveView("favorites")}
+              >
+                Favorites
+              </button>
+            </div>
           </div>
 
-          <div className="recipe-grid">
-            {recipes.length === 0 ? (
-              <div className="empty">No recipes found.</div>
-            ) : (
-              recipes.map((r) => (
-                <button
-                  key={r.id}
-                  className="recipe-tile"
-                  onClick={() => navigate(`/recipes/${r.id}`)}
-                >
-                  <div className="title">{r.title}</div>
-                  <div className="meta">
-                    {r.created_at
-                      ? new Date(r.created_at).toLocaleDateString()
-                      : ""}
-                  </div>
-                </button>
-              ))
-            )}
+          <div className="recipe-index">
+            <h2 className="index-title">Index</h2>
+            {(() => {
+              // Filter recipes based on view and search
+              const filteredRecipes = recipes.filter((recipe) => {
+                const matchesView =
+                  activeView === "all" ||
+                  (activeView === "favorites" && recipe.is_favorite);
+                const matchesSearch =
+                  searchQuery === "" ||
+                  recipe.name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                  recipe.cuisine
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                  recipe.meal_type
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase());
+                return matchesView && matchesSearch;
+              });
+
+              // Group by meal type
+              const mealTypeOrder = [
+                "Breakfast",
+                "Lunch",
+                "Appetizer",
+                "Dinner",
+                "Dessert",
+                "Spice blend",
+              ];
+              const recipesByMealType = filteredRecipes.reduce(
+                (acc, recipe) => {
+                  const mealTypeRaw = recipe.meal_type || "Other";
+                  const mealType =
+                    mealTypeRaw.charAt(0).toUpperCase() + mealTypeRaw.slice(1);
+                  if (!acc[mealType]) acc[mealType] = [];
+                  acc[mealType].push(recipe);
+                  return acc;
+                },
+                {} as { [key: string]: RecipeModel[] }
+              );
+
+              // Sort recipes within each meal type
+              Object.keys(recipesByMealType).forEach((mealType) => {
+                recipesByMealType[mealType].sort((a, b) =>
+                  a.name.localeCompare(b.name)
+                );
+              });
+
+              // Order meal types
+              const preferred = mealTypeOrder.filter(
+                (mt) => recipesByMealType[mt]
+              );
+              const remaining = Object.keys(recipesByMealType)
+                .filter((mt) => !preferred.includes(mt))
+                .sort();
+              const orderedMealTypes = [...preferred, ...remaining];
+
+              if (filteredRecipes.length === 0) {
+                return <div className="empty">No recipes found.</div>;
+              }
+
+              return orderedMealTypes.map((mealType) => (
+                <div key={mealType} className="meal-type-section">
+                  <h3 className="meal-type-heading">{mealType}</h3>
+                  <ul className="recipe-links">
+                    {recipesByMealType[mealType].map((recipe) => (
+                      <li key={recipe.id}>
+                        <button
+                          className="recipe-link"
+                          onClick={() => {
+                            // Set the recipe to display in the context
+                            if (setRecipeToDisplay) {
+                              setRecipeToDisplay(recipe);
+                            }
+                            // Navigate to recipes page
+                            navigate("/recipes");
+                          }}
+                        >
+                          {recipe.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </div>

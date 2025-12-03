@@ -23,6 +23,7 @@ interface RecipeDetailsProps {
   showRecipe: RecipeModel | null;
   onSelectedRecipesChange: (recipe: RecipeModel | null) => void;
   showAddToSelectedRecipes: boolean | null;
+  onFavoriteChange?: (recipeId: string, isFavorite: boolean) => void;
 }
 
 const RecipeDetails: React.FC<RecipeDetailsProps> = ({
@@ -30,6 +31,7 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
   onSelectedRecipesChange,
   isSelected,
   showAddToSelectedRecipes,
+  onFavoriteChange,
 }) => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isAddingToList, setIsAddingToList] = useState<boolean>(false);
@@ -62,9 +64,21 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
       const response = await apiClient.patch<{ isFavorite: boolean }>(
         `/api/recipes/${showRecipe.id}/favorite`
       );
-      setIsFavorite(response.data.isFavorite);
+      const newFavoriteStatus = response.data.isFavorite;
+      setIsFavorite(newFavoriteStatus);
+
+      // Update the recipe object itself
+      if (showRecipe) {
+        showRecipe.is_favorite = newFavoriteStatus;
+      }
+
+      // Notify parent component if callback provided
+      if (onFavoriteChange) {
+        onFavoriteChange(showRecipe.id, newFavoriteStatus);
+      }
     } catch (error) {
       console.error("Error toggling favorite:", error);
+      alert("Failed to update favorite status");
     }
   };
 
@@ -79,13 +93,20 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
         itemsAdded: number;
         totalItems: number;
       }>(`/api/recipes/${showRecipe.id}/add-to-grocery-list`);
-      console.log("Added to grocery list:", response.data);
-      alert(
-        `Added ${response.data.itemsAdded} ingredients to your grocery list!`
-      );
-    } catch (error) {
+
+      if (response.data.success) {
+        alert(
+          `Added ${response.data.itemsAdded} ingredients to your grocery list! Total items: ${response.data.totalItems}`
+        );
+      } else {
+        alert("Failed to add ingredients to grocery list");
+      }
+    } catch (error: any) {
       console.error("Error adding to grocery list:", error);
-      alert("Failed to add ingredients to grocery list");
+      const errorMsg =
+        error.response?.data?.error ||
+        "Failed to add ingredients to grocery list";
+      alert(errorMsg);
     } finally {
       setIsAddingToList(false);
     }
@@ -112,37 +133,60 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
     <div className="recipe-content">
       {showRecipe && ingredientGroups && (
         <div className="recipes-container">
-          <div className="recipe-header">
-            <h2>{capitalizeHeading(showRecipe.name)}</h2>
+          <h2>{capitalizeHeading(showRecipe.name)}</h2>
 
-            {/* Action buttons */}
-            <div className="recipe-actions">
-              <button
-                className={`recipe-action-btn favorite-btn ${
-                  isFavorite ? "active" : ""
-                }`}
-                onClick={handleToggleFavorite}
-                title={
-                  isFavorite ? "Remove from favorites" : "Add to favorites"
-                }
+          {/* Action buttons row */}
+          <div className="recipe-actions-row">
+            <button
+              className={`recipe-action-btn favorite-btn ${
+                isFavorite ? "active" : ""
+              }`}
+              onClick={handleToggleFavorite}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill={isFavorite ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill={isFavorite ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-                {isFavorite ? "Favorited" : "Favorite"}
-              </button>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {isFavorite ? "Favorited" : "Favorite"}
+            </button>
 
+            <button
+              className="recipe-action-btn add-to-list-btn"
+              onClick={handleAddToGroceryList}
+              disabled={isAddingToList}
+              title="Add all ingredients to grocery list"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+              {isAddingToList ? "Adding..." : "Add to Grocery List"}
+            </button>
+
+            {/* Add to Selected Recipes toggle */}
+            {showAddToSelectedRecipes && (
               <button
-                className="recipe-action-btn add-to-list-btn"
-                onClick={handleAddToGroceryList}
-                disabled={isAddingToList}
-                title="Add all ingredients to grocery list"
+                className={`recipe-action-btn selected-recipe-btn ${
+                  isSelected ? "active" : ""
+                }`}
+                onClick={handleCheckboxChange}
+                title={
+                  isSelected
+                    ? "Remove from selected recipes"
+                    : "Add to selected recipes"
+                }
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -151,25 +195,13 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  {isSelected && <path d="M9 12l2 2 4-4" />}
                 </svg>
-                {isAddingToList ? "Adding..." : "Add to Grocery List"}
+                {isSelected ? "Selected" : "Add to Selected Recipes"}
               </button>
-            </div>
+            )}
           </div>
-
-          {/* Checkbox for selecting recipe */}
-          {showAddToSelectedRecipes && (
-            <div>
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={handleCheckboxChange}
-              />
-              <label>Add to Selected Recipes</label>
-            </div>
-          )}
 
           {/* 2. Display Other Details (with capitalized headings) */}
           <div className="recipe-info">

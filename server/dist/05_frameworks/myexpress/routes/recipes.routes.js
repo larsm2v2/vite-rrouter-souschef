@@ -26,7 +26,6 @@ if (!apiKey) {
 const genAI = apiKey ? new generative_ai_1.GoogleGenerativeAI(apiKey) : null;
 // Get all recipes
 router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const result = yield connection_1.default.query(`
       SELECT
@@ -53,7 +52,7 @@ router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0,
       LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
       WHERE r.user_id = $1
       ORDER BY r.created_at DESC
-    `, [(_a = req.user) === null || _a === void 0 ? void 0 : _a.id]);
+    `, [req.user.id]);
         // Return snake_case format matching frontend interfaces
         const transformedRecipes = result.rows.map((row) => {
             // Transform ingredients from array to object with category keys
@@ -72,6 +71,7 @@ router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0,
                 cuisine: row.cuisine || "",
                 meal_type: row.meal_type || "",
                 dietary_restrictions: row.dietary_restrictions || [],
+                is_favorite: row.is_favorite || false,
                 serving_info: {
                     prep_time: row.prep_time,
                     cook_time: row.cook_time,
@@ -95,7 +95,6 @@ router.get("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0,
 }));
 // Get a specific recipe by ID
 router.get("/:id", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const result = yield connection_1.default.query(`
       SELECT
@@ -121,7 +120,7 @@ router.get("/:id", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void
       LEFT JOIN recipe_serving_info rsi ON r.id = rsi.recipe_id
       LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
       WHERE r.id = $1 AND r.user_id = $2
-    `, [req.params.id, (_a = req.user) === null || _a === void 0 ? void 0 : _a.id]);
+    `, [req.params.id, req.user.id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: "Recipe not found" });
         }
@@ -142,6 +141,7 @@ router.get("/:id", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void
             cuisine: row.cuisine || "",
             meal_type: row.meal_type || "",
             dietary_restrictions: row.dietary_restrictions || [],
+            is_favorite: row.is_favorite || false,
             serving_info: {
                 prep_time: row.prep_time,
                 cook_time: row.cook_time,
@@ -196,6 +196,109 @@ router.post("/", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0
     }
     catch (err) {
         next(err);
+    }
+}));
+// Toggle favorite status for a recipe
+router.patch("/:id/favorite", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const recipeId = parseInt(req.params.id);
+        const userId = req.user.id;
+        // Get current favorite status
+        const currentStatus = yield connection_1.default.query(`SELECT is_favorite FROM recipes WHERE id = $1 AND user_id = $2`, [recipeId, userId]);
+        if (currentStatus.rows.length === 0) {
+            return res.status(404).json({ error: "Recipe not found" });
+        }
+        // Toggle the favorite status
+        const newFavoriteStatus = !currentStatus.rows[0].is_favorite;
+        yield connection_1.default.query(`UPDATE recipes SET is_favorite = $1 WHERE id = $2 AND user_id = $3`, [newFavoriteStatus, recipeId, userId]);
+        res.json({ isFavorite: newFavoriteStatus });
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+// Add all recipe ingredients to grocery list
+router.post("/:id/add-to-grocery-list", jwtAuth_1.authenticateJWT, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const recipeId = parseInt(req.params.id);
+        const userId = req.user.id;
+        // Fetch the recipe with ingredients
+        const recipeResult = yield connection_1.default.query(`
+        SELECT
+          (
+            SELECT json_agg(jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients))
+            FROM recipe_ingredients ri
+            WHERE ri.recipe_id = r.id
+          ) AS ingredients
+        FROM recipes r
+        WHERE r.id = $1 AND r.user_id = $2
+      `, [recipeId, userId]);
+        if (recipeResult.rows.length === 0) {
+            return res.status(404).json({ error: "Recipe not found" });
+        }
+        const ingredients = recipeResult.rows[0].ingredients;
+        if (!ingredients || ingredients.length === 0) {
+            return res
+                .status(400)
+                .json({ error: "Recipe has no ingredients to add" });
+        }
+        // Get the current grocery list version
+        const versionResult = yield connection_1.default.query(`SELECT id, items FROM shopping_list_versions 
+         WHERE user_id = $1 
+         ORDER BY created_at DESC 
+         LIMIT 1`, [userId]);
+        let currentItems = [];
+        if (versionResult.rows.length > 0) {
+            currentItems = versionResult.rows[0].items || [];
+        }
+        // Extract all ingredients from all categories
+        const newItems = [];
+        ingredients.forEach((categoryObj) => {
+            if (categoryObj.ingredients && Array.isArray(categoryObj.ingredients)) {
+                categoryObj.ingredients.forEach((ingredient) => {
+                    newItems.push({
+                        name: ingredient.name,
+                        quantity: ingredient.quantity,
+                        unit: ingredient.unit || "",
+                        checked: false,
+                    });
+                });
+            }
+        });
+        // Merge with existing items (avoiding duplicates by name)
+        const itemMap = new Map();
+        currentItems.forEach((item) => {
+            itemMap.set(item.name.toLowerCase(), item);
+        });
+        newItems.forEach((item) => {
+            const key = item.name.toLowerCase();
+            if (itemMap.has(key)) {
+                // If item exists, add quantities if units match
+                const existing = itemMap.get(key);
+                if (existing.unit === item.unit) {
+                    existing.quantity += item.quantity;
+                }
+                else {
+                    // Different units, add as separate item
+                    itemMap.set(`${key}_${item.unit}`, item);
+                }
+            }
+            else {
+                itemMap.set(key, item);
+            }
+        });
+        const mergedItems = Array.from(itemMap.values());
+        // Create a new grocery list version
+        yield connection_1.default.query(`INSERT INTO shopping_list_versions (user_id, items, created_at) 
+         VALUES ($1, $2, NOW())`, [userId, JSON.stringify(mergedItems)]);
+        res.json({
+            success: true,
+            itemsAdded: newItems.length,
+            totalItems: mergedItems.length,
+        });
+    }
+    catch (error) {
+        next(error);
     }
 }));
 exports.default = router;

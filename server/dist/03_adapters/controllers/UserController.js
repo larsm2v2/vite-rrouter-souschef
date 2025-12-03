@@ -36,6 +36,7 @@ let UserController = class UserController {
                 res.status(401).json({ error: "Unauthorized" });
                 return;
             }
+            // We checked above that `req.user` is present, so assert it as User
             const userId = req.user.id;
             const userProfile = yield this.getUserProfile.execute(userId);
             if (!userProfile) {

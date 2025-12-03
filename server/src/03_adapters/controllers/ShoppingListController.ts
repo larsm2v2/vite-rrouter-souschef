@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import { User } from "../../01_entities/User";
 import {
-  GetGroceryListVersion,
-  CreateGroceryListVersion,
+  GetShoppingListVersion,
+  CreateShoppingListVersion,
 } from "../../02_use_cases";
 import { injectable, inject } from "tsyringe";
 
 @injectable()
-export class GroceryListController {
+export class ShoppingListController {
   constructor(
-    @inject(GetGroceryListVersion) private getVersion: GetGroceryListVersion,
-    @inject(CreateGroceryListVersion)
-    private createVersion: CreateGroceryListVersion
+    @inject(GetShoppingListVersion) private getVersion: GetShoppingListVersion,
+    @inject(CreateShoppingListVersion)
+    private createVersion: CreateShoppingListVersion
   ) {}
 
   async getCurrent(req: Request, res: Response): Promise<void> {

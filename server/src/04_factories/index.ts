@@ -7,9 +7,9 @@ export { createRecipeController } from "./RecipeControllerFactory";
 export { createGroceryController } from "./GroceryControllerFactory";
 export { createGetMealPlan, createCreateMealPlan } from "./MealPlanFactory";
 export {
-  createGetGroceryListVersion,
-  createCreateGroceryListVersion,
-} from "./GroceryListFactory";
+  createGetShoppingListVersion,
+  createCreateShoppingListVersion,
+} from "./ShoppingListFactory";
 export {
   createLogRecipeActivity,
   createGetRecipeActivityLog,

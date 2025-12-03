@@ -29,6 +29,8 @@ let GroceryRepository = class GroceryRepository {
     getList(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
+            // Type `req.user` is provided by Express augmentation; cast explicitly
+            // to our canonical User entity type so TypeScript recognizes `id`.
             const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
             if (!userId) {
                 res.status(401).json({ error: "Unauthorized" });

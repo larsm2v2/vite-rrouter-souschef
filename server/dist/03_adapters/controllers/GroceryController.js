@@ -30,8 +30,7 @@ let GroceryController = class GroceryController {
     }
     getList(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+            const userId = req.user.id;
             if (!userId) {
                 res.status(401).json({ error: "Unauthorized" });
                 return;

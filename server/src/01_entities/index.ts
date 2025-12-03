@@ -3,6 +3,6 @@ export { Recipe } from "./Recipe";
 export { GroceryItem } from "./GroceryItem";
 export { AuditLog } from "./AuditLog";
 export { MealPlan } from "./MealPlan";
-export { GroceryListVersion } from "./GroceryListVersion";
+export { ShoppingListVersion } from "./ShoppingListVersion";
 export { RecipeActivityLog } from "./RecipeActivityLog";
 export { GoogleProfile } from "./GoogleProfile";

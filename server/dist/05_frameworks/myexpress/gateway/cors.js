@@ -11,6 +11,7 @@ exports.corsMiddleware = (0, cors_1.default)({
         const allowedOrigins = [
             process.env.CLIENT_URL,
             "http://localhost:5173",
+            "http://127.0.0.1:5173",
             "http://localhost:5174",
         ].filter(Boolean);
         if (!origin || allowedOrigins.includes(origin)) {
@@ -21,7 +22,11 @@ exports.corsMiddleware = (0, cors_1.default)({
         }
     },
     credentials: true, // Enable credentials for cookies (OAuth state, refresh token)
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-Request-ID"],
+    exposedHeaders: [
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-Request-ID",
+    ],
 });
