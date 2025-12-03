@@ -9,11 +9,38 @@
   transition: width 0.3s ease-in-out; /* Smooth transition */
   z-index: 100; /* Ensure it's on top */
   overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.grocery-list-sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .grocery-list-sidebar.open {
-  width: 50%; /* Open width */
+  width: 450px;
+  min-width: 320px;
+  max-width: 90vw;
   position: fixed;
+}
+
+@media (max-width: 1200px) {
+  .grocery-list-sidebar.open {
+    width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grocery-list-sidebar.open {
+    width: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grocery-list-sidebar.open {
+    width: 85vw;
+  }
 }
 
 .sidebar-header {

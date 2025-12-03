@@ -9,7 +9,7 @@ interface RecipesIndexProps {
   selectedRecipeIds: string[];
   setSelectedRecipeIds: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedRecipeId: (recipeId: string | null) => void;
-  setRecipes: React.Dispatch<React.SetStateAction<RecipeModel[]>>;
+  setRecipes?: React.Dispatch<React.SetStateAction<RecipeModel[]>>;
 }
 /* 	selectedRecipe: RecipeModel | null
 	setSelectedRecipe: React.Dispatch<React.SetStateAction<RecipeModel | null>> */
@@ -22,7 +22,7 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
   /* 	selectedRecipe,
 	setSelectedRecipe, */
 }) => {
-  const [recipes, setRecipes] = useState<RecipeModel[]>([]);
+  const [recipes, setLocalRecipes] = useState<RecipeModel[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSelected, setShowSelected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +41,7 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
       const response = await apiClient.get<RecipeModel[]>(`/api/recipes`);
       if (response.status === 200) {
         setRecipes(response.data); // Server returns recipes directly from database
-        setRecipesInContext(response.data); // Also update context
+        setRecipesInContext?.(response.data); // Also update context if provided
         console.log("JSON retrieved: ", response.data);
       } else {
         throw new Error("Failed to fetch recipes.");
@@ -55,7 +55,7 @@ const RecipesIndex: React.FC<RecipesIndexProps> = ({
 
   useEffect(() => {
     // Fetch recipes when the component mounts
-    fetchRecipes(setRecipes); // Call the function here
+    fetchRecipes(setLocalRecipes); // Call the function here
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Filtering based on search and showSelected

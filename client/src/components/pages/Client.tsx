@@ -193,9 +193,12 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
 
         // Only log out if it's not a rate limit error
-        const isRateLimit = axios.isAxiosError(refreshError)
-          ? refreshError.response?.status === 429
-          : false;
+        // Type guard for axios error with response
+        const isAxiosErrorWithResponse = (error: unknown): error is { response: { status: number } } => {
+          return typeof error === 'object' && error !== null && 'response' in error;
+        };
+        
+        const isRateLimit = isAxiosErrorWithResponse(refreshError) && refreshError.response?.status === 429;
 
         if (isRateLimit) {
           console.warn("Rate limited on refresh, will retry after cooldown");
