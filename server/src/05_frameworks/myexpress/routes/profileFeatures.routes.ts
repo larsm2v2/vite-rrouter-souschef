@@ -3,7 +3,7 @@ import { authenticateJWT } from "../jwtAuth";
 import "../../../04_factories/di"; // ensure DI container is configured
 import { container } from "tsyringe";
 import { MealPlanController } from "../../../03_adapters/controllers/MealPlanController";
-import { ShoppingListController } from "../../../03_adapters/controllers/ShoppingListController";
+import { GroceryListController } from "../../../03_adapters/controllers/GroceryListController";
 import { RecipeActivityController } from "../../../03_adapters/controllers/RecipeActivityController";
 
 console.log("📥 Importing profileFeatures.routes");
@@ -23,14 +23,14 @@ router.post("/meal-plan", async (req, res) => {
   return controller.create(req, res);
 });
 
-// Shopping list versions
-router.get("/shopping-list/version", async (req, res) => {
-  const controller = container.resolve(ShoppingListController);
+// Grocery list versions
+router.get("/grocery-list/version", async (req, res) => {
+  const controller = container.resolve(GroceryListController);
   return controller.getCurrent(req, res);
 });
 
-router.post("/shopping-list/version", async (req, res) => {
-  const controller = container.resolve(ShoppingListController);
+router.post("/grocery-list/version", async (req, res) => {
+  const controller = container.resolve(GroceryListController);
   return controller.create(req, res);
 });
 

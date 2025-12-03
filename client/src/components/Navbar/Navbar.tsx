@@ -72,7 +72,6 @@ const Navbar: React.FC<NavbarProps> = ({
         />
       )}
       <nav className={"nav"}>
-
         <ul className="nav-links">
           <li>
             <Link to="/recipes" title="My Recipes" aria-label="My Recipes">
@@ -88,11 +87,11 @@ const Navbar: React.FC<NavbarProps> = ({
           </li>
           {/* <li>
             <Link
-              to="/shoppingList"
-              title="My Shopping List"
-              aria-label="My Shopping List"
+              to="/groceryList"
+              title="My Grocery List"
+              aria-label="My Grocery List"
             >
-              <span className="nav-full">myShoppingList</span>
+              <span className="nav-full">myGroceryList</span>
               <span className="nav-compact">List</span>
             </Link>
           </li> */}

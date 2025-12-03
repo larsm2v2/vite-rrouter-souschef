@@ -1,15 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createGetShoppingListVersion = createGetShoppingListVersion;
-exports.createCreateShoppingListVersion = createCreateShoppingListVersion;
+exports.createGetGroceryListVersion = createGetGroceryListVersion;
+exports.createCreateGroceryListVersion = createCreateGroceryListVersion;
 const repositories_1 = require("../03_adapters/repositories");
-const GetShoppingListVersion_1 = require("../02_use_cases/GetShoppingListVersion");
-const CreateShoppingListVersion_1 = require("../02_use_cases/CreateShoppingListVersion");
-function createGetShoppingListVersion() {
-    const repo = new repositories_1.ShoppingListVersionRepository();
-    return new GetShoppingListVersion_1.GetShoppingListVersion(repo);
+const GetGroceryListVersion_1 = require("../02_use_cases/GetGroceryListVersion");
+const CreateGroceryListVersion_1 = require("../02_use_cases/CreateGroceryListVersion");
+function createGetGroceryListVersion() {
+  const repo = new repositories_1.GroceryListVersionRepository();
+  return new GetGroceryListVersion_1.GetGroceryListVersion(repo);
 }
-function createCreateShoppingListVersion() {
-    const repo = new repositories_1.ShoppingListVersionRepository();
-    return new CreateShoppingListVersion_1.CreateShoppingListVersion(repo);
+function createCreateGroceryListVersion() {
+  const repo = new repositories_1.GroceryListVersionRepository();
+  return new CreateGroceryListVersion_1.CreateGroceryListVersion(repo);
 }

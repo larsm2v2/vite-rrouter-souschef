@@ -98,12 +98,12 @@
 
 .in-page-nav a:hover {
   background-color: #e8e8e8;
-  color: #000;
+  color: var(--primary-color);
 }
 
 .in-page-nav a.active {
-  background-color: #4caf50;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--tertiary-color);
   font-weight: 500;
 }
 

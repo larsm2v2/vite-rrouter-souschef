@@ -54,6 +54,10 @@ const redirectDebounceTime = 2000; // 2 seconds
 // Token refresh state
 let isRefreshing = false;
 let failedQueue: QueueItem[] = [];
+let refreshAttempts = 0;
+let lastRefreshAttempt = 0;
+const MAX_REFRESH_ATTEMPTS = 3;
+const REFRESH_COOLDOWN = 5000; // 5 seconds between refresh attempts
 
 const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -103,6 +107,32 @@ apiClient.interceptors.response.use(
 
     // Handle unauthorized - token expired or not logged in
     if (error.response?.status === 401 && !requestWithRetry._retry) {
+      const now = Date.now();
+
+      // Check if we're in cooldown period
+      if (now - lastRefreshAttempt < REFRESH_COOLDOWN) {
+        console.warn("Refresh attempt too soon, waiting for cooldown...");
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        });
+      }
+
+      // Check if we've exceeded max attempts
+      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        console.error("Max refresh attempts exceeded, logging out...");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+        processQueue(new Error("Max refresh attempts exceeded"), null);
+        failedQueue = [];
+        isRefreshing = false;
+
+        if (now - lastAuthRedirect > redirectDebounceTime) {
+          lastAuthRedirect = now;
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
       console.warn("API client received 401, attempting refresh...");
       if (isRefreshing) {
         // If already refreshing, queue this request
@@ -122,6 +152,8 @@ apiClient.interceptors.response.use(
 
       requestWithRetry._retry = true;
       isRefreshing = true;
+      lastRefreshAttempt = now;
+      refreshAttempts++;
 
       try {
         // Try to refresh the token by calling refresh endpoint which reads HttpOnly cookie
@@ -129,7 +161,10 @@ apiClient.interceptors.response.use(
         const response = await axios.post<{ accessToken: string }>(
           `${API_URL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          {
+            withCredentials: true,
+            timeout: 10000, // 10 second timeout for refresh
+          }
         );
 
         console.debug("Refresh response:", response.status, response.data);
@@ -143,6 +178,9 @@ apiClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
+        // Reset attempts on success
+        refreshAttempts = 0;
+
         // Process queued requests
         processQueue(null, newAccessToken);
         isRefreshing = false;
@@ -153,6 +191,17 @@ apiClient.interceptors.response.use(
         // Refresh failed, clear tokens and redirect to login
         processQueue(refreshError, null);
         isRefreshing = false;
+
+        // Only log out if it's not a rate limit error
+        const isRateLimit = axios.isAxiosError(refreshError)
+          ? refreshError.response?.status === 429
+          : false;
+
+        if (isRateLimit) {
+          console.warn("Rate limited on refresh, will retry after cooldown");
+          // Don't log out immediately on rate limit, let cooldown handle it
+          return Promise.reject(refreshError);
+        }
 
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");

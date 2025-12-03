@@ -1,17 +1,17 @@
-import { ShoppingListVersion } from "../01_entities";
-import { ShoppingListVersionRepository } from "../03_adapters/repositories";
+import { GroceryListVersion } from "../01_entities";
+import { GroceryListVersionRepository } from "../03_adapters/repositories";
 import { injectable, inject } from "tsyringe";
 
 @injectable()
-export class GetShoppingListVersion {
+export class GetGroceryListVersion {
   constructor(
-    @inject(ShoppingListVersionRepository)
-    private repo: ShoppingListVersionRepository
+    @inject(GroceryListVersionRepository)
+    private repo: GroceryListVersionRepository
   ) {}
 
-  async execute(userId: number): Promise<ShoppingListVersion | null> {
+  async execute(userId: number): Promise<GroceryListVersion | null> {
     return this.repo.findCurrentByUser(userId);
   }
 }
 
-export default GetShoppingListVersion;
+export default GetGroceryListVersion;

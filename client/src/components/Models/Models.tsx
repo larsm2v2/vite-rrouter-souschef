@@ -5,6 +5,7 @@ export interface RecipeModel {
   cuisine: string;
   meal_type: string;
   dietary_restrictions: string[];
+  is_favorite?: boolean;
   serving_info: {
     prep_time?: string;
     cook_time?: string;

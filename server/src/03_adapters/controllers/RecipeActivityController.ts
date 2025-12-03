@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { User } from "../../01_entities/User";
 import { LogRecipeActivity, GetRecipeActivityLog } from "../../02_use_cases";
 import { injectable, inject } from "tsyringe";
 
@@ -10,7 +11,7 @@ export class RecipeActivityController {
   ) {}
 
   async log(req: Request, res: Response): Promise<void> {
-    const userId = req.user?.id;
+    const userId = (req.user as User).id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -21,7 +22,7 @@ export class RecipeActivityController {
   }
 
   async list(req: Request, res: Response): Promise<void> {
-    const userId = req.user?.id;
+    const userId = (req.user as User).id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;

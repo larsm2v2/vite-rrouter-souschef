@@ -6,7 +6,7 @@ import { UserRepository } from "../03_adapters/repositories/UserRepository";
 import { RecipeRepository } from "../03_adapters/repositories/RecipeRepository";
 import { GroceryRepository } from "../03_adapters/repositories/GroceryRepository";
 import { MealPlanRepository } from "../03_adapters/repositories/MealPlanRepository";
-import { ShoppingListVersionRepository } from "../03_adapters/repositories/ShoppingListVersionRepository";
+import { GroceryListVersionRepository } from "../03_adapters/repositories/GroceryListVersionRepository";
 import { RecipeActivityLogRepository } from "../03_adapters/repositories/RecipeActivityLogRepository";
 
 // Use-cases
@@ -15,8 +15,8 @@ import { UpdateUserProfile } from "../02_use_cases/UpdateUserProfile";
 import { GetGroceryList } from "../02_use_cases/GetGroceryList";
 import { GetMealPlan } from "../02_use_cases/GetMealPlan";
 import { CreateMealPlan } from "../02_use_cases/CreateMealPlan";
-import { GetShoppingListVersion } from "../02_use_cases/GetShoppingListVersion";
-import { CreateShoppingListVersion } from "../02_use_cases/CreateShoppingListVersion";
+import { GetGroceryListVersion } from "../02_use_cases/GetGroceryListVersion";
+import { CreateGroceryListVersion } from "../02_use_cases/CreateGroceryListVersion";
 import { LogRecipeActivity } from "../02_use_cases/LogRecipeActivity";
 import { GetRecipeActivityLog } from "../02_use_cases/GetRecipeActivityLog";
 import { CreateRecipe } from "../02_use_cases/CreateRecipe";
@@ -30,7 +30,7 @@ import { LogoutUser } from "../02_use_cases/LogoutUser";
 import { UserController } from "../03_adapters/controllers/UserController";
 import { GroceryController } from "../03_adapters/controllers/GroceryController";
 import { MealPlanController } from "../03_adapters/controllers/MealPlanController";
-import { ShoppingListController } from "../03_adapters/controllers/ShoppingListController";
+import { GroceryListController } from "../03_adapters/controllers/GroceryListController";
 import { RecipeActivityController } from "../03_adapters/controllers/RecipeActivityController";
 
 // Register repositories as singletons
@@ -39,8 +39,8 @@ container.registerSingleton(RecipeRepository, RecipeRepository);
 container.registerSingleton(GroceryRepository, GroceryRepository);
 container.registerSingleton(MealPlanRepository, MealPlanRepository);
 container.registerSingleton(
-  ShoppingListVersionRepository,
-  ShoppingListVersionRepository
+  GroceryListVersionRepository,
+  GroceryListVersionRepository
 );
 container.registerSingleton(
   RecipeActivityLogRepository,
@@ -53,11 +53,8 @@ container.registerSingleton(UpdateUserProfile, UpdateUserProfile);
 container.registerSingleton(GetGroceryList, GetGroceryList);
 container.registerSingleton(GetMealPlan, GetMealPlan);
 container.registerSingleton(CreateMealPlan, CreateMealPlan);
-container.registerSingleton(GetShoppingListVersion, GetShoppingListVersion);
-container.registerSingleton(
-  CreateShoppingListVersion,
-  CreateShoppingListVersion
-);
+container.registerSingleton(GetGroceryListVersion, GetGroceryListVersion);
+container.registerSingleton(CreateGroceryListVersion, CreateGroceryListVersion);
 container.registerSingleton(LogRecipeActivity, LogRecipeActivity);
 container.registerSingleton(GetRecipeActivityLog, GetRecipeActivityLog);
 
@@ -78,7 +75,7 @@ container.registerSingleton(
 container.registerSingleton(UserController, UserController);
 container.registerSingleton(GroceryController, GroceryController);
 container.registerSingleton(MealPlanController, MealPlanController);
-container.registerSingleton(ShoppingListController, ShoppingListController);
+container.registerSingleton(GroceryListController, GroceryListController);
 container.registerSingleton(RecipeActivityController, RecipeActivityController);
 
 export default container;

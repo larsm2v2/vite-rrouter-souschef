@@ -26,8 +26,8 @@ function App() {
   );
   const [, setSelectedRecipe] = useState<RecipeModel | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
-  //State for Shopping List
-  //const [isShoppingListOpen, setIsShoppingListOpen] = useState(false)
+  //State for Grocery List
+  //const [isGroceryListOpen, setIsGroceryListOpen] = useState(false)
   //State for display
   const [recipeToDisplay, setRecipeToDisplay] = useState<RecipeModel | null>(
     null
@@ -142,7 +142,7 @@ function App() {
               setIsLoading={setIsLoading}
             />
           )}
-          {/* Toggle ShoppingListPanel visibility within RecipeDisplay */}
+          {/* Toggle GroceryListPanel visibility within RecipeDisplay */}
         </div>
       </div>
     </Fragment>

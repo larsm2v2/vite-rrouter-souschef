@@ -1,19 +1,19 @@
-import { ShoppingListVersion } from "../01_entities";
-import { ShoppingListVersionRepository } from "../03_adapters/repositories";
+import { GroceryListVersion } from "../01_entities";
+import { GroceryListVersionRepository } from "../03_adapters/repositories";
 import { injectable, inject } from "tsyringe";
 
 @injectable()
-export class CreateShoppingListVersion {
+export class CreateGroceryListVersion {
   constructor(
-    @inject(ShoppingListVersionRepository)
-    private repo: ShoppingListVersionRepository
+    @inject(GroceryListVersionRepository)
+    private repo: GroceryListVersionRepository
   ) {}
 
   async execute(
-    entry: Partial<ShoppingListVersion>
-  ): Promise<ShoppingListVersion> {
+    entry: Partial<GroceryListVersion>
+  ): Promise<GroceryListVersion> {
     return this.repo.createVersion(entry);
   }
 }
 
-export default CreateShoppingListVersion;
+export default CreateGroceryListVersion;

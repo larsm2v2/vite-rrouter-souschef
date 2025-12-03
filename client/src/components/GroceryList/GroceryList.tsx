@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import "./ShoppingList.css";
+import "./GroceryList.css";
 import { RecipeModel } from "../Models/Models";
 import EditableList from "./EditableList/EditableList";
-import shoppingListData from "./ShoppingList.json";
+import shoppingListData from "./GroceryList.json";
 import { ListItem } from "../Models/Models";
 import apiClient from "../pages/Client";
 
-interface ShoppingListProps {
+interface GroceryListProps {
   selectedRecipeIds: string[];
 }
 
@@ -33,7 +33,7 @@ interface ShoppingListProps {
 
 	return fixedRecipe as RecipeModel
 } */
-const ShoppingList: React.FC<ShoppingListProps> = ({
+const GroceryList: React.FC<GroceryListProps> = ({
   selectedRecipeIds = [],
 }) => {
   const [, setRecipeIngredients] = useState<{
@@ -60,9 +60,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const response = await apiClient.get<RecipeModel[]>(
-          `/api/recipes`
-        );
+        const response = await apiClient.get<RecipeModel[]>(`/api/recipes`);
 
         if (response.status === 200) {
           setRecipes(response.data); // Update recipes state
@@ -131,7 +129,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 		}
 	} */
   useEffect(() => {
-    const updateShoppingList = async () => {
+    const updateGroceryList = async () => {
       const newRecipeIngredients: { [recipeId: string]: ListItem[] } = {};
       const validRecipeIds = selectedRecipeIds.filter(
         (recipeId) => recipeId !== null && recipeId !== ""
@@ -179,12 +177,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       setListItems(consolidatedList);
     };
 
-    updateShoppingList();
+    updateGroceryList();
   }, [selectedRecipeIds, recipes]);
 
   return (
-    <div className="shoppinglist-container">
-      <h1 className="shoppinglist-title">myShoppingList</h1>
+    <div className="grocerylist-container">
+      <h1 className="grocerylist-title">myGroceryList</h1>
       <div className="flex-container">
         <div className="edit-box">
           <EditableList listItems={listItems} setListItems={setListItems} />
@@ -194,4 +192,4 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   );
 };
 
-export default ShoppingList;
+export default GroceryList;

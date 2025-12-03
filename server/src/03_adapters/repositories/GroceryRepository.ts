@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { User } from "../../01_entities/User";
 import { injectable } from "tsyringe";
 import pool from "../../05_frameworks/database/connection";
 import { GroceryItem } from "../../01_entities/GroceryItem";
@@ -8,7 +9,9 @@ export class GroceryRepository {
   constructor() {}
 
   async getList(req: Request, res: Response): Promise<void> {
-    const userId = req.user?.id;
+    // Type `req.user` is provided by Express augmentation; cast explicitly
+    // to our canonical User entity type so TypeScript recognizes `id`.
+    const userId = (req.user as User | undefined)?.id;
 
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });

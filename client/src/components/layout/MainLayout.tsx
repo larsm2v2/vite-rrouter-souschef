@@ -103,6 +103,16 @@ const MainLayout = () => {
         </header>
 
         <div className={`app-body ${sidebarToggled ? "sidebar-open" : ""}`}>
+          <button
+            className={`sidebar-toggle-tab left-toggle ${sidebarToggled ? "open" : ""}`}
+            onClick={() => setSidebarToggled((s) => !s)}
+            aria-label={
+              sidebarToggled ? "Close grocery list" : "Open grocery list"
+            }
+          >
+            <span className="toggle-full">Grocery List</span>
+            <span className="toggle-compact">G</span>
+          </button>
           <FocusTrap
             active={overlayOpen}
             focusTrapOptions={{
@@ -112,16 +122,6 @@ const MainLayout = () => {
             }}
           >
             <aside className={`app-sidebar`} id="App-sidebar">
-              <button
-                className="sidebar-toggle-tab left-toggle"
-                onClick={() => setSidebarToggled((s) => !s)}
-                aria-label={
-                  sidebarToggled ? "Close grocery list" : "Open grocery list"
-                }
-              >
-                <span className="toggle-full">Grocery List</span>
-                <span className="toggle-compact">G</span>
-              </button>
               <Sidebar selectedRecipeIds={selectedRecipeIds} />
             </aside>
           </FocusTrap>
