@@ -91,6 +91,38 @@ VITE_DEV_BYPASS=true
 
 Important: This bypass is strictly for local development. Do NOT enable `VITE_DEV_BYPASS` in production or CI. Remove the env var before deploying.
 
+### Ensure refresh tokens work in development (cookies & CORS)
+
+When running development servers for the `client` and `server` on different ports (for example `http://localhost:5173` and `http://localhost:8000`) browsers may block cross-site cookies used for refresh rotation. To avoid this issue, either:
+
+- Run the `client` dev server with a proxy that forwards API calls to the `server` so they appear same-origin (recommended), or
+- Use HTTPS + SameSite=None set on cookies (more complex), or
+- Use `VITE_DEV_BYPASS` to skip the full auth flow for development only.
+
+To enable the Vite dev proxy (recommended), the repository already sets a proxy in `client/vite.config.ts`. Confirm you started the server first, then run:
+
+```powershell
+# Start server (dev)
+cd server
+npm run newDev
+
+# In a separate shell, start the client dev server which will proxy /auth and /api to the server
+cd client
+npm ci
+npm run dev
+```
+
+When using the proxy, the `refreshToken` cookie is set under the same origin and will be sent by the browser on `POST /auth/refresh` requests. If you still see refresh failures, check the server debug route:
+
+```powershell
+# Verify the server sees the cookie
+curl -i -X GET --cookie "refreshToken=<cookieValue>" http://localhost:8000/auth/debug/cookies
+```
+
+Or visit the client, open devtools, reproduce the login flow, and examine the network request to `/auth/refresh` and the `Cookie` header presence.
+
+If you use `http://127.0.0.1:5173` instead of `http://localhost:5173`, ensure the server CORS config allows that origin (we already permit `http://127.0.0.1:5173` by default).
+
 The E2E tests start the Vite dev server automatically and run against `http://127.0.0.1:5173`.
 
 Run Safari-like tests using WebKit:

@@ -1,10 +1,10 @@
 import pool from "../../05_frameworks/database/connection";
-import { ShoppingListVersion } from "../../01_entities/ShoppingListVersion";
+import { GroceryListVersion } from "../../01_entities/GroceryListVersion";
 import { injectable } from "tsyringe";
 
 @injectable()
-export class ShoppingListVersionRepository {
-  async findCurrentByUser(userId: number): Promise<ShoppingListVersion | null> {
+export class GroceryListVersionRepository {
+  async findCurrentByUser(userId: number): Promise<GroceryListVersion | null> {
     const result = await pool.query(
       `SELECT id, user_id AS "userId", version, list_data AS "listData", created_at AS "createdAt", is_current AS "isCurrent"
        FROM shopping_list_versions
@@ -16,8 +16,8 @@ export class ShoppingListVersionRepository {
   }
 
   async createVersion(
-    entry: Partial<ShoppingListVersion>
-  ): Promise<ShoppingListVersion> {
+    entry: Partial<GroceryListVersion>
+  ): Promise<GroceryListVersion> {
     // Mark existing versions as not current
     await pool.query(
       `UPDATE shopping_list_versions SET is_current = false WHERE user_id = $1`,

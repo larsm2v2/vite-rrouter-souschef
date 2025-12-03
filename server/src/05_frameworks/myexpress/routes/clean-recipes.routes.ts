@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { User } from "../../../01_entities/User";
 import { authenticateJWT } from "../jwtAuth";
 import db from "../../database/connection";
 import { cleanRecipe } from "../../cleanRecipe/client";
@@ -16,7 +17,8 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Fetch all recipes from database
-      const result = await db.query(`
+      const result = await db.query(
+        `
         SELECT
           r.*,
           rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
@@ -41,7 +43,9 @@ router.post(
         LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
         WHERE r.user_id = $1
         ORDER BY r.created_at DESC
-      `, [req.user?.id]);
+      `,
+        [(req.user as User).id]
+      );
 
       // Clean each recipe using the microservice
       const cleanedRecipes = await Promise.all(

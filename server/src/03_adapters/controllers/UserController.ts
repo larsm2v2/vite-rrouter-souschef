@@ -16,7 +16,8 @@ export class UserController {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    const userId = req.user.id;
+    // We checked above that `req.user` is present, so assert it as User
+    const userId = (req.user as User).id;
     const userProfile = await this.getUserProfile.execute(userId);
 
     if (!userProfile) {
@@ -31,7 +32,7 @@ export class UserController {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    const userId = req.user.id;
+    const userId = (req.user as User).id;
     const update: Partial<User> = {};
     if (typeof req.body.display_name !== "undefined")
       update.displayName = req.body.display_name;

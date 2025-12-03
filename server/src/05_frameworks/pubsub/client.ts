@@ -1,13 +1,22 @@
 import { PubSub, Topic } from "@google-cloud/pubsub";
 
 const projectId = process.env.GCP_PROJECT_ID || "souschef4me";
-const pubsub = new PubSub({ projectId });
+let pubsub: PubSub | null = null;
 
 let ocrTopic: Topic | null = null;
 
 async function getOcrTopic(): Promise<Topic> {
   if (!ocrTopic) {
     const topicName = process.env.OCR_JOBS_TOPIC || "ocr-jobs";
+    if (!pubsub) {
+      try {
+        pubsub = new PubSub({ projectId });
+      } catch (err) {
+        console.error("Failed to create Pub/Sub client:", err);
+        throw err;
+      }
+    }
+
     ocrTopic = pubsub.topic(topicName);
 
     try {

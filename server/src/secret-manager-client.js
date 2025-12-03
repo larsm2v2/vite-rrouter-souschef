@@ -4,7 +4,18 @@
 //   const { getSecret, getSecretsBatch, clearSecretCache } = require('./secret-manager-client');
 
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
-const client = new SecretManagerServiceClient();
+let client = null;
+function getClient() {
+  if (!client) {
+    try {
+      client = new SecretManagerServiceClient();
+    } catch (err) {
+      console.error('Failed to create SecretManagerServiceClient:', err);
+      throw err;
+    }
+  }
+  return client;
+}
 
 // Simple in-memory cache
 // cache[resourceName] = { value: string, expiresAt: timestamp }
@@ -41,7 +52,8 @@ async function getSecret(opts = {}) {
     }
   }
 
-  const [accessResponse] = await client.accessSecretVersion({ name: resourceName });
+  const theClient = getClient();
+  const [accessResponse] = await theClient.accessSecretVersion({ name: resourceName });
   const payload = accessResponse.payload && accessResponse.payload.data
     ? accessResponse.payload.data.toString('utf8')
     : '';

@@ -10,8 +10,10 @@ const execFileAsync = promisify(execFile);
 const projectId = process.env.GCP_PROJECT_ID || "souschef4me";
 const subscriptionName = process.env.OCR_JOBS_SUBSCRIPTION || "ocr-worker-sub";
 
-const pubsub = new PubSub({ projectId });
-const subscription = pubsub.subscription(subscriptionName);
+// Pub/Sub client and subscription are created lazily to avoid throwing during
+// module import when Google Application Default Credentials are not configured.
+let pubsub: PubSub | null = null;
+let subscription: ReturnType<PubSub["subscription"]> | null = null;
 
 // Tesseract OCR execution
 async function runTesseract(filePath: string): Promise<string> {
@@ -173,11 +175,21 @@ export function startOcrWorker() {
     `Starting OCR worker... (subscription: ${subscriptionName}, project: ${projectId})`
   );
 
-  subscription.on("message", messageHandler);
+  try {
+    pubsub = new PubSub({ projectId });
+    subscription = pubsub.subscription(subscriptionName);
 
-  subscription.on("error", (error) => {
-    console.error("Subscription error:", error);
-  });
+    subscription.on("message", messageHandler);
+
+    subscription.on("error", (error) => {
+      console.error("Subscription error:", error);
+    });
+  } catch (err) {
+    // If Pub/Sub credentials are not available, don't crash the process.
+    console.error("Failed to initialize Pub/Sub subscription for OCR worker:", err);
+    console.warn("OCR worker will not start. Run the worker with proper GCP credentials.");
+    return; // Do not start the worker if Pub/Sub is unavailable
+  }
 
   // Graceful shutdown
   process.on("SIGINT", () => {

@@ -34,3 +34,28 @@ If you are using Cloud Run or CI, ensure the service is configured to use port `
 ## Notes
 
 - If you need to reproduce the old session-based local dev flow, add a dev-only shim that imports the framework app (`src/05_frameworks/index.ts`) and mounts session middleware. Production builds and containers still use JWT tokens via `dist/06_app/main.js`.
+
+## Running with Google Cloud services (Pub/Sub & Secret Manager)
+
+The application can optionally use Google Cloud services (Pub/Sub for OCR jobs and Secret Manager for runtime secrets). Those clients require Application Default Credentials (ADC) to be present when initializing the client.
+
+- Local dev without GCP: The server is resilient when Google Cloud credentials are absent. Pub/Sub topics are checked lazily and if unavailable the server falls back to synchronous OCR processing. Secret Manager is also lazily initialized; missing credentials won't crash the server.
+- Running the OCR worker or using Pub/Sub features: If you plan to run the OCR worker or use Pub/Sub in dev, set up ADC (for local development, use `gcloud auth application-default login` or set `GOOGLE_APPLICATION_CREDENTIALS` to a service account JSON file). Without credentials, the OCR worker will not start and Pub/Sub calls will fail.
+
+Example to set up ADC for local development (PowerShell):
+
+```powershell
+# Install gcloud SDK (if not installed) and authenticate
+gcloud auth application-default login
+
+# Or set a service account JSON path
+$env:GOOGLE_APPLICATION_CREDENTIALS = 'C:\path\to\sa.json'
+```
+
+If the worker or Pub/Sub initialization fails due to credentials, logs will show a descriptive error and the server will continue to operate without Pub/Sub processing.
+
+## Local cookie-based refresh troubleshooting
+- When running `client` on a different port than `server` in development, cross-site cookies may be blocked by the browser and `POST /auth/refresh` will not carry the `refreshToken` HttpOnly cookie. If you experience immediate logouts after a short time due to failed refresh requests, try one of these approaches:
+  - Use the Vite dev proxy by running `client` dev server as-is (the repository includes a proxy in `client/vite.config.ts`) and start `server` with `npm run newDev`; this avoids cross-site cookie rejections.
+  - Alternatively, use HTTPS for both client and server with `SameSite=None` if you need cross-site cookies over secure transport.
+  - For debugging, `GET /auth/debug/cookies` prints incoming cookies so you can verify whether the cookie landed on the server-side.

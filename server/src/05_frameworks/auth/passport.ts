@@ -183,7 +183,7 @@ function encryptToken(token: string): string {
 }
 
 passport.serializeUser<number>((user: Express.User, done) => {
-  done(null, user.id);
+  done(null, (user as User).id);
 });
 
 passport.deserializeUser<number>(async (id: number, done) => {

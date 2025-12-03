@@ -4,3 +4,117 @@
   margin: 0 auto;
   padding: 1rem;
 }
+
+/* Recipe header with action buttons */
+.recipe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.recipe-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+/* Recipe action buttons container */
+.recipe-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Base recipe action button styles */
+.recipe-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recipe-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-action-btn:active {
+  transform: translateY(0);
+}
+
+.recipe-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.recipe-action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Favorite button specific styles */
+.favorite-btn {
+  border-color: #ff6b9d;
+  color: #ff6b9d;
+}
+
+.favorite-btn:hover {
+  background: #fff0f5;
+  border-color: #ff4081;
+}
+
+.favorite-btn.active {
+  background: #ff6b9d;
+  color: white;
+  border-color: #ff6b9d;
+}
+
+.favorite-btn.active:hover {
+  background: #ff4081;
+  border-color: #ff4081;
+}
+
+/* Add to grocery list button specific styles */
+.add-to-list-btn {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.add-to-list-btn:hover {
+  background: #f1f8f4;
+  border-color: #45a049;
+}
+
+.add-to-list-btn:disabled {
+  border-color: #ccc;
+  color: #999;
+}
+
+/* Responsive behavior */
+@media (max-width: 640px) {
+  .recipe-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .recipe-actions {
+    width: 100%;
+  }
+
+  .recipe-action-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 140px;
+  }
+}
