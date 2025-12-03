@@ -95,17 +95,30 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
       }>(`/api/recipes/${showRecipe.id}/add-to-grocery-list`);
 
       if (response.data.success) {
+        // Dispatch custom event to notify GroceryList component
+        window.dispatchEvent(new CustomEvent("groceryListUpdated"));
+
         alert(
           `Added ${response.data.itemsAdded} ingredients to your grocery list! Total items: ${response.data.totalItems}`
         );
       } else {
         alert("Failed to add ingredients to grocery list");
       }
-    } catch (error: any) {
-      console.error("Error adding to grocery list:", error);
-      const errorMsg =
-        error.response?.data?.error ||
-        "Failed to add ingredients to grocery list";
+    } catch (err: unknown) {
+      console.error("Error adding to grocery list:", err);
+
+      let errorMsg = "Failed to add ingredients to grocery list";
+
+      if (err instanceof Error) {
+        errorMsg = err.message || errorMsg;
+      } else if (typeof err === "object" && err !== null) {
+        const e = err as {
+          response?: { data?: { error?: string } };
+          message?: string;
+        };
+        errorMsg = e?.response?.data?.error ?? e?.message ?? errorMsg;
+      }
+
       alert(errorMsg);
     } finally {
       setIsAddingToList(false);

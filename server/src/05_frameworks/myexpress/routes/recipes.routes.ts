@@ -346,10 +346,16 @@ router.post(
 
       const mergedItems = Array.from(itemMap.values());
 
-      // Create a new grocery list version
+      // Mark all existing versions as not current
       await db.query(
-        `INSERT INTO shopping_list_versions (user_id, version, list_data, created_at) 
-         VALUES ($1, $2, $3, NOW())`,
+        `UPDATE shopping_list_versions SET is_current = false WHERE user_id = $1`,
+        [userId]
+      );
+
+      // Create a new grocery list version as the current one
+      await db.query(
+        `INSERT INTO shopping_list_versions (user_id, version, list_data, is_current, created_at) 
+         VALUES ($1, $2, $3, true, NOW())`,
         [userId, 1, JSON.stringify(mergedItems)]
       );
 

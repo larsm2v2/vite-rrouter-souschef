@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./GroceryList.css";
 import { RecipeModel } from "../Models/Models";
 import EditableList from "./EditableList/EditableList";
-import shoppingListData from "./GroceryList.json";
 import { ListItem } from "../Models/Models";
 import apiClient from "../pages/Client";
 
@@ -40,22 +39,75 @@ const GroceryList: React.FC<GroceryListProps> = ({
     [recipeId: string]: ListItem[];
   }>({});
   const [recipes, setRecipes] = useState<RecipeModel[]>([]);
-  const [listItems, setListItems] = useState<ListItem[]>(
-    shoppingListData.map((item) => ({
-      ...item,
-      listItem: item.item,
-      isDone: false,
-      toTransfer: false,
-    }))
-  );
-  /* 	const [newItem, setNewItem] = useState<ListItem>({
-		id: Date.now(),
-		quantity: 0,
-		unit: "",
-		listItem: "",
-		isDone: false,
-		toTransfer: false,
-	}) */
+  const [listItems, setListItems] = useState<ListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch backend grocery list version
+  const fetchGroceryList = useCallback(async () => {
+    try {
+      const response = await apiClient.get<{
+        id: number;
+        userId: number;
+        version: number;
+        listData: {
+          quantity?: number;
+          unit?: string;
+          name?: string;
+          checked?: boolean;
+        }[];
+        createdAt: string;
+        isCurrent: boolean;
+      }>("/api/grocery-list/version");
+
+      if (response.status === 200 && response.data?.listData) {
+        // Convert backend format to ListItem format
+        const backendItems: ListItem[] = response.data.listData.map(
+          (
+            item: {
+              quantity?: number;
+              unit?: string;
+              name?: string;
+              checked?: boolean;
+            },
+            index: number
+          ) => ({
+            id: index,
+            quantity: item.quantity || 0,
+            unit: item.unit || "",
+            listItem: item.name || "",
+            isDone: item.checked || false,
+            toTransfer: false,
+          })
+        );
+        setListItems(backendItems);
+      }
+    } catch (error) {
+      console.error("Error fetching grocery list:", error);
+      // Initialize with empty list if fetch fails
+      setListItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGroceryList();
+  }, [fetchGroceryList]);
+
+  // Listen for custom event when grocery list is updated
+  useEffect(() => {
+    const handleGroceryListUpdate = () => {
+      console.log("Grocery list update event received, refreshing...");
+      fetchGroceryList();
+    };
+
+    window.addEventListener("groceryListUpdated", handleGroceryListUpdate);
+
+    return () => {
+      window.removeEventListener("groceryListUpdated", handleGroceryListUpdate);
+    };
+  }, [fetchGroceryList]);
+
   //Fetch Backend Recipes
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -130,6 +182,8 @@ const GroceryList: React.FC<GroceryListProps> = ({
 	} */
   useEffect(() => {
     const updateGroceryList = async () => {
+      if (loading) return; // Wait for initial grocery list to load
+
       const newRecipeIngredients: { [recipeId: string]: ListItem[] } = {};
       const validRecipeIds = selectedRecipeIds.filter(
         (recipeId) => recipeId !== null && recipeId !== ""
@@ -157,37 +211,48 @@ const GroceryList: React.FC<GroceryListProps> = ({
 
       setRecipeIngredients(newRecipeIngredients);
       const allIngredients = Object.values(newRecipeIngredients).flat();
-      const uniqueIngredients = new Set<string>();
-      const consolidatedList: ListItem[] = [];
+
+      // Merge selected recipe ingredients with existing grocery list items
+      const mergedList = [...listItems];
 
       allIngredients.forEach((ingredient) => {
-        if (!uniqueIngredients.has(ingredient.listItem)) {
-          uniqueIngredients.add(ingredient.listItem);
-          consolidatedList.push(ingredient);
-        } else {
-          const existingItem = consolidatedList.find(
-            (item) => item.listItem === ingredient.listItem
-          );
-          if (existingItem) {
-            existingItem.quantity += ingredient.quantity;
+        const existingIndex = mergedList.findIndex(
+          (item) =>
+            item.listItem.toLowerCase() === ingredient.listItem.toLowerCase()
+        );
+
+        if (existingIndex >= 0) {
+          // If item exists and units match, add quantities
+          if (mergedList[existingIndex].unit === ingredient.unit) {
+            mergedList[existingIndex].quantity += ingredient.quantity;
+          } else {
+            // Different units, add as new item
+            mergedList.push(ingredient);
           }
+        } else {
+          // New item, add to list
+          mergedList.push(ingredient);
         }
       });
 
-      setListItems(consolidatedList);
+      setListItems(mergedList);
     };
 
     updateGroceryList();
-  }, [selectedRecipeIds, recipes]);
+  }, [selectedRecipeIds, recipes, loading]);
 
   return (
     <div className="grocerylist-container">
       <h1 className="grocerylist-title">myGroceryList</h1>
-      <div className="flex-container">
-        <div className="edit-box">
-          <EditableList listItems={listItems} setListItems={setListItems} />
+      {loading ? (
+        <div className="loading">Loading grocery list...</div>
+      ) : (
+        <div className="flex-container">
+          <div className="edit-box">
+            <EditableList listItems={listItems} setListItems={setListItems} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

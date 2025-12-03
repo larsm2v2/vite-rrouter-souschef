@@ -146,22 +146,14 @@
   text-decoration: underline;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling - hidden but functional */
+.recipe-index-sidebar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
 .recipe-index-sidebar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.recipe-index-sidebar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.recipe-index-sidebar::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.recipe-index-sidebar::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* Responsive behavior */
