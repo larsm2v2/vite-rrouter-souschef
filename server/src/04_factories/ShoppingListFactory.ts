@@ -1,13 +1,13 @@
-import { GroceryListVersionRepository } from "../03_adapters/repositories";
-import { GetGroceryListVersion } from "../02_use_cases/GetGroceryListVersion";
-import { CreateGroceryListVersion } from "../02_use_cases/CreateGroceryListVersion";
+import { ShoppingListVersionRepository } from "../03_adapters/repositories";
+import { GetShoppingListVersion } from "../02_use_cases/GetShoppingListVersion";
+import { CreateShoppingListVersion } from "../02_use_cases/CreateShoppingListVersion";
 
-export function createGetGroceryListVersion(): GetGroceryListVersion {
-  const repo = new GroceryListVersionRepository();
-  return new GetGroceryListVersion(repo);
+export function createGetShoppingListVersion(): GetShoppingListVersion {
+  const repo = new ShoppingListVersionRepository();
+  return new GetShoppingListVersion(repo);
 }
 
-export function createCreateGroceryListVersion(): CreateGroceryListVersion {
-  const repo = new GroceryListVersionRepository();
-  return new CreateGroceryListVersion(repo);
+export function createCreateShoppingListVersion(): CreateShoppingListVersion {
+  const repo = new ShoppingListVersionRepository();
+  return new CreateShoppingListVersion(repo);
 }

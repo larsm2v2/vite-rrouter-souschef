@@ -98,6 +98,115 @@
   margin-top: 0.5vw;
 }
 
+/* Recipe index header */
+.recipe-index-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  background: #1f1f1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
+  font-size: 0.95rem;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.toggle-btn.active {
+  background: var(--tertiary-color);
+  border-color: var(--tertiary-color);
+  color: var(--primary-color);
+}
+
+/* Recipe index */
+.recipe-index {
+  background: rgba(255, 193, 7, 0.15);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.index-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-align: center;
+  color: #f9fafb;
+}
+
+.meal-type-section {
+  margin-bottom: 1.5rem;
+}
+
+.meal-type-heading {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f9fafb;
+  text-align: center;
+}
+
+.recipe-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.recipe-links li {
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.recipe-link {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.recipe-link:hover {
+  background: rgba(0, 0, 0, 0.1);
+  text-decoration: underline;
+}
+
 .recipes-summary {
   position: relative;
   display: flex;

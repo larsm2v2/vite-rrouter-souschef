@@ -140,6 +140,15 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({
     });
   };
 
+  // Handle favorite changes - update the recipes array
+  const handleFavoriteChange = (recipeId: string, isFavorite: boolean) => {
+    setRecipes((prevRecipes) =>
+      prevRecipes.map((r) =>
+        r.id === recipeId ? { ...r, is_favorite: isFavorite } : r
+      )
+    );
+  };
+
   useEffect(() => {
     if (selectedRecipeId) {
       const recipe = recipes.find(
@@ -172,6 +181,7 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({
             onSelectedRecipesChange={handleSelectedRecipesChange}
             isSelected={selectedRecipeIds.includes(selectedRecipeId || "")}
             showAddToSelectedRecipes={activeContent === "recipes"}
+            onFavoriteChange={handleFavoriteChange}
           />
 
           {activeContent === "sousChef" && (
