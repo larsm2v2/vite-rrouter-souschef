@@ -243,13 +243,13 @@ router.post("/:id/add-to-grocery-list", jwtAuth_1.authenticateJWT, (req, res, ne
                 .json({ error: "Recipe has no ingredients to add" });
         }
         // Get the current grocery list version
-        const versionResult = yield connection_1.default.query(`SELECT id, items FROM shopping_list_versions 
+        const versionResult = yield connection_1.default.query(`SELECT id, list_data FROM shopping_list_versions 
          WHERE user_id = $1 
          ORDER BY created_at DESC 
          LIMIT 1`, [userId]);
         let currentItems = [];
         if (versionResult.rows.length > 0) {
-            currentItems = versionResult.rows[0].items || [];
+            currentItems = versionResult.rows[0].list_data || [];
         }
         // Extract all ingredients from all categories
         const newItems = [];
@@ -289,8 +289,8 @@ router.post("/:id/add-to-grocery-list", jwtAuth_1.authenticateJWT, (req, res, ne
         });
         const mergedItems = Array.from(itemMap.values());
         // Create a new grocery list version
-        yield connection_1.default.query(`INSERT INTO shopping_list_versions (user_id, items, created_at) 
-         VALUES ($1, $2, NOW())`, [userId, JSON.stringify(mergedItems)]);
+        yield connection_1.default.query(`INSERT INTO shopping_list_versions (user_id, version, list_data, created_at) 
+         VALUES ($1, $2, $3, NOW())`, [userId, 1, JSON.stringify(mergedItems)]);
         res.json({
             success: true,
             itemsAdded: newItems.length,
