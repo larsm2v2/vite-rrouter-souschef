@@ -5,7 +5,7 @@ import { AlreadyStocked, StockedItem } from "../01_entities/AlreadyStocked";
 @injectable()
 export class UpdateAlreadyStocked {
   constructor(
-    @inject("AlreadyStockedRepository")
+    @inject(AlreadyStockedRepository)
     private alreadyStockedRepository: AlreadyStockedRepository
   ) {}
 
