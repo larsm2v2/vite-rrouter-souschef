@@ -5,6 +5,7 @@ import profileRoutes from "./profile";
 import recipesRoutes from "./recipes.routes";
 import groceryRoutes from "./grocery.routes";
 import profileFeatures from "./profileFeatures.routes";
+import alreadyStockedRoutes from "./already-stocked.routes";
 import ocrRoutes from "../../../routes/ocr";
 
 const router = express.Router();
@@ -67,6 +68,15 @@ console.log(
   typeof profileFeatures,
   "stackLength",
   profileFeatures?.stack?.length
+);
+
+console.log("  Mounting /api/already-stocked → already stocked routes");
+router.use("/api/already-stocked", alreadyStockedRoutes);
+console.log(
+  "    -> alreadyStockedRoutes loaded?",
+  typeof alreadyStockedRoutes,
+  "stackLength",
+  alreadyStockedRoutes?.stack?.length
 );
 
 console.log("  Mounting /api → ocr routes");

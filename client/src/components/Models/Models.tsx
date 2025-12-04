@@ -61,4 +61,10 @@ export interface ListItem {
   toTransfer: boolean;
 }
 
+export interface StockedItem {
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
 export type id = string | never;

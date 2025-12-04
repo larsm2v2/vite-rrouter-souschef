@@ -6,3 +6,4 @@ export { MealPlan } from "./MealPlan";
 export { ShoppingListVersion } from "./ShoppingListVersion";
 export { RecipeActivityLog } from "./RecipeActivityLog";
 export { GoogleProfile } from "./GoogleProfile";
+export { AlreadyStocked, StockedItem } from "./AlreadyStocked";

@@ -12,3 +12,5 @@ export { GetShoppingListVersion } from "./GetShoppingListVersion";
 export { CreateShoppingListVersion } from "./CreateShoppingListVersion";
 export { LogRecipeActivity } from "./LogRecipeActivity";
 export { GetRecipeActivityLog } from "./GetRecipeActivityLog";
+export { GetAlreadyStocked } from "./GetAlreadyStocked";
+export { UpdateAlreadyStocked } from "./UpdateAlreadyStocked";

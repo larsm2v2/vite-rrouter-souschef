@@ -8,6 +8,7 @@ import { GroceryRepository } from "../03_adapters/repositories/GroceryRepository
 import { MealPlanRepository } from "../03_adapters/repositories/MealPlanRepository";
 import { ShoppingListVersionRepository } from "../03_adapters/repositories/ShoppingListVersionRepository";
 import { RecipeActivityLogRepository } from "../03_adapters/repositories/RecipeActivityLogRepository";
+import { AlreadyStockedRepository } from "../03_adapters/repositories/AlreadyStockedRepository";
 
 // Use-cases
 import { GetUserProfile } from "../02_use_cases/GetUserProfile";
@@ -25,6 +26,8 @@ import { DeleteRecipe } from "../02_use_cases/DeleteRecipe";
 import { LogAudit } from "../02_use_cases/AuditLogging";
 import { CheckAuthentication } from "../02_use_cases/CheckAuthentication";
 import { LogoutUser } from "../02_use_cases/LogoutUser";
+import { GetAlreadyStocked } from "../02_use_cases/GetAlreadyStocked";
+import { UpdateAlreadyStocked } from "../02_use_cases/UpdateAlreadyStocked";
 
 // Controllers
 import { UserController } from "../03_adapters/controllers/UserController";
@@ -32,6 +35,7 @@ import { GroceryController } from "../03_adapters/controllers/GroceryController"
 import { MealPlanController } from "../03_adapters/controllers/MealPlanController";
 import { ShoppingListController } from "../03_adapters/controllers/ShoppingListController";
 import { RecipeActivityController } from "../03_adapters/controllers/RecipeActivityController";
+import { AlreadyStockedController } from "../03_adapters/controllers/AlreadyStockedController";
 
 // Register repositories as singletons
 container.registerSingleton(UserRepository, UserRepository);
@@ -46,6 +50,7 @@ container.registerSingleton(
   RecipeActivityLogRepository,
   RecipeActivityLogRepository
 );
+container.registerSingleton(AlreadyStockedRepository, AlreadyStockedRepository);
 
 // Register use-cases
 container.registerSingleton(GetUserProfile, GetUserProfile);
@@ -60,6 +65,8 @@ container.registerSingleton(
 );
 container.registerSingleton(LogRecipeActivity, LogRecipeActivity);
 container.registerSingleton(GetRecipeActivityLog, GetRecipeActivityLog);
+container.registerSingleton(GetAlreadyStocked, GetAlreadyStocked);
+container.registerSingleton(UpdateAlreadyStocked, UpdateAlreadyStocked);
 
 // Additional use-cases
 container.registerSingleton(LogAudit, LogAudit);
@@ -80,5 +87,6 @@ container.registerSingleton(GroceryController, GroceryController);
 container.registerSingleton(MealPlanController, MealPlanController);
 container.registerSingleton(ShoppingListController, ShoppingListController);
 container.registerSingleton(RecipeActivityController, RecipeActivityController);
+container.registerSingleton(AlreadyStockedController, AlreadyStockedController);
 
 export default container;
