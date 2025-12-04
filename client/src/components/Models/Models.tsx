@@ -63,8 +63,8 @@ export interface ListItem {
 
 export interface StockedItem {
   name: string;
-  quantity: number;
-  unit: string;
+  quantity?: number;
+  unit?: string;
 }
 
 export type id = string | never;

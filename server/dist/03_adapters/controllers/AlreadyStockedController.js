@@ -60,11 +60,11 @@ let AlreadyStockedController = class AlreadyStockedController {
                     res.status(400).json({ error: "stockedItems must be an array" });
                     return;
                 }
-                // Validate items structure
+                // Validate items structure - only name is required
                 for (const item of stockedItems) {
-                    if (!item.name || typeof item.quantity !== "number" || !item.unit) {
+                    if (!item.name || typeof item.name !== "string") {
                         res.status(400).json({
-                            error: "Each stocked item must have name, quantity (number), and unit",
+                            error: "Each stocked item must have a name",
                         });
                         return;
                     }

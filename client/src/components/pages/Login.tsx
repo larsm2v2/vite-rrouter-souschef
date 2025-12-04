@@ -83,8 +83,9 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/profile", { replace: true });
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, [isAuthenticated, navigate]);
 
   const handleLocalLogin = async (e: React.FormEvent) => {
