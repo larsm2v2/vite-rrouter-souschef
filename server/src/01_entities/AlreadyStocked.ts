@@ -1,7 +1,7 @@
 export interface StockedItem {
   name: string;
-  quantity: number;
-  unit: string;
+  quantity?: number;
+  unit?: string;
 }
 
 export interface AlreadyStocked {

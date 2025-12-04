@@ -40,7 +40,7 @@
 
 .already-stocked-form {
   display: grid;
-  grid-template-columns: 1fr 100px 150px 80px;
+  grid-template-columns: 1fr 80px;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
@@ -57,10 +57,7 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 0.9rem;
-}
-
-.already-stocked-input.quantity {
-  text-align: center;
+  width: 100%;
 }
 
 .add-stocked-btn {
@@ -132,22 +129,6 @@
   font-size: 0.9rem;
   flex: 1;
 }
-
-.stocked-edit-input.qty {
-  width: 70px;
-  flex: 0 0 70px;
-  text-align: center;
-}
-
-.stocked-edit-input.unit {
-  width: 80px;
-  flex: 0 0 80px;
-}
-
-.stocked-qty-unit {
-  display: flex;
-  gap: 0.3rem;
-  align-items: center;
 }
 
 .delete-stocked-btn {
@@ -163,6 +144,23 @@
 
 .delete-stocked-btn:hover {
   background: #da190b;
+}
+
+@media (max-width: 768px) {
+.delete-stocked-btn {
+  padding: 0.4rem 0.6rem;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+  margin-left: 0.5rem;
+}
+
+.delete-stocked-btn:hover {
+  background: #ff5252;
 }
 
 @media (max-width: 768px) {
@@ -183,3 +181,4 @@
     width: 100%;
   }
 }
+

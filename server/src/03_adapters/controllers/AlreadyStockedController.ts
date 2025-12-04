@@ -43,12 +43,11 @@ export class AlreadyStockedController {
         return;
       }
 
-      // Validate items structure
+      // Validate items structure - only name is required
       for (const item of stockedItems) {
-        if (!item.name || typeof item.quantity !== "number" || !item.unit) {
+        if (!item.name || typeof item.name !== "string") {
           res.status(400).json({
-            error:
-              "Each stocked item must have name, quantity (number), and unit",
+            error: "Each stocked item must have a name",
           });
           return;
         }

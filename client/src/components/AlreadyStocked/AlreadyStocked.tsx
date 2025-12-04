@@ -13,11 +13,7 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
   const [stocked, setStocked] = useState<StockedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newItem, setNewItem] = useState<StockedItem>({
-    name: "",
-    quantity: 0,
-    unit: "",
-  });
+  const [newItemName, setNewItemName] = useState("");
   const saveTimerRef = useRef<number | null>(null);
 
   // Fetch already stocked items
@@ -71,23 +67,13 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newItem.name.trim()) {
+    if (!newItemName.trim()) {
       setError("Item name cannot be empty");
       return;
     }
 
-    if (newItem.quantity <= 0) {
-      setError("Quantity must be greater than 0");
-      return;
-    }
-
-    if (!newItem.unit.trim()) {
-      setError("Unit cannot be empty");
-      return;
-    }
-
-    setStocked([...stocked, newItem]);
-    setNewItem({ name: "", quantity: 0, unit: "" });
+    setStocked([...stocked, { name: newItemName.trim() }]);
+    setNewItemName("");
     setError(null);
   };
 
@@ -95,16 +81,9 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
     setStocked(stocked.filter((_, i) => i !== index));
   };
 
-  const handleUpdateItem = (
-    index: number,
-    field: keyof StockedItem,
-    value: any
-  ) => {
+  const handleUpdateItemName = (index: number, newName: string) => {
     const updated = [...stocked];
-    updated[index] = {
-      ...updated[index],
-      [field]: field === "quantity" ? parseFloat(value) || 0 : value,
-    };
+    updated[index] = { ...updated[index], name: newName };
     setStocked(updated);
   };
 
@@ -141,33 +120,9 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
         <div className="form-group">
           <input
             type="text"
-            placeholder="Item name"
-            value={newItem.name}
-            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-            className="already-stocked-input"
-          />
-        </div>
-        <div className="form-group">
-          <input
-            type="number"
-            placeholder="Qty"
-            value={newItem.quantity || ""}
-            onChange={(e) =>
-              setNewItem({
-                ...newItem,
-                quantity: parseFloat(e.target.value) || 0,
-              })
-            }
-            className="already-stocked-input quantity"
-            step="0.1"
-          />
-        </div>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Unit (cups, tbsp, etc)"
-            value={newItem.unit}
-            onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+            placeholder="Add item name..."
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
             className="already-stocked-input"
           />
         </div>
@@ -186,34 +141,9 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
                 <input
                   type="text"
                   value={item.name}
-                  onChange={(e) =>
-                    handleUpdateItem(index, "name", e.target.value)
-                  }
+                  onChange={(e) => handleUpdateItemName(index, e.target.value)}
                   className="stocked-edit-input"
                 />
-                <div className="stocked-qty-unit">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      handleUpdateItem(
-                        index,
-                        "quantity",
-                        parseFloat(e.target.value) || 0
-                      )
-                    }
-                    className="stocked-edit-input qty"
-                    step="0.1"
-                  />
-                  <input
-                    type="text"
-                    value={item.unit}
-                    onChange={(e) =>
-                      handleUpdateItem(index, "unit", e.target.value)
-                    }
-                    className="stocked-edit-input unit"
-                  />
-                </div>
               </div>
               <button
                 className="delete-stocked-btn"
@@ -231,3 +161,4 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
 };
 
 export default AlreadyStocked;
+
