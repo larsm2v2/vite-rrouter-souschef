@@ -7,7 +7,8 @@ import { StockedItem } from "../../01_entities/AlreadyStocked";
 @injectable()
 export class AlreadyStockedController {
   constructor(
-    @inject("GetAlreadyStocked") private getAlreadyStockedUseCase: GetAlreadyStocked,
+    @inject("GetAlreadyStocked")
+    private getAlreadyStockedUseCase: GetAlreadyStocked,
     @inject("UpdateAlreadyStocked")
     private updateAlreadyStockedUseCase: UpdateAlreadyStocked
   ) {}
@@ -20,7 +21,9 @@ export class AlreadyStockedController {
         return;
       }
 
-      const alreadyStocked = await this.getAlreadyStockedUseCase.execute(userId);
+      const alreadyStocked = await this.getAlreadyStockedUseCase.execute(
+        userId
+      );
       res.status(200).json(alreadyStocked || { stockedItems: [] });
     } catch (error) {
       console.error("Error fetching already stocked:", error);

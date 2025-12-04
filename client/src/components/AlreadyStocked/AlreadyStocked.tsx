@@ -161,4 +161,3 @@ const AlreadyStocked: React.FC<AlreadyStockedProps> = ({
 };
 
 export default AlreadyStocked;
-
