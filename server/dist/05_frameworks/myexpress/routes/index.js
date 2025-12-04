@@ -2,7 +2,7 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g;
+var _a, _b, _c, _d, _e, _f, _g, _h;
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_routes_1 = __importDefault(require("./auth.routes"));
@@ -11,6 +11,7 @@ const profile_1 = __importDefault(require("./profile"));
 const recipes_routes_1 = __importDefault(require("./recipes.routes"));
 const grocery_routes_1 = __importDefault(require("./grocery.routes"));
 const profileFeatures_routes_1 = __importDefault(require("./profileFeatures.routes"));
+const already_stocked_routes_1 = __importDefault(require("./already-stocked.routes"));
 const ocr_1 = __importDefault(require("../../../routes/ocr"));
 const router = express_1.default.Router();
 console.log("📋 Mounting routes...");
@@ -35,8 +36,11 @@ console.log("    -> profileRoutes loaded?", typeof profile_1.default, "stackLeng
 console.log("  Mounting /api → profile features routes");
 router.use("/api", profileFeatures_routes_1.default);
 console.log("    -> profileFeatures loaded?", typeof profileFeatures_routes_1.default, "stackLength", (_f = profileFeatures_routes_1.default === null || profileFeatures_routes_1.default === void 0 ? void 0 : profileFeatures_routes_1.default.stack) === null || _f === void 0 ? void 0 : _f.length);
+console.log("  Mounting /api/already-stocked → already stocked routes");
+router.use("/api/already-stocked", already_stocked_routes_1.default);
+console.log("    -> alreadyStockedRoutes loaded?", typeof already_stocked_routes_1.default, "stackLength", (_g = already_stocked_routes_1.default === null || already_stocked_routes_1.default === void 0 ? void 0 : already_stocked_routes_1.default.stack) === null || _g === void 0 ? void 0 : _g.length);
 console.log("  Mounting /api → ocr routes");
 router.use("/api", ocr_1.default);
-console.log("    -> ocrRoutes loaded?", typeof ocr_1.default, "stackLength", (_g = ocr_1.default === null || ocr_1.default === void 0 ? void 0 : ocr_1.default.stack) === null || _g === void 0 ? void 0 : _g.length);
+console.log("    -> ocrRoutes loaded?", typeof ocr_1.default, "stackLength", (_h = ocr_1.default === null || ocr_1.default === void 0 ? void 0 : ocr_1.default.stack) === null || _h === void 0 ? void 0 : _h.length);
 console.log(`✅ Routes mounted successfully. Total routers: ${router.stack.length}`);
 exports.default = router;

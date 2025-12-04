@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RecipeActivityController = exports.ShoppingListController = exports.MealPlanController = exports.GroceryController = exports.RecipeController = exports.UserController = void 0;
+exports.AlreadyStockedController = exports.RecipeActivityController = exports.ShoppingListController = exports.MealPlanController = exports.GroceryController = exports.RecipeController = exports.UserController = void 0;
 var UserController_1 = require("./UserController");
 Object.defineProperty(exports, "UserController", { enumerable: true, get: function () { return UserController_1.UserController; } });
 var RecipeController_1 = require("./RecipeController");
@@ -13,3 +13,5 @@ var ShoppingListController_1 = require("./ShoppingListController");
 Object.defineProperty(exports, "ShoppingListController", { enumerable: true, get: function () { return ShoppingListController_1.ShoppingListController; } });
 var RecipeActivityController_1 = require("./RecipeActivityController");
 Object.defineProperty(exports, "RecipeActivityController", { enumerable: true, get: function () { return RecipeActivityController_1.RecipeActivityController; } });
+var AlreadyStockedController_1 = require("./AlreadyStockedController");
+Object.defineProperty(exports, "AlreadyStockedController", { enumerable: true, get: function () { return AlreadyStockedController_1.AlreadyStockedController; } });

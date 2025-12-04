@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetRecipeActivityLog = exports.LogRecipeActivity = exports.CreateShoppingListVersion = exports.GetShoppingListVersion = exports.CreateMealPlan = exports.GetMealPlan = exports.LogoutUser = exports.CheckAuthentication = exports.LogAudit = exports.GetGroceryList = exports.DeleteRecipe = exports.UpdateRecipe = exports.CreateRecipe = exports.GetUserProfile = void 0;
+exports.UpdateAlreadyStocked = exports.GetAlreadyStocked = exports.GetRecipeActivityLog = exports.LogRecipeActivity = exports.CreateShoppingListVersion = exports.GetShoppingListVersion = exports.CreateMealPlan = exports.GetMealPlan = exports.LogoutUser = exports.CheckAuthentication = exports.LogAudit = exports.GetGroceryList = exports.DeleteRecipe = exports.UpdateRecipe = exports.CreateRecipe = exports.GetUserProfile = void 0;
 var GetUserProfile_1 = require("./GetUserProfile");
 Object.defineProperty(exports, "GetUserProfile", { enumerable: true, get: function () { return GetUserProfile_1.GetUserProfile; } });
 var CreateRecipe_1 = require("./CreateRecipe");
@@ -29,3 +29,7 @@ var LogRecipeActivity_1 = require("./LogRecipeActivity");
 Object.defineProperty(exports, "LogRecipeActivity", { enumerable: true, get: function () { return LogRecipeActivity_1.LogRecipeActivity; } });
 var GetRecipeActivityLog_1 = require("./GetRecipeActivityLog");
 Object.defineProperty(exports, "GetRecipeActivityLog", { enumerable: true, get: function () { return GetRecipeActivityLog_1.GetRecipeActivityLog; } });
+var GetAlreadyStocked_1 = require("./GetAlreadyStocked");
+Object.defineProperty(exports, "GetAlreadyStocked", { enumerable: true, get: function () { return GetAlreadyStocked_1.GetAlreadyStocked; } });
+var UpdateAlreadyStocked_1 = require("./UpdateAlreadyStocked");
+Object.defineProperty(exports, "UpdateAlreadyStocked", { enumerable: true, get: function () { return UpdateAlreadyStocked_1.UpdateAlreadyStocked; } });

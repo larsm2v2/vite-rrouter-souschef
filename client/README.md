@@ -74,16 +74,16 @@ If you are seeing PKCE/sessionStorage persistence issues in development, you can
 
 1. Set a local env var in `client/.env.development` or your shell:
 
-```powershell
-# enable the dev bypass (ONLY for local development)
-$env:VITE_DEV_BYPASS = 'true'
-```
+   ```powershell
+   # enable the dev bypass (ONLY for local development)
+   $env:VITE_DEV_BYPASS = 'true'
+   ```
 
-Or add to `client/.env.development`:
+   Or add to `client/.env.development`:
 
-```dotenv
-VITE_DEV_BYPASS=true
-```
+   ```dotenv
+   VITE_DEV_BYPASS=true
+   ```
 
 2. Start the dev server and open: `http://127.0.0.1:5173/dev-login`
 

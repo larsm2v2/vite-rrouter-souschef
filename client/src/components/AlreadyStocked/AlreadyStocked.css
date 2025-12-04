@@ -1,0 +1,185 @@
+.already-stocked-container {
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.already-stocked-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.already-stocked-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.add-all-btn {
+  padding: 0.5rem 1rem;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.add-all-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.add-all-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.already-stocked-form {
+  display: grid;
+  grid-template-columns: 1fr 100px 150px 80px;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.form-group {
+  display: flex;
+}
+
+.already-stocked-input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.already-stocked-input.quantity {
+  text-align: center;
+}
+
+.add-stocked-btn {
+  padding: 0.5rem 1rem;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.add-stocked-btn:hover {
+  background: #0b7dda;
+}
+
+.error-message {
+  color: #d32f2f;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  background: #ffebee;
+}
+
+.already-stocked-list {
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.already-stocked-list::-webkit-scrollbar {
+  display: none;
+}
+
+.already-stocked-list::-ms-overflow-style {
+  display: none;
+}
+
+.no-stocked {
+  text-align: center;
+  color: #999;
+  padding: 1rem;
+  font-style: italic;
+}
+
+.stocked-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+  border-left: 4px solid #2196f3;
+}
+
+.stocked-details {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.stocked-edit-input {
+  padding: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.stocked-edit-input.qty {
+  width: 70px;
+  flex: 0 0 70px;
+  text-align: center;
+}
+
+.stocked-edit-input.unit {
+  width: 80px;
+  flex: 0 0 80px;
+}
+
+.stocked-qty-unit {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.delete-stocked-btn {
+  padding: 0.4rem 0.6rem;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.delete-stocked-btn:hover {
+  background: #da190b;
+}
+
+@media (max-width: 768px) {
+  .already-stocked-form {
+    grid-template-columns: 1fr;
+  }
+
+  .already-stocked-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .already-stocked-header h2 {
+    align-self: flex-start;
+  }
+
+  .add-all-btn {
+    width: 100%;
+  }
+}

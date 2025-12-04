@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { RecipeModel } from "../Models/Models";
+import { RecipeModel, StockedItem } from "../Models/Models";
+import AlreadyStocked from "../AlreadyStocked/AlreadyStocked";
 import apiClient from "./Client";
 import "./Profile.css";
 
@@ -22,7 +23,9 @@ const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [recipes, setRecipes] = useState<RecipeModel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"all" | "favorites">("all");
+  const [activeView, setActiveView] = useState<
+    "all" | "favorites" | "alreadyStocked"
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
@@ -218,6 +221,9 @@ const Profile: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
+              style={{
+                display: activeView !== "alreadyStocked" ? "block" : "none",
+              }}
             />
             <div className="view-toggle">
               <button
@@ -234,98 +240,121 @@ const Profile: React.FC = () => {
               >
                 Favorites
               </button>
+              <button
+                className={`toggle-btn ${
+                  activeView === "alreadyStocked" ? "active" : ""
+                }`}
+                onClick={() => setActiveView("alreadyStocked")}
+              >
+                Already Stocked
+              </button>
             </div>
           </div>
 
-          <div className="recipe-index">
-            <h2 className="index-title">Index</h2>
-            {(() => {
-              // Filter recipes based on view and search
-              const filteredRecipes = recipes.filter((recipe) => {
-                const matchesView =
-                  activeView === "all" ||
-                  (activeView === "favorites" && recipe.is_favorite);
-                const matchesSearch =
-                  searchQuery === "" ||
-                  recipe.name
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                  recipe.cuisine
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                  recipe.meal_type
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase());
-                return matchesView && matchesSearch;
-              });
+          {activeView === "alreadyStocked" ? (
+            <AlreadyStocked
+              onAddToGroceryList={(items: StockedItem[]) => {
+                // Dispatch event to GroceryList to add these items
+                const event = new CustomEvent("addAlreadyStockedToGrocery", {
+                  detail: items,
+                });
+                window.dispatchEvent(event);
+              }}
+            />
+          ) : (
+            <>
+              <div className="recipe-index">
+                <h2 className="index-title">Index</h2>
+                {(() => {
+                  // Filter recipes based on view and search
+                  const filteredRecipes = recipes.filter((recipe) => {
+                    const matchesView =
+                      activeView === "all" ||
+                      (activeView === "favorites" && recipe.is_favorite);
+                    const matchesSearch =
+                      searchQuery === "" ||
+                      recipe.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      recipe.cuisine
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      recipe.meal_type
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase());
+                    return matchesView && matchesSearch;
+                  });
 
-              // Group by meal type
-              const mealTypeOrder = [
-                "Breakfast",
-                "Lunch",
-                "Appetizer",
-                "Dinner",
-                "Dessert",
-                "Spice blend",
-              ];
-              const recipesByMealType = filteredRecipes.reduce(
-                (acc, recipe) => {
-                  const mealTypeRaw = recipe.meal_type || "Other";
-                  const mealType =
-                    mealTypeRaw.charAt(0).toUpperCase() + mealTypeRaw.slice(1);
-                  if (!acc[mealType]) acc[mealType] = [];
-                  acc[mealType].push(recipe);
-                  return acc;
-                },
-                {} as { [key: string]: RecipeModel[] }
-              );
+                  // Group by meal type
+                  const mealTypeOrder = [
+                    "Breakfast",
+                    "Lunch",
+                    "Appetizer",
+                    "Dinner",
+                    "Dessert",
+                    "Spice blend",
+                  ];
+                  const recipesByMealType = filteredRecipes.reduce(
+                    (acc, recipe) => {
+                      const mealTypeRaw = recipe.meal_type || "Other";
+                      const mealType =
+                        mealTypeRaw.charAt(0).toUpperCase() +
+                        mealTypeRaw.slice(1);
+                      if (!acc[mealType]) acc[mealType] = [];
+                      acc[mealType].push(recipe);
+                      return acc;
+                    },
+                    {} as { [key: string]: RecipeModel[] }
+                  );
 
-              // Sort recipes within each meal type
-              Object.keys(recipesByMealType).forEach((mealType) => {
-                recipesByMealType[mealType].sort((a, b) =>
-                  a.name.localeCompare(b.name)
-                );
-              });
+                  // Sort recipes within each meal type
+                  Object.keys(recipesByMealType).forEach((mealType) => {
+                    recipesByMealType[mealType].sort((a, b) =>
+                      a.name.localeCompare(b.name)
+                    );
+                  });
 
-              // Order meal types
-              const preferred = mealTypeOrder.filter(
-                (mt) => recipesByMealType[mt]
-              );
-              const remaining = Object.keys(recipesByMealType)
-                .filter((mt) => !preferred.includes(mt))
-                .sort();
-              const orderedMealTypes = [...preferred, ...remaining];
+                  // Order meal types
+                  const preferred = mealTypeOrder.filter(
+                    (mt) => recipesByMealType[mt]
+                  );
+                  const remaining = Object.keys(recipesByMealType)
+                    .filter((mt) => !preferred.includes(mt))
+                    .sort();
+                  const orderedMealTypes = [...preferred, ...remaining];
 
-              if (filteredRecipes.length === 0) {
-                return <div className="empty">No recipes found.</div>;
-              }
+                  if (filteredRecipes.length === 0) {
+                    return <div className="empty">No recipes found.</div>;
+                  }
 
-              return orderedMealTypes.map((mealType) => (
-                <div key={mealType} className="meal-type-section">
-                  <h3 className="meal-type-heading">{mealType}</h3>
-                  <ul className="recipe-links">
-                    {recipesByMealType[mealType].map((recipe) => (
-                      <li key={recipe.id}>
-                        <button
-                          className="recipe-link"
-                          onClick={() => {
-                            // Set the recipe to display in the context
-                            if (setRecipeToDisplay) {
-                              setRecipeToDisplay(recipe);
-                            }
-                            // Navigate to recipes page
-                            navigate("/recipes");
-                          }}
-                        >
-                          {recipe.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ));
-            })()}
-          </div>
+                  return orderedMealTypes.map((mealType) => (
+                    <div key={mealType} className="meal-type-section">
+                      <h3 className="meal-type-heading">{mealType}</h3>
+                      <ul className="recipe-links">
+                        {recipesByMealType[mealType].map((recipe) => (
+                          <li key={recipe.id}>
+                            <button
+                              className="recipe-link"
+                              onClick={() => {
+                                // Set the recipe to display in the context
+                                if (setRecipeToDisplay) {
+                                  setRecipeToDisplay(recipe);
+                                }
+                                // Navigate to recipes page
+                                navigate("/recipes");
+                              }}
+                            >
+                              {recipe.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

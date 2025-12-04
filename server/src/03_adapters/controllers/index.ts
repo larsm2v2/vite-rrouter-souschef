@@ -4,3 +4,4 @@ export { GroceryController } from "./GroceryController";
 export { MealPlanController } from "./MealPlanController";
 export { ShoppingListController } from "./ShoppingListController";
 export { RecipeActivityController } from "./RecipeActivityController";
+export { AlreadyStockedController } from "./AlreadyStockedController";

@@ -288,9 +288,11 @@ router.post("/:id/add-to-grocery-list", jwtAuth_1.authenticateJWT, (req, res, ne
             }
         });
         const mergedItems = Array.from(itemMap.values());
-        // Create a new grocery list version
-        yield connection_1.default.query(`INSERT INTO shopping_list_versions (user_id, version, list_data, created_at) 
-         VALUES ($1, $2, $3, NOW())`, [userId, 1, JSON.stringify(mergedItems)]);
+        // Mark all existing versions as not current
+        yield connection_1.default.query(`UPDATE shopping_list_versions SET is_current = false WHERE user_id = $1`, [userId]);
+        // Create a new grocery list version as the current one
+        yield connection_1.default.query(`INSERT INTO shopping_list_versions (user_id, version, list_data, is_current, created_at) 
+         VALUES ($1, $2, $3, true, NOW())`, [userId, 1, JSON.stringify(mergedItems)]);
         res.json({
             success: true,
             itemsAdded: newItems.length,

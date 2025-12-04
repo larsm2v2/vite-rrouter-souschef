@@ -9,6 +9,7 @@ const GroceryRepository_1 = require("../03_adapters/repositories/GroceryReposito
 const MealPlanRepository_1 = require("../03_adapters/repositories/MealPlanRepository");
 const ShoppingListVersionRepository_1 = require("../03_adapters/repositories/ShoppingListVersionRepository");
 const RecipeActivityLogRepository_1 = require("../03_adapters/repositories/RecipeActivityLogRepository");
+const AlreadyStockedRepository_1 = require("../03_adapters/repositories/AlreadyStockedRepository");
 // Use-cases
 const GetUserProfile_1 = require("../02_use_cases/GetUserProfile");
 const UpdateUserProfile_1 = require("../02_use_cases/UpdateUserProfile");
@@ -25,12 +26,15 @@ const DeleteRecipe_1 = require("../02_use_cases/DeleteRecipe");
 const AuditLogging_1 = require("../02_use_cases/AuditLogging");
 const CheckAuthentication_1 = require("../02_use_cases/CheckAuthentication");
 const LogoutUser_1 = require("../02_use_cases/LogoutUser");
+const GetAlreadyStocked_1 = require("../02_use_cases/GetAlreadyStocked");
+const UpdateAlreadyStocked_1 = require("../02_use_cases/UpdateAlreadyStocked");
 // Controllers
 const UserController_1 = require("../03_adapters/controllers/UserController");
 const GroceryController_1 = require("../03_adapters/controllers/GroceryController");
 const MealPlanController_1 = require("../03_adapters/controllers/MealPlanController");
 const ShoppingListController_1 = require("../03_adapters/controllers/ShoppingListController");
 const RecipeActivityController_1 = require("../03_adapters/controllers/RecipeActivityController");
+const AlreadyStockedController_1 = require("../03_adapters/controllers/AlreadyStockedController");
 // Register repositories as singletons
 tsyringe_1.container.registerSingleton(UserRepository_1.UserRepository, UserRepository_1.UserRepository);
 tsyringe_1.container.registerSingleton(RecipeRepository_1.RecipeRepository, RecipeRepository_1.RecipeRepository);
@@ -38,6 +42,7 @@ tsyringe_1.container.registerSingleton(GroceryRepository_1.GroceryRepository, Gr
 tsyringe_1.container.registerSingleton(MealPlanRepository_1.MealPlanRepository, MealPlanRepository_1.MealPlanRepository);
 tsyringe_1.container.registerSingleton(ShoppingListVersionRepository_1.ShoppingListVersionRepository, ShoppingListVersionRepository_1.ShoppingListVersionRepository);
 tsyringe_1.container.registerSingleton(RecipeActivityLogRepository_1.RecipeActivityLogRepository, RecipeActivityLogRepository_1.RecipeActivityLogRepository);
+tsyringe_1.container.registerSingleton(AlreadyStockedRepository_1.AlreadyStockedRepository, AlreadyStockedRepository_1.AlreadyStockedRepository);
 // Register use-cases
 tsyringe_1.container.registerSingleton(GetUserProfile_1.GetUserProfile, GetUserProfile_1.GetUserProfile);
 tsyringe_1.container.registerSingleton(UpdateUserProfile_1.UpdateUserProfile, UpdateUserProfile_1.UpdateUserProfile);
@@ -48,6 +53,8 @@ tsyringe_1.container.registerSingleton(GetShoppingListVersion_1.GetShoppingListV
 tsyringe_1.container.registerSingleton(CreateShoppingListVersion_1.CreateShoppingListVersion, CreateShoppingListVersion_1.CreateShoppingListVersion);
 tsyringe_1.container.registerSingleton(LogRecipeActivity_1.LogRecipeActivity, LogRecipeActivity_1.LogRecipeActivity);
 tsyringe_1.container.registerSingleton(GetRecipeActivityLog_1.GetRecipeActivityLog, GetRecipeActivityLog_1.GetRecipeActivityLog);
+tsyringe_1.container.registerSingleton(GetAlreadyStocked_1.GetAlreadyStocked, GetAlreadyStocked_1.GetAlreadyStocked);
+tsyringe_1.container.registerSingleton(UpdateAlreadyStocked_1.UpdateAlreadyStocked, UpdateAlreadyStocked_1.UpdateAlreadyStocked);
 // Additional use-cases
 tsyringe_1.container.registerSingleton(AuditLogging_1.LogAudit, AuditLogging_1.LogAudit);
 tsyringe_1.container.registerSingleton(CheckAuthentication_1.CheckAuthentication, CheckAuthentication_1.CheckAuthentication);
@@ -63,4 +70,5 @@ tsyringe_1.container.registerSingleton(GroceryController_1.GroceryController, Gr
 tsyringe_1.container.registerSingleton(MealPlanController_1.MealPlanController, MealPlanController_1.MealPlanController);
 tsyringe_1.container.registerSingleton(ShoppingListController_1.ShoppingListController, ShoppingListController_1.ShoppingListController);
 tsyringe_1.container.registerSingleton(RecipeActivityController_1.RecipeActivityController, RecipeActivityController_1.RecipeActivityController);
+tsyringe_1.container.registerSingleton(AlreadyStockedController_1.AlreadyStockedController, AlreadyStockedController_1.AlreadyStockedController);
 exports.default = tsyringe_1.container;

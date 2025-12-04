@@ -171,6 +171,20 @@ function createTables() {
             yield client.query(`
       CREATE INDEX IF NOT EXISTS idx_shopping_list_user_current ON shopping_list_versions(user_id, is_current);
     `);
+            // Already Stocked (recurring grocery items)
+            yield client.query(`
+      CREATE TABLE IF NOT EXISTS already_stocked (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        stocked_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id)
+      );
+    `);
+            yield client.query(`
+      CREATE INDEX IF NOT EXISTS idx_already_stocked_user ON already_stocked(user_id);
+    `);
             // Recipe activity log
             yield client.query(`
       CREATE TABLE IF NOT EXISTS recipe_activity_log (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./GroceryList.css";
 import { RecipeModel } from "../Models/Models";
 import EditableList from "./EditableList/EditableList";
@@ -41,7 +41,7 @@ const GroceryList: React.FC<GroceryListProps> = ({
   const [recipes, setRecipes] = useState<RecipeModel[]>([]);
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saveTimer, setSaveTimer] = useState<number | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
 
   // Fetch backend grocery list version
   const fetchGroceryList = useCallback(async () => {
@@ -100,8 +100,8 @@ const GroceryList: React.FC<GroceryListProps> = ({
     if (loading) return; // don't persist during initial load
 
     // Debounce rapid changes to avoid spamming the server
-    if (saveTimer) {
-      window.clearTimeout(saveTimer);
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
     }
 
     const timerId = window.setTimeout(async () => {
@@ -127,8 +127,7 @@ const GroceryList: React.FC<GroceryListProps> = ({
         console.error("Failed to persist grocery list changes:", err);
       }
     }, 500); // 500ms debounce
-
-    setSaveTimer(timerId);
+    saveTimerRef.current = timerId;
 
     // Cleanup if list changes again quickly
     return () => {
@@ -149,6 +148,60 @@ const GroceryList: React.FC<GroceryListProps> = ({
       window.removeEventListener("groceryListUpdated", handleGroceryListUpdate);
     };
   }, [fetchGroceryList]);
+
+  // Listen for already stocked items to be added to grocery list
+  useEffect(() => {
+    const handleAddAlreadyStockedToGrocery = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const stockedItems = customEvent.detail;
+      if (Array.isArray(stockedItems)) {
+        // Add each already stocked item to listItems
+        const newItems = stockedItems.map(
+          (item: { name: string; quantity: number; unit: string }) => ({
+            id: Date.now() + Math.random(),
+            quantity: item.quantity,
+            unit: item.unit,
+            listItem: item.name,
+            isDone: false,
+            toTransfer: false,
+          })
+        );
+
+        // Merge with existing list items
+        setListItems((prevItems) => {
+          const merged = [...prevItems];
+          newItems.forEach((newItem) => {
+            const existingIndex = merged.findIndex(
+              (item) =>
+                item.listItem.toLowerCase() === newItem.listItem.toLowerCase()
+            );
+            if (existingIndex >= 0) {
+              if (merged[existingIndex].unit === newItem.unit) {
+                merged[existingIndex].quantity += newItem.quantity;
+              } else {
+                merged.push(newItem);
+              }
+            } else {
+              merged.push(newItem);
+            }
+          });
+          return merged;
+        });
+      }
+    };
+
+    window.addEventListener(
+      "addAlreadyStockedToGrocery",
+      handleAddAlreadyStockedToGrocery
+    );
+
+    return () => {
+      window.removeEventListener(
+        "addAlreadyStockedToGrocery",
+        handleAddAlreadyStockedToGrocery
+      );
+    };
+  }, []);
 
   //Fetch Backend Recipes
   useEffect(() => {
@@ -222,6 +275,8 @@ const GroceryList: React.FC<GroceryListProps> = ({
 			})
 		}
 	} */
+  // Intentional deps: we avoid including listItems to prevent feedback loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const updateGroceryList = async () => {
       if (loading) return; // Wait for initial grocery list to load
