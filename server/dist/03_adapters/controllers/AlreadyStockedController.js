@@ -82,8 +82,8 @@ let AlreadyStockedController = class AlreadyStockedController {
 exports.AlreadyStockedController = AlreadyStockedController;
 exports.AlreadyStockedController = AlreadyStockedController = __decorate([
     (0, tsyringe_1.injectable)(),
-    __param(0, (0, tsyringe_1.inject)("GetAlreadyStocked")),
-    __param(1, (0, tsyringe_1.inject)("UpdateAlreadyStocked")),
+    __param(0, (0, tsyringe_1.inject)(GetAlreadyStocked_1.GetAlreadyStocked)),
+    __param(1, (0, tsyringe_1.inject)(UpdateAlreadyStocked_1.UpdateAlreadyStocked)),
     __metadata("design:paramtypes", [GetAlreadyStocked_1.GetAlreadyStocked,
         UpdateAlreadyStocked_1.UpdateAlreadyStocked])
 ], AlreadyStockedController);

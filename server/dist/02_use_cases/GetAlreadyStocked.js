@@ -37,6 +37,6 @@ let GetAlreadyStocked = class GetAlreadyStocked {
 exports.GetAlreadyStocked = GetAlreadyStocked;
 exports.GetAlreadyStocked = GetAlreadyStocked = __decorate([
     (0, tsyringe_1.injectable)(),
-    __param(0, (0, tsyringe_1.inject)("AlreadyStockedRepository")),
+    __param(0, (0, tsyringe_1.inject)(AlreadyStockedRepository_1.AlreadyStockedRepository)),
     __metadata("design:paramtypes", [AlreadyStockedRepository_1.AlreadyStockedRepository])
 ], GetAlreadyStocked);
