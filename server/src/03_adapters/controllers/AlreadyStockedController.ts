@@ -7,9 +7,9 @@ import { StockedItem } from "../../01_entities/AlreadyStocked";
 @injectable()
 export class AlreadyStockedController {
   constructor(
-    @inject("GetAlreadyStocked")
+    @inject(GetAlreadyStocked)
     private getAlreadyStockedUseCase: GetAlreadyStocked,
-    @inject("UpdateAlreadyStocked")
+    @inject(UpdateAlreadyStocked)
     private updateAlreadyStockedUseCase: UpdateAlreadyStocked
   ) {}
 
