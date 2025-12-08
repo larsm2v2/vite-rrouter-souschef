@@ -1,149 +1,159 @@
 import React, { useState, useEffect } from "react";
-import { RecipeModel } from "../../Models/Models";
+import { RecipeModel } from "../../../types";
 import { useNavigate } from "react-router-dom";
 import "./RecipeIndexSidebar.css";
 
 interface RecipeIndexSidebarProps {
-  recipe: RecipeModel;
-  recipesIndex?: RecipeModel[];
+	recipe: RecipeModel;
+	recipesIndex?: RecipeModel[];
 }
 
 const RecipeIndexSidebar: React.FC<RecipeIndexSidebarProps> = ({
-  recipe,
-  recipesIndex = [],
+	recipe,
+	recipesIndex = [],
 }) => {
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<string>("ingredients");
+	const navigate = useNavigate();
+	const [activeSection, setActiveSection] = useState<string>("ingredients");
 
-  // Track which section is in viewport
-  useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: "-100px 0px -66%",
-      threshold: 0,
-    };
+	// Track which section is in viewport
+	useEffect(() => {
+		const observerOptions = {
+			root: null,
+			rootMargin: "-100px 0px -66%",
+			threshold: 0,
+		};
 
-    const observerCallback: IntersectionObserverCallback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    };
+		const observerCallback: IntersectionObserverCallback = (entries) => {
+			entries.forEach((entry) => {
+				if (entry.isIntersecting) {
+					setActiveSection(entry.target.id);
+				}
+			});
+		};
 
-    const observer = new IntersectionObserver(
-      observerCallback,
-      observerOptions
-    );
+		const observer = new IntersectionObserver(
+			observerCallback,
+			observerOptions
+		);
 
-    // Observe all major sections
-    const sections = ["ingredients", "instructions", "notes"];
-    sections.forEach((sectionId) => {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        observer.observe(element);
-      }
-    });
+		// Observe all major sections
+		const sections = ["ingredients", "instructions", "notes"];
+		sections.forEach((sectionId) => {
+			const element = document.getElementById(sectionId);
+			if (element) {
+				observer.observe(element);
+			}
+		});
 
-    return () => {
-      sections.forEach((sectionId) => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          observer.unobserve(element);
-        }
-      });
-    };
-  }, [recipe]);
+		return () => {
+			sections.forEach((sectionId) => {
+				const element = document.getElementById(sectionId);
+				if (element) {
+					observer.unobserve(element);
+				}
+			});
+		};
+	}, [recipe]);
 
-  // Group recipes by meal type
-  const recipesByMealType = recipesIndex.reduce((acc, r) => {
-    if (r.id === recipe.id) return acc; // Exclude current recipe
-    const mealType = r.meal_type || "Other";
-    if (!acc[mealType]) {
-      acc[mealType] = [];
-    }
-    acc[mealType].push(r);
-    return acc;
-  }, {} as Record<string, RecipeModel[]>);
+	// Group recipes by meal type
+	const recipesByMealType = recipesIndex.reduce((acc, r) => {
+		if (r.id === recipe.id) return acc; // Exclude current recipe
+		const mealType = r.meal_type || "Other";
+		if (!acc[mealType]) {
+			acc[mealType] = [];
+		}
+		acc[mealType].push(r);
+		return acc;
+	}, {} as Record<string, RecipeModel[]>);
 
-  const handleRecipeClick = (recipeId: string) => {
-    navigate(`/recipes/${recipeId}`);
-  };
+	const handleRecipeClick = (recipeId: string) => {
+		navigate(`/recipes/${recipeId}`);
+	};
 
-  const handleNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    sectionId: string
-  ) => {
-    e.preventDefault();
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
+	const handleNavClick = (
+		e: React.MouseEvent<HTMLAnchorElement>,
+		sectionId: string
+	) => {
+		e.preventDefault();
+		const element = document.getElementById(sectionId);
+		if (element) {
+			element.scrollIntoView({ behavior: "smooth", block: "start" });
+		}
+	};
 
-  return (
-    <div className="recipe-index-inner">
-      {/* In-page navigation */}
-      <nav className="in-page-nav" aria-label="Recipe sections">
-            <h3>On This Page</h3>
-            <ul>
-              <li>
-                <a
-                  href="#ingredients"
-                  onClick={(e) => handleNavClick(e, "ingredients")}
-                  className={activeSection === "ingredients" ? "active" : ""}
-                >
-                  Ingredients
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#instructions"
-                  onClick={(e) => handleNavClick(e, "instructions")}
-                  className={activeSection === "instructions" ? "active" : ""}
-                >
-                  Instructions
-                </a>
-              </li>
-              {recipe.notes && recipe.notes.length > 0 && (
-                <li>
-                  <a
-                    href="#notes"
-                    onClick={(e) => handleNavClick(e, "notes")}
-                    className={activeSection === "notes" ? "active" : ""}
-                  >
-                    Notes
-                  </a>
-                </li>
-              )}
-            </ul>
-          </nav>
+	return (
+		<div className="recipe-index-inner">
+			{/* In-page navigation */}
+			<nav className="in-page-nav" aria-label="Recipe sections">
+				<h3>On This Page</h3>
+				<ul>
+					<li>
+						<a
+							href="#ingredients"
+							onClick={(e) => handleNavClick(e, "ingredients")}
+							className={
+								activeSection === "ingredients" ? "active" : ""
+							}
+						>
+							Ingredients
+						</a>
+					</li>
+					<li>
+						<a
+							href="#instructions"
+							onClick={(e) => handleNavClick(e, "instructions")}
+							className={
+								activeSection === "instructions" ? "active" : ""
+							}
+						>
+							Instructions
+						</a>
+					</li>
+					{recipe.notes && recipe.notes.length > 0 && (
+						<li>
+							<a
+								href="#notes"
+								onClick={(e) => handleNavClick(e, "notes")}
+								className={
+									activeSection === "notes" ? "active" : ""
+								}
+							>
+								Notes
+							</a>
+						</li>
+					)}
+				</ul>
+			</nav>
 
-          {/* Recipe index */}
-          {recipesIndex.length > 1 && (
-            <nav className="recipe-index" aria-label="Other recipes">
-              <h3>Other Recipes</h3>
-              {Object.entries(recipesByMealType).map(([mealType, recipes]) => (
-                <div key={mealType} className="recipe-group">
-                  <h4>{mealType}</h4>
-                  <ul>
-                    {recipes.map((r) => (
-                      <li key={r.id}>
-                        <button
-                          onClick={() => handleRecipeClick(r.id)}
-                          className="recipe-link"
-                        >
-                          {r.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-            ))}
-          </nav>
-        )}
-      </div>
-  );
+			{/* Recipe index */}
+			{recipesIndex.length > 1 && (
+				<nav className="recipe-index" aria-label="Other recipes">
+					<h3>Other Recipes</h3>
+					{Object.entries(recipesByMealType).map(
+						([mealType, recipes]) => (
+							<div key={mealType} className="recipe-group">
+								<h4>{mealType}</h4>
+								<ul>
+									{recipes.map((r) => (
+										<li key={r.id}>
+											<button
+												onClick={() =>
+													handleRecipeClick(r.id)
+												}
+												className="recipe-link"
+											>
+												{r.name}
+											</button>
+										</li>
+									))}
+								</ul>
+							</div>
+						)
+					)}
+				</nav>
+			)}
+		</div>
+	);
 };
 
 export default RecipeIndexSidebar;
