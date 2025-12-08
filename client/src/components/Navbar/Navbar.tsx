@@ -8,14 +8,14 @@ import "../Sidebar/Sidebar.css";
 interface NavbarProps {
 	sidebarToggled: boolean;
 	setSidebarToggled: React.Dispatch<React.SetStateAction<boolean>>;
-	setActiveContent?: React.Dispatch<
-		React.SetStateAction<"recipes" | "sousChef">
-	>;
 	setRecipeToDisplay?: React.Dispatch<
 		React.SetStateAction<RecipeModel | null>
 	>;
 	searchQuery?: string;
 	setSearchQuery?: React.Dispatch<React.SetStateAction<string>>;
+	setActiveContent?: React.Dispatch<
+		React.SetStateAction<"recipes" | "sousChef">
+	>;
 	displayName?: string;
 }
 
@@ -24,6 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({
 	setSidebarToggled,
 	displayName,
 	searchQuery: searchQueryProp,
+	setActiveContent,
 	setSearchQuery,
 }) => {
 	// Toggle handler is provided by parent via setSidebarToggled; helper removed to avoid unused function
@@ -55,6 +56,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
 	const doSearch = (q: string) => {
 		if (setSearchQuery) setSearchQuery(q);
+		if (setActiveContent) setActiveContent("recipes");
 		// ensure we navigate to the canonical recipes page
 		navigate("/recipes");
 	};
