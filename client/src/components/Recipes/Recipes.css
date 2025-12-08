@@ -8,6 +8,37 @@
   align-items: flex-start;
 }
 
+/* search/filter controls above the index */
+.recipes-filter {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.recipes-filter input[type="text"], .recipes-filter .search-input {
+  padding: 10px 14px;
+  border-radius: 999px; /* pill */
+  border: 1px solid rgba(0,0,0,0.08);
+  min-width: 220px;
+  outline: none;
+}
+.recipes-filter input[type="text"]:focus {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+.recipes-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--primary-color);
+}
+.recipes-filter input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+}
+
 .recipes-container h2 {
   margin: 24px 0 16px 0;
   width: 100%;
