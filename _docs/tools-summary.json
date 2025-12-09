@@ -1,0 +1,120 @@
+{
+	"repo": "vite-rrouter-souschef",
+	"summary": "Monorepo for a recipe / OCR / sous-chef app with a React SPA client, TypeScript Express server, and a small recipe-cleaning microservice.",
+	"services": [
+		{
+			"name": "client",
+			"path": "client/",
+			"purpose": "SPA (web app) - main user interface, contains PKCE/OAuth flows, recipes UI, Grocery list UI and OCR frontend",
+			"language": "TypeScript (React)",
+			"frameworks_libraries": [
+				"React 19",
+				"Vite",
+				"React Router",
+				"Axios",
+				"tesseract.js",
+				"Playwright for E2E"
+			],
+			"styles": "CSS modules and top-level styles (client/src/components/** and src/index.css)",
+			"testing": ["Playwright (e2e)"],
+			"linting": ["ESLint"],
+			"key_scripts": {
+				"dev": "vite",
+				"build": "tsc -b && vite build",
+				"lint": "eslint .",
+				"e2e": "playwright test"
+			},
+			"notes": [
+				"Uses PKCE + Google OAuth helper flows",
+				"Contains OCR client code using tesseract.js",
+				"Deploys to Firebase Hosting in CI in production flows (mentions firebase-tools)"
+			]
+		},
+		{
+			"name": "server",
+			"path": "server/",
+			"purpose": "Production backend API, auth, DB migrations, DI and business logic",
+			"language": "TypeScript (Node.js)",
+			"frameworks_libraries": [
+				"Express",
+				"TypeORM",
+				"tsyringe (DI)",
+				"Passport + OpenID/Google PKCE",
+				"Postgres client (pg)",
+				"Google Cloud libs (pubsub, secret-manager, generative-ai)",
+				"Helmet/CORS/express-rate-limit"
+			],
+			"dev_tools": [
+				"ts-node (dev)",
+				"tsc (build)",
+				"Jest + supertest (tests)",
+				"cross-env"
+			],
+			"key_scripts": {
+				"dev": "ts-node src/06_app/main.ts",
+				"build": "tsc",
+				"start": "node dist/06_app/main.js",
+				"test": "jest",
+				"migrate": "ts-node src/db-migration.ts"
+			},
+			"storage_database": "Postgres (via TypeORM/pg)",
+			"notes": [
+				"Implements layered Clean Architecture (01_entities -> 06_app)",
+				"Uses DI and reflect-metadata",
+				"Has OCR worker built as separate process and can run migrations"
+			]
+		},
+		{
+			"name": "clean-recipe-service",
+			"path": "clean-recipe-service/",
+			"purpose": "Small microservice for recipe normalization / canonicalization (used by server + OCR worker)",
+			"language": "TypeScript (Node.js)",
+			"frameworks_libraries": [
+				"Express",
+				"Sharp (image handling)",
+				"CORS"
+			],
+			"testing": ["Jest"],
+			"key_scripts": {
+				"dev": "ts-node src/index.ts",
+				"build": "tsc",
+				"start": "node dist/index.js"
+			},
+			"notes": [
+				"Provides canonicalization and synonym maps (see src/synonyms.ts)"
+			]
+		}
+	],
+	"dev_infrastructure": {
+		"containers": "Docker + cloudbuild.yaml in some components",
+		"ci": "CI references in repo (server tests expect clean-recipe-service to run in CI). There are GitHub Actions for server and E2E flows in project documentation.",
+		"deployment": [
+			"Firebase Hosting for client",
+			"Cloud Run / Docker for server in some deployment docs"
+		],
+		"secrets": "Uses Google Secret Manager in server and has helper scripts for secret uploads",
+		"observability_and_misc": [
+			"Uses console logging, some health endpoints, and custom eventing patterns (eg. groceryListUpdated)"
+		]
+	},
+	"languages": ["TypeScript", "JavaScript", "CSS"],
+	"testing": ["Jest (unit/integration)", "Playwright (E2E)", "supertest"],
+	"build_systems_and_tools": [
+		"Vite (client)",
+		"tsc (build)",
+		"ts-node (dev)",
+		"npm scripts"
+	],
+	"libraries_of_interest": [
+		"react",
+		"react-router",
+		"axios",
+		"tesseract.js",
+		"typescript",
+		"typeorm",
+		"tsyringe",
+		"passport",
+		"openid-client",
+		"@google/generative-ai"
+	]
+}

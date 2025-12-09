@@ -17,9 +17,15 @@ const RecipeIndexSidebar: React.FC<RecipeIndexSidebarProps> = ({
 
 	// Track which section is in viewport
 	useEffect(() => {
+		// Read configured header height so the observer accounts for the sticky navbar
+		const headerRaw = getComputedStyle(document.documentElement).getPropertyValue(
+			"--header-height"
+		);
+		const headerPx = headerRaw ? parseInt(headerRaw.trim().replace("px", ""), 10) : 80;
 		const observerOptions = {
 			root: null,
-			rootMargin: "-100px 0px -66%",
+			// offset the top by the header height so the 'active' section matches visible content
+			rootMargin: `-${headerPx + 12}px 0px -66%`,
 			threshold: 0,
 		};
 
@@ -77,6 +83,7 @@ const RecipeIndexSidebar: React.FC<RecipeIndexSidebarProps> = ({
 		e.preventDefault();
 		const element = document.getElementById(sectionId);
 		if (element) {
+			// prefer native scroll-margin-top set on the section for correct offset
 			element.scrollIntoView({ behavior: "smooth", block: "start" });
 		}
 	};

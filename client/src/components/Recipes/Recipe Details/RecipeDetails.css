@@ -1,127 +1,132 @@
 /* Recipe content styling */
 .recipe-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 1rem;
 }
 
 /* Recipe title */
 .recipe-content h2 {
-  margin: 0 0 1rem 0;
+	margin: 0 0 1rem 0;
 }
 
 /* Recipe actions row - horizontal layout below title */
 .recipe-actions-row {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	margin-bottom: 1.5rem;
 }
 
 /* Base recipe action button styles */
 .recipe-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: white;
-  color: #333;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 1rem;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	background: white;
+	color: #333;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
 }
 
 .recipe-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .recipe-action-btn:active {
-  transform: translateY(0);
+	transform: translateY(0);
 }
 
 .recipe-action-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
 }
 
 .recipe-action-btn svg {
-  width: 20px;
-  height: 20px;
+	width: 20px;
+	height: 20px;
 }
 
 /* Favorite button specific styles */
 .favorite-btn {
-  border-color: #ff6b9d;
-  color: #ff6b9d;
+	border-color: #ff6b9d;
+	color: #ff6b9d;
 }
 
 .favorite-btn:hover {
-  background: #fff0f5;
-  border-color: #ff4081;
+	background: #fff0f5;
+	border-color: #ff4081;
 }
 
 .favorite-btn.active {
-  background: #ff6b9d;
-  color: white;
-  border-color: #ff6b9d;
+	background: #ff6b9d;
+	color: white;
+	border-color: #ff6b9d;
 }
 
 .favorite-btn.active:hover {
-  background: #ff4081;
-  border-color: #ff4081;
+	background: #ff4081;
+	border-color: #ff4081;
 }
 
 /* Add to grocery list button specific styles */
 .add-to-list-btn {
-  border-color: #4caf50;
-  color: #4caf50;
+	border-color: #4caf50;
+	color: #4caf50;
 }
 
 .add-to-list-btn:hover {
-  background: #f1f8f4;
-  border-color: #45a049;
+	background: #f1f8f4;
+	border-color: #45a049;
 }
 
 .add-to-list-btn:disabled {
-  border-color: #ccc;
-  color: #999;
+	border-color: #ccc;
+	color: #999;
 }
 
 /* Selected recipe button specific styles */
 .selected-recipe-btn {
-  border-color: #2196f3;
-  color: #2196f3;
+	border-color: #2196f3;
+	color: #2196f3;
 }
 
 .selected-recipe-btn:hover {
-  background: #e3f2fd;
-  border-color: #1976d2;
+	background: #e3f2fd;
+	border-color: #1976d2;
 }
 
 .selected-recipe-btn.active {
-  background: #2196f3;
-  color: white;
-  border-color: #2196f3;
+	background: #2196f3;
+	color: white;
+	border-color: #2196f3;
 }
 
 .selected-recipe-btn.active:hover {
-  background: #1976d2;
-  border-color: #1976d2;
+	background: #1976d2;
+	border-color: #1976d2;
 }
 
 /* Responsive behavior */
 @media (max-width: 640px) {
-  .recipe-actions-row {
-    flex-direction: column;
-  }
+	.recipe-actions-row {
+		flex-direction: column;
+	}
 
-  .recipe-action-btn {
-    width: 100%;
-    justify-content: center;
-  }
+	.recipe-action-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* Make in-page anchor targets visible below the sticky header */
+section[id] {
+	scroll-margin-top: calc(var(--header-height, 80px) + 12px);
 }
