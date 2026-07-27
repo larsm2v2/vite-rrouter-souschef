@@ -134,7 +134,7 @@
 }
 
 .app-main {
-  padding: 20px;
+  padding: 20px 3.5rem 20px 20px; /* right pad clears the fixed right-sidebar tab */
   /* allow the main area to shrink inside the grid and scroll when content overflows */
   min-height: 0;
   overflow: auto;
@@ -163,7 +163,7 @@
   }
 
   .app-main {
-    padding: 12px;
+    padding: 12px; /* right tab goes full-screen on mobile — no side offset needed */
   }
 
   .sidebar-toggle-tab.left-toggle .toggle-full {
@@ -174,8 +174,16 @@
     display: block;
   }
 
+  /* When sidebar is open on mobile it covers 100% width; left:100% would push
+     the tab off-screen. Pin it inside the overlay at the top-right instead. */
   .app-body.sidebar-open .sidebar-toggle-tab.left-toggle {
-    left: 100%;
+    left: auto;
+    right: 0.75rem;
+    top: 0.75rem;
+    transform: none;
+    writing-mode: horizontal-tb;
+    border-radius: 8px;
+    z-index: 202;
   }
 
   /* Right index sidebar narrows to 300px at tablet; position tab accordingly */
