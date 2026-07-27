@@ -16,12 +16,12 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 420px;
-  padding: 2vw;
+  padding: 1.5rem;
 }
 
 .logo-container {
   text-align: center;
-  margin-bottom: 1vw;
+  margin-bottom: 0.75rem;
 }
 
 .logo-container h1 {
@@ -34,7 +34,7 @@
   display: flex;
   flex-direction: column;
   text-align: center;
-  margin-bottom: 1.5vw;
+  margin-bottom: 1.25rem;
 }
 
 .header h2 {
@@ -50,14 +50,14 @@
 .oauth-providers {
   display: flex;
   flex-direction: column;
-  gap: 1vw;
+  gap: 0.75rem;
 }
 
 .provider-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75vw 1vw;
+  padding: 0.75rem 1rem;
   border-radius: 4px;
   border: 1px solid #ddd;
   background-color: white;
@@ -88,7 +88,7 @@ input {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 1.5vw 0;
+  margin: 1.5rem 0;
   color: #666;
 }
 
@@ -106,7 +106,7 @@ input {
 
 .footer {
   text-align: center;
-  margin-top: 1.5vw;
+  margin-top: 1.25rem;
   font-size: 0.9rem;
   color: #666;
 }
@@ -123,9 +123,9 @@ input {
 .error-message {
   background-color: #ffebee;
   color: #d32f2f;
-  padding: 0.75vw;
+  padding: 0.75rem;
   border-radius: 4px;
-  margin-bottom: 1vw;
+  margin-bottom: 0.75rem;
   font-size: 0.9rem;
   text-align: center;
 }
@@ -133,7 +133,7 @@ input {
 /* New styles for forms */
 .auth-tabs {
   display: flex;
-  margin-bottom: 1.5vw;
+  margin-bottom: 1.25rem;
   border-bottom: 1px solid #ddd;
 }
 
@@ -141,12 +141,14 @@ input {
   flex: 1;
   background: none;
   border: none;
-  padding: 0.75vw 0;
+  padding: 0.75rem 0;
   font-size: 1rem;
   font-weight: 500;
   color: #666;
   cursor: pointer;
-  transition: color 0.2s, border-bottom 0.2s;
+  transition:
+    color 0.2s,
+    border-bottom 0.2s;
 }
 
 .tab-button.active {
@@ -157,14 +159,14 @@ input {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1vw;
-  margin-bottom: 1.5vw;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5vw;
+  gap: 0.5rem;
 }
 
 .form-group label {
@@ -174,7 +176,7 @@ input {
 }
 
 .form-group input {
-  padding: 0.75vw;
+  padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
@@ -187,7 +189,7 @@ input {
 }
 
 .submit-button {
-  padding: 0.75vw;
+  padding: 0.75rem;
   background-color: var(--primary-color);
   color: white;
   border: none;

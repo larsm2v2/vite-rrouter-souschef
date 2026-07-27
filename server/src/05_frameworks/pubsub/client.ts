@@ -1,11 +1,18 @@
 import { PubSub, Topic } from "@google-cloud/pubsub";
 
 const projectId = process.env.GCP_PROJECT_ID || "souschef4me";
+const pubsubEnabled = process.env.PUBSUB_ENABLED !== "false";
 let pubsub: PubSub | null = null;
 
 let ocrTopic: Topic | null = null;
 
 async function getOcrTopic(): Promise<Topic> {
+  if (!pubsubEnabled) {
+    throw new Error(
+      "Pub/Sub is disabled via PUBSUB_ENABLED=false. Async OCR is unavailable in this environment.",
+    );
+  }
+
   if (!ocrTopic) {
     const topicName = process.env.OCR_JOBS_TOPIC || "ocr-jobs";
     if (!pubsub) {
@@ -23,15 +30,23 @@ async function getOcrTopic(): Promise<Topic> {
       const [exists] = await ocrTopic.exists();
       if (!exists) {
         console.warn(
-          `Pub/Sub topic "${topicName}" does not exist. Creating it...`
+          `Pub/Sub topic "${topicName}" does not exist. Creating it...`,
         );
         await pubsub.createTopic(topicName);
         console.log(`Created Pub/Sub topic: ${topicName}`);
       }
     } catch (err) {
       console.error(`Failed to check/create Pub/Sub topic:`, err);
+      // Tear down the gRPC client so background credential-retry operations
+      // don't fire unhandled rejections after this catch block returns.
+      ocrTopic = null;
+      const clientToClose = pubsub;
+      pubsub = null;
+      clientToClose?.close().catch(() => {
+        // ignore close errors — we're already handling the failure path
+      });
       throw new Error(
-        `Pub/Sub topic "${topicName}" setup failed. Ensure GCP credentials are configured.`
+        `Pub/Sub topic "${topicName}" setup failed. Ensure GCP credentials are configured.`,
       );
     }
   }
@@ -47,7 +62,7 @@ export interface OcrJobMessage {
 }
 
 export async function publishOcrJob(
-  jobData: Omit<OcrJobMessage, "timestamp">
+  jobData: Omit<OcrJobMessage, "timestamp">,
 ): Promise<string> {
   try {
     const topic = await getOcrTopic();
@@ -67,7 +82,7 @@ export async function publishOcrJob(
         jobId: jobData.jobId,
         messageId,
         timestamp: new Date().toISOString(),
-      })
+      }),
     );
 
     return messageId;
@@ -78,7 +93,7 @@ export async function publishOcrJob(
         jobId: jobData.jobId,
         error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
-      })
+      }),
     );
     throw error;
   }
@@ -86,11 +101,20 @@ export async function publishOcrJob(
 
 // Check if Pub/Sub is available (for environments without GCP)
 export async function isPubSubAvailable(): Promise<boolean> {
+  if (!pubsubEnabled) {
+    console.warn(
+      "Pub/Sub is disabled in this environment via PUBSUB_ENABLED=false. Falling back to synchronous processing.",
+    );
+    return false;
+  }
+
   try {
     await getOcrTopic();
     return true;
   } catch (err) {
-    console.warn("Pub/Sub not available, falling back to synchronous processing");
+    console.warn(
+      "Pub/Sub not available, falling back to synchronous processing",
+    );
     return false;
   }
 }

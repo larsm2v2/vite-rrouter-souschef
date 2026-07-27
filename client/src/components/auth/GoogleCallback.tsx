@@ -76,7 +76,7 @@ export default function GoogleCallback() {
 
         // Exchange code + verifier for tokens via backend
         // Match server default (client/.env uses 8000 locally) and other client code
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
         // console.log(
         //   "Exchanging code with server at:",
         //   `${apiUrl}/api/oauth/google/token`

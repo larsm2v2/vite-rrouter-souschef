@@ -41,7 +41,7 @@ async function main() {
     // idempotent schema migrations.
     if (process.env.RUN_MIGRATIONS === "true") {
       console.log(
-        "RUN_MIGRATIONS=true - running migration runner before start"
+        "RUN_MIGRATIONS=true - running migration runner before start",
       );
       try {
         await migrateRunner();
@@ -59,5 +59,26 @@ async function main() {
     process.exit(1);
   }
 }
+
+// Safety net: catch unhandled rejections from background gRPC / Google Auth
+// operations (e.g. credential retries after a failed Pub/Sub availability
+// check) so the server doesn't crash when Pub/Sub is unavailable locally.
+process.on("unhandledRejection", (reason: unknown) => {
+  const msg = reason instanceof Error ? reason.message : String(reason ?? "");
+  // Known non-fatal: Google Application Default Credentials missing locally
+  if (
+    msg.includes("Could not load the default credentials") ||
+    msg.includes("No ADC") ||
+    msg.includes("GOOGLE_APPLICATION_CREDENTIALS")
+  ) {
+    console.warn(
+      "[unhandledRejection] GCP credentials not available (expected in local dev):",
+      msg,
+    );
+    return; // swallow — server should keep running without Pub/Sub
+  }
+  // Re-emit all other unhandled rejections as errors so they are visible
+  console.error("[unhandledRejection] Unexpected rejection:", reason);
+});
 
 main();

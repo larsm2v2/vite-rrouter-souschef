@@ -12,7 +12,7 @@
  * @returns A random string suitable for use as a PKCE code verifier
  */
 export function generateCodeVerifier(): string {
-  // Generate 64 random characters (128 bits of entropy)
+  // Generate 32 random bytes (256 bits of entropy) → 43-char base64url verifier
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
 

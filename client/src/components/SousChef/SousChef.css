@@ -200,7 +200,7 @@ p {
   box-shadow: #072733 0 2px 4px;
   overflow: hidden;
   height: auto;
-  font-size: auto;
+  font-size: 1rem;
 }
 
 .specificContainer input {
