@@ -11,14 +11,14 @@ describe("POST /auth/refresh", () => {
     await db.query("DELETE FROM users WHERE email = $1", [testEmail]);
     await db.query(
       "DELETE FROM refresh_tokens WHERE user_id = (SELECT id FROM users WHERE email = $1)",
-      [testEmail]
+      [testEmail],
     );
   });
 
   it("rotates refresh token and returns new access token", async () => {
     // Register a new user which sets refreshToken cookie
     const registerRes = await request(app)
-      .post("/api/auth/register")
+      .post("/auth/register")
       .send({
         email: testEmail,
         password: testPassword,
@@ -35,12 +35,12 @@ describe("POST /auth/refresh", () => {
       ? setCookieHeader
       : [setCookieHeader].filter(Boolean);
     const cookieHeader = setCookieArray.find((c: string) =>
-      c.startsWith("refreshToken=")
+      c.startsWith("refreshToken="),
     );
     expect(cookieHeader).toBeDefined();
     // Send refresh with cookie
     const refreshRes = await request(app)
-      .post("/api/auth/refresh")
+      .post("/auth/refresh")
       .set("Cookie", cookieHeader)
       .send({});
 

@@ -45,6 +45,7 @@ psql $env:PG_URL -c "SELECT * FROM ocr_jobs LIMIT 1;"
 ```
 
 Or use your existing migration runner:
+
 ```powershell
 npm run migrate  # If integrated into db-migration.ts
 ```
@@ -141,8 +142,9 @@ gcloud run jobs execute ocr-worker-job --region us-central1 --project souschef4m
 ### Option C: Separate Dockerfile for Worker
 
 Create `server/Dockerfile.worker`:
+
 ```dockerfile
-FROM node:20-slim
+FROM node:24-bookworm-slim
 
 # Install Tesseract
 RUN apt-get update && apt-get install -y \
@@ -160,6 +162,7 @@ CMD ["node", "dist/workers/ocr-worker.js"]
 ```
 
 Build and deploy:
+
 ```powershell
 cd c:\Users\Lawrence\Documents\GitHub\vite-rrouter-souschef\server
 
@@ -247,6 +250,7 @@ jsonPayload.type="pubsub-publish-error"
 ### Metrics Dashboard
 
 Create dashboard in GCP Console → Monitoring:
+
 1. Pub/Sub topic publish rate
 2. Subscription backlog size
 3. Worker instance count
@@ -287,11 +291,15 @@ gcloud scheduler jobs create http ocr-cleanup-job `
 ```
 
 Or run as cron job in worker:
+
 ```typescript
 // Add to worker startup
-setInterval(async () => {
-  await ocrJobRepository.deleteOldJobs(30); // Delete jobs > 30 days
-}, 24 * 60 * 60 * 1000); // Run daily
+setInterval(
+  async () => {
+    await ocrJobRepository.deleteOldJobs(30); // Delete jobs > 30 days
+  },
+  24 * 60 * 60 * 1000,
+); // Run daily
 ```
 
 ## Rollback Plan
@@ -339,14 +347,17 @@ psql $env:PG_URL -c "DROP TABLE IF EXISTS ocr_jobs;"
 ## Cost Estimate
 
 **Pub/Sub**:
+
 - 1M jobs/month ≈ 500 MB ≈ **$0.03/month**
 
 **Cloud Run Worker**:
+
 - 1M jobs/month, 5s avg processing = 1,389 vCPU-hours
 - At $0.024/vCPU-hour ≈ **$33/month**
 - Memory (512 MB): $0.003/GiB-hour ≈ **$2/month**
 
 **Database Storage**:
+
 - 1M jobs ≈ 500 MB ≈ **$0.02/month** (Cloud SQL storage)
 
 **Total**: ~$35/month for 1 million OCR jobs
@@ -354,6 +365,7 @@ psql $env:PG_URL -c "DROP TABLE IF EXISTS ocr_jobs;"
 ## Troubleshooting
 
 **Jobs not processing**:
+
 ```powershell
 # Check worker is running
 gcloud run services describe ocr-worker --region us-central1 --project souschef4me
@@ -366,6 +378,7 @@ gcloud run services logs tail ocr-worker --region us-central1 --project souschef
 ```
 
 **Pub/Sub permission errors**:
+
 ```powershell
 # Verify IAM bindings
 gcloud pubsub topics get-iam-policy ocr-jobs --project souschef4me
@@ -373,6 +386,7 @@ gcloud pubsub subscriptions get-iam-policy ocr-worker-sub --project souschef4me
 ```
 
 **Database connection errors**:
+
 ```powershell
 # Test connection from worker
 gcloud run services update ocr-worker `
@@ -397,6 +411,7 @@ gcloud run services update ocr-worker `
 **Phase 2 Complete!** 🎉
 
 You now have:
+
 - ✅ Async OCR processing with Pub/Sub
 - ✅ Scalable background workers
 - ✅ Job status tracking

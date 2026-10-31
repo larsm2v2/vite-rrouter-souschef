@@ -56,6 +56,32 @@ export function generateState(): string {
 }
 
 /**
+ * Resolve the same-origin frontend callback used by both PKCE legs.
+ * A redirect override is only accepted when it points back to this app origin.
+ */
+export function getGoogleRedirectUri(
+  currentOrigin: string,
+  configuredUri?: string,
+): string {
+  const origin = new URL(currentOrigin).origin;
+  const redirectUri = configuredUri?.trim() || `${origin}/auth/callback`;
+  const parsed = new URL(redirectUri);
+
+  if (
+    parsed.origin !== origin ||
+    parsed.pathname !== "/auth/callback" ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(
+      "The Google PKCE redirect URI must be this app's /auth/callback URL",
+    );
+  }
+
+  return parsed.toString();
+}
+
+/**
  * Store PKCE parameters in sessionStorage
  *
  * @param verifier - The code verifier to store

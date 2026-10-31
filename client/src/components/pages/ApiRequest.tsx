@@ -4,9 +4,9 @@ export abstract class ApiRequest<T> {
   headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  data: any;
+  data: unknown;
 
-  constructor(data?: any) {
+  constructor(data?: unknown) {
     this.data = data;
   }
 

@@ -16,7 +16,20 @@ const MainLayout = () => {
 	const [activeContent, setActiveContent] = useState<"recipes" | "sousChef">(
 		"sousChef"
 	);
-	const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]);
+	const [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>(() => {
+		try {
+			const storedSelectedRecipeIds =
+				localStorage.getItem("selectedRecipeIds");
+			const parsedIds: unknown = storedSelectedRecipeIds
+				? JSON.parse(storedSelectedRecipeIds)
+				: [];
+			return Array.isArray(parsedIds)
+				? parsedIds.filter((id): id is string => typeof id === "string")
+				: [];
+		} catch {
+			return [];
+		}
+	});
 	const [recipeToDisplay, setRecipeToDisplay] = useState<RecipeModel | null>(
 		null
 	);
@@ -27,15 +40,6 @@ const MainLayout = () => {
 
 	const openOcr = () => setShowOcrModal(true);
 	const closeOcr = () => setShowOcrModal(false);
-
-	// Load selected recipes from local storage
-	useEffect(() => {
-		const storedSelectedRecipeIds =
-			localStorage.getItem("selectedRecipeIds");
-		if (storedSelectedRecipeIds) {
-			setSelectedRecipeIds(JSON.parse(storedSelectedRecipeIds));
-		}
-	}, []);
 
 	// Save selected recipes to local storage
 	useEffect(() => {
@@ -132,7 +136,18 @@ const MainLayout = () => {
 						focusTrapOptions={{
 							initialFocus: "#App-sidebar",
 							onDeactivate: () => setSidebarToggled(false),
-							clickOutsideDeactivates: true,
+							// Outside clicks (the backdrop, the toggle tab) are handled
+							// explicitly by their own onClick handlers below, each of
+							// which sets sidebarToggled to a single explicit value.
+							// clickOutsideDeactivates must stay false here: if true,
+							// focus-trap's own capture-phase outside-click listener
+							// would race with the toggle tab's onClick handler (which
+							// fires later, in the bubble phase) and could re-open the
+							// sidebar instead of closing it. allowOutsideClick lets
+							// those outside clicks reach their own handlers instead of
+							// being swallowed by the trap.
+							clickOutsideDeactivates: false,
+							allowOutsideClick: () => true,
 						}}
 					>
 						<aside className={`app-sidebar`} id="App-sidebar">

@@ -9,6 +9,7 @@ const router = Router();
 interface TokenExchangeRequest {
   code: string;
   code_verifier: string;
+  redirect_uri?: string;
 }
 
 /**
@@ -21,13 +22,29 @@ interface TokenExchangeRequest {
  */
 router.post("/google/token", async (req: Request, res: Response) => {
   try {
-    const { code, code_verifier } = req.body as TokenExchangeRequest;
+    const {
+      code,
+      code_verifier,
+      redirect_uri: requestedRedirectUri,
+    } = req.body as TokenExchangeRequest;
 
     // Validate request
     if (!code || !code_verifier) {
       return res.status(400).json({
         error:
           "Missing required parameters: code and code_verifier are required",
+      });
+    }
+
+    const configuredRedirectUri =
+      process.env.GOOGLE_PKCE_REDIRECT_URI ||
+      `${(process.env.CLIENT_URL || "http://localhost:5173").replace(/\/+$/, "")}/auth/callback`;
+    if (
+      requestedRedirectUri &&
+      requestedRedirectUri !== configuredRedirectUri
+    ) {
+      return res.status(400).json({
+        error: "PKCE redirect URI does not match server configuration",
       });
     }
 
@@ -51,9 +68,7 @@ router.post("/google/token", async (req: Request, res: Response) => {
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         code,
         code_verifier, // Client-generated PKCE verifier
-        redirect_uri:
-          process.env.GOOGLE_CALLBACK_URL ||
-          `${process.env.CLIENT_URL}/auth/callback`,
+        redirect_uri: configuredRedirectUri,
         grant_type: "authorization_code",
       }),
     });
@@ -76,7 +91,7 @@ router.post("/google/token", async (req: Request, res: Response) => {
         headers: {
           Authorization: `Bearer ${tokens.access_token}`,
         },
-      }
+      },
     );
 
     if (!userInfoResponse.ok) {
@@ -94,7 +109,7 @@ router.post("/google/token", async (req: Request, res: Response) => {
       `SELECT id, google_sub, email, display_name 
        FROM users 
        WHERE google_sub = $1`,
-      [userInfo.sub]
+      [userInfo.sub],
     );
 
     user = userResult.rows[0];
@@ -123,14 +138,14 @@ router.post("/google/token", async (req: Request, res: Response) => {
           tokens.access_token ? encryptToken(tokens.access_token) : null,
           tokens.refresh_token ? encryptToken(tokens.refresh_token) : null,
           tokenExpiry.toISOString(),
-        ]
+        ],
       );
 
       const newUserResult = await db.query(
         `SELECT id, email, display_name 
          FROM users 
          WHERE id = $1`,
-        [insertResult.rows[0].id]
+        [insertResult.rows[0].id],
       );
 
       user = newUserResult.rows[0];
@@ -154,7 +169,7 @@ router.post("/google/token", async (req: Request, res: Response) => {
           userInfo.picture,
           userInfo.name,
           user.id,
-        ]
+        ],
       );
     }
 
@@ -162,12 +177,12 @@ router.post("/google/token", async (req: Request, res: Response) => {
     const accessToken = generateAccessToken(
       user.id,
       user.email,
-      user.display_name
+      user.display_name,
     );
     const refreshToken = await generateRefreshToken(
       user.id,
       user.email,
-      user.display_name
+      user.display_name,
     );
 
     // Set refresh token as HTTP-only cookie

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Frontend Audit Handoff</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17333d;
+        --muted: #526a72;
+        --paper: #f4f7f5;
+        --surface: #fff;
+        --line: #c9d6d4;
+        --accent: #176f68;
+        --fixed: #17634e;
+        --open: #8a5318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          16px/1.55 "Segoe UI",
+          sans-serif;
+      }
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 40px auto;
+      }
+      header {
+        border-bottom: 3px solid var(--accent);
+        padding-bottom: 20px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+      }
+      h2 {
+        margin: 32px 0 12px;
+        font-size: 21px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .meta {
+        color: var(--muted);
+      }
+      .summary {
+        margin-top: 20px;
+        padding: 16px 18px;
+        border-left: 4px solid var(--accent);
+        background: var(--surface);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        background: var(--surface);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+      }
+      th,
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #e7efed;
+        font-size: 14px;
+      }
+      td:first-child {
+        white-space: nowrap;
+        font-weight: 700;
+      }
+      .status {
+        color: var(--fixed);
+        font-weight: 650;
+      }
+      ul {
+        padding-left: 22px;
+      }
+      code {
+        font-family: Consolas, monospace;
+      }
+      footer {
+        margin-top: 30px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+      }
+      @media (max-width: 600px) {
+        main {
+          width: min(100% - 24px, 1120px);
+          margin: 24px auto;
+        }
+        h1 {
+          font-size: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Frontend Audit Handoff</h1>
+        <p class="meta">
+          Date: 2026-10-31 · Scope: React/Vite client, auth and recipe flows,
+          grocery sidebar, URL import, lint/build, Playwright desktop and mobile
+          Chromium, Node runtime migration.
+        </p>
+      </header>
+
+      <section class="summary" aria-label="Audit summary">
+        <strong>Disposition:</strong> All actionable findings discovered in this
+        pass were fixed. Three non-blocking lint warnings, untested
+        Firefox/WebKit browsers, and one incomplete full Docker image build
+        remain.
+      </section>
+
+      <h2>Findings</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Severity</th>
+              <th>Finding</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>FE-01</td>
+              <td>High</td>
+              <td>
+                Selected recipe IDs started empty, then a mount effect could
+                overwrite the persisted local-storage selection before hydration
+                completed in Strict Mode.
+              </td>
+              <td class="status">
+                Fixed: synchronously hydrate and validate the state initializer
+                in <code>MainLayout.tsx</code>.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-02</td>
+              <td>High</td>
+              <td>
+                Every selected recipe was merged into the already-persisted
+                grocery list on reload. Playwright reproduced a quantity of 3
+                becoming 6; the effect also captured stale list state.
+              </td>
+              <td class="status">
+                Fixed: process newly selected IDs only after hydration and merge
+                using functional state updates. Regression test added.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-03</td>
+              <td>Medium</td>
+              <td>
+                Grocery edit/delete/done actions were clickable spans without
+                keyboard semantics, labels, or focus indication.
+              </td>
+              <td class="status">
+                Fixed: labeled buttons, focus styling, and keyboard regression
+                test.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-04</td>
+              <td>High</td>
+              <td>
+                Console diagnostics exposed OAuth state/session storage, refresh
+                response tokens, Axios headers, and private recipe/OCR content.
+              </td>
+              <td class="status">
+                Fixed: remove payload logs or retain only sanitized
+                labels/statuses across auth and user-content flows.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-05</td>
+              <td>Medium</td>
+              <td>
+                Protected-route return state was lost when Google OAuth left the
+                SPA for a full-page redirect.
+              </td>
+              <td class="status">
+                Fixed: validated same-origin session-storage destination and
+                stable post-login target; browser coverage added.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-06</td>
+              <td>Medium</td>
+              <td>
+                Lint errors included JSX in a <code>.js</code> asset, explicit
+                <code>any</code> in OCR/API request code, and redundant catch
+                handling.
+              </td>
+              <td class="status">
+                Fixed: removed the unreferenced malformed file, typed request
+                data, and removed unsafe casts.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-07</td>
+              <td>Feature</td>
+              <td>Grocery items had no direct Google Keep export.</td>
+              <td class="status">
+                Implemented: copy unchecked items as normalized one-per-line
+                text with toast feedback; Playwright covered.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-08</td>
+              <td>Feature</td>
+              <td>
+                The client had no protected shared-recipe preview and accept
+                journey.
+              </td>
+              <td class="status">
+                Implemented: share action, preview route, return handling, and
+                accept flow; Playwright covered with API stubs.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-09</td>
+              <td>Feature/Security</td>
+              <td>
+                OCR import had no URL source or server-side public HTML/JSON-LD
+                parser.
+              </td>
+              <td class="status">
+                Implemented: URL tab, reusable editable preview,
+                authenticated/rate-limited endpoint, schema.org Recipe parser,
+                DNS pinning, private-IP rejection, redirect revalidation,
+                8-second deadline, 3 MiB cap, and focused tests.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-10</td>
+              <td>High</td>
+              <td>
+                PKCE used the frontend callback while the server exchange could
+                use the legacy API <code>GOOGLE_CALLBACK_URL</code>, causing a
+                redirect URI mismatch.
+              </td>
+              <td class="status">
+                Fixed by separating
+                <code>GOOGLE_PKCE_REDIRECT_URI</code> and
+                <code>VITE_GOOGLE_PKCE_REDIRECT_URI</code>, and rejecting
+                exchange URI mismatches. The exact frontend callback still must
+                be registered in Google Cloud Console.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Remaining Items</h2>
+      <ul>
+        <li>
+          <code>npm run lint</code> reports three non-blocking Fast Refresh
+          warnings in <code>Models.tsx</code>, <code>Toast.tsx</code>, and
+          <code>AuthContext.tsx</code>.
+        </li>
+        <li>
+          Playwright ran on desktop Chromium and Mobile Chrome: Firefox and
+          WebKit were not run because their pinned browser binaries are absent.
+          An initial all-project run failed at browser launch before application
+          assertions.
+        </li>
+        <li>
+          New share-flow tests stub backend responses; a live client-to-server
+          browser integration was not run in this pass.
+        </li>
+        <li>
+          The clean-recipe-service Dockerfile now uses deterministic
+          <code>npm ci</code>, a strict TypeScript build, and runtime-only OS
+          libraries. Its Node 24 image builds and a container smoke test
+          confirms Sharp 0.32.6 loads. The server Node 24 Docker image also
+          builds and runs.
+        </li>
+        <li>
+          Docker image diagnostics report 15 high findings on the Node server
+          base and 14 on the clean-recipe base; scan/patch work is separate from
+          the Node runtime migration.
+        </li>
+        <li>
+          Firefox/WebKit and a dedicated live client-to-server URL-import
+          browser test remain follow-up coverage.
+        </li>
+      </ul>
+
+      <h2>Runtime Upgrade</h2>
+      <ul>
+        <li>
+          Runtime pins now target Node 24: <code>.nvmrc</code>, all package
+          <code>engines</code>, both service Dockerfiles, and
+          client/server/Playwright GitHub Actions workflows.
+        </li>
+        <li>
+          Server <code>@types/node</code> now targets v24; the deployment-guide
+          Docker sample and server workflow guide were updated.
+        </li>
+        <li>
+          Node 24.22.2 verified server build/tests, client build/lint,
+          microservice build/tests, Sharp loading, and desktop/mobile Chromium
+          E2E.
+        </li>
+      </ul>
+
+      <h2>Verification</h2>
+      <ul>
+        <li>Client lint: zero errors, three warnings.</li>
+        <li>Client production build: passed.</li>
+        <li>
+          Playwright desktop Chromium + Mobile Chrome:
+          <strong>64 passed, 4 skipped</strong> under Node 24.
+        </li>
+        <li>
+          Server: build passed;
+          <strong>19/19 suites, 68/68 tests</strong> passed under Node 24.
+        </li>
+        <li>
+          Clean-recipe-service: TypeScript build and
+          <strong>12/12 tests</strong> passed; Sharp 0.32.6 loaded under Node
+          24.
+        </li>
+        <li>
+          Docker: server image built and reports Node 24.22.2; optimized
+          clean-recipe image built and reports Node 24.22.2 with Sharp 0.32.6.
+        </li>
+        <li>
+          Focused grocery export, persisted-selection, keyboard action, share
+          preview/accept, OAuth callback, PKCE, and URL-import editor checks
+          passed.
+        </li>
+        <li>
+          URL import parser/controller checks cover JSON-LD normalization,
+          unsafe URL rejection, and response shape.
+        </li>
+        <li>
+          Browser output was directed to the system temp directory; no traces or
+          screenshots were added to the repository.
+        </li>
+      </ul>
+
+      <footer>
+        Standalone handoff report for later implementation and review.
+      </footer>
+    </main>
+  </body>
+</html>

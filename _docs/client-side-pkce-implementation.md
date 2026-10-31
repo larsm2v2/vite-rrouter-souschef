@@ -5,7 +5,6 @@
 ### Client-Side Components (Vite React App)
 
 1. **`client/src/utils/pkce.ts`** - PKCE utility functions
-
    - `generateCodeVerifier()` - Creates random PKCE verifier
    - `generateCodeChallenge()` - Hashes verifier with SHA-256
    - `generateState()` - CSRF protection
@@ -14,7 +13,6 @@
    - `buildGoogleAuthUrl()` - Construct OAuth URL
 
 2. **`client/src/components/auth/GoogleLoginButton.tsx`** - Login button
-
    - Generates PKCE parameters in browser
    - Stores verifier in sessionStorage
    - Redirects to Google OAuth
@@ -28,7 +26,6 @@
 ### Backend Components (Cloud Run Express API)
 
 4. **`server/src/05_frameworks/myexpress/routes/oauth-google.routes.ts`** - Token exchange
-
    - **Stateless endpoint**: `/api/oauth/google/token`
    - Receives `{ code, code_verifier }` from client
    - Exchanges with Google (no server storage!)
@@ -93,6 +90,8 @@
 ```bash
 VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 VITE_API_URL=https://souschef-api-pxtqq24yta-uc.a.run.app
+# Optional; when set, must be the same origin as the deployed client.
+VITE_GOOGLE_PKCE_REDIRECT_URI=https://your-frontend-domain.com/auth/callback
 ```
 
 ### Server (Cloud Run environment)
@@ -100,40 +99,43 @@ VITE_API_URL=https://souschef-api-pxtqq24yta-uc.a.run.app
 ```bash
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
-GOOGLE_CALLBACK_URL=https://your-frontend-url.com/auth/callback
 CLIENT_URL=https://your-frontend-url.com
+# Optional explicit PKCE callback. If omitted, uses CLIENT_URL + /auth/callback.
+GOOGLE_PKCE_REDIRECT_URI=https://your-frontend-url.com/auth/callback
+# Keep this for the legacy server-side /auth/google/callback flow.
+GOOGLE_CALLBACK_URL=https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback
 ```
 
 ### Google Cloud Console Updates
 
-**Important:** Update the OAuth redirect URI in Google Cloud Console:
+**Important:** Add the exact frontend callback URI sent by the PKCE flow to the OAuth client’s **Authorized redirect URIs**:
 
-**Old (server-side):**
-
-```
-https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback
-```
-
-**New (client-side):**
+**PKCE frontend callback:**
 
 ```
 https://your-frontend-domain.com/auth/callback
 ```
 
+Add the legacy API callback too if the server-side flow is still enabled:
+
+```
+https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback
+```
+
+For local development, authorize the exact origin you open in the browser, for example `http://localhost:5173/auth/callback` or `http://127.0.0.1:5173/auth/callback`. Google treats these as different redirect URIs. Do not include a trailing slash unless it is also present in the URI sent by the app.
+
 ## Next Steps
 
 1. **Update Google Cloud Console**
-
    - Add frontend callback URL to authorized redirect URIs
    - Keep client ID/secret the same
 
 2. **Set client environment variables**
-
    - Create `client/.env` with VITE_GOOGLE_CLIENT_ID and VITE_API_URL
 
 3. **Update server environment**
-
-   - Set GOOGLE_CALLBACK_URL to frontend URL
+   - Set `CLIENT_URL` to the frontend origin, or set `GOOGLE_PKCE_REDIRECT_URI` to the exact frontend callback.
+   - Keep `GOOGLE_CALLBACK_URL` pointed at the API callback for the legacy server-side flow.
 
 4. **Add route to React Router**
 

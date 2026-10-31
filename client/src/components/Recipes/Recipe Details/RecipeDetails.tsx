@@ -6,347 +6,374 @@ import "../Recipes.css";
 import "../../SousChef/SousChef.css";
 import "./RecipeDetails.css";
 import apiClient from "../../pages/Client";
+import { useToast } from "../../common/Toast";
 
 // Interface for ingredient groups
 interface IngredientGroup {
-	name: string;
-	ingredients: {
-		[subcategory: string]: {
-			id: number;
-			quantity: number;
-			name: string;
-			unit?: string;
-		}[];
-	}; // Assuming consistent ingredient structure
+  name: string;
+  ingredients: {
+    [subcategory: string]: {
+      id: number;
+      quantity: number;
+      name: string;
+      unit?: string;
+    }[];
+  }; // Assuming consistent ingredient structure
 }
 
 interface RecipeDetailsProps {
-	isSelected: boolean;
-	showRecipe?: RecipeModel | null;
-	onSelectedRecipesChange: (recipe: RecipeModel | null) => void;
-	showAddToSelectedRecipes: boolean | null;
-	onFavoriteChange?: (recipeId: string, isFavorite: boolean) => void;
+  isSelected: boolean;
+  showRecipe?: RecipeModel | null;
+  onSelectedRecipesChange: (recipe: RecipeModel | null) => void;
+  showAddToSelectedRecipes: boolean | null;
+  onFavoriteChange?: (recipeId: string, isFavorite: boolean) => void;
 }
 
 const RecipeDetails: React.FC<RecipeDetailsProps> = ({
-	showRecipe,
-	onSelectedRecipesChange,
-	isSelected,
-	showAddToSelectedRecipes,
-	onFavoriteChange,
+  showRecipe,
+  onSelectedRecipesChange,
+  isSelected,
+  showAddToSelectedRecipes,
+  onFavoriteChange,
 }) => {
-	const [isFavorite, setIsFavorite] = useState<boolean>(false);
-	const [isAddingToList, setIsAddingToList] = useState<boolean>(false);
+  const { showToast } = useToast();
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [isAddingToList, setIsAddingToList] = useState<boolean>(false);
+  const [isSharing, setIsSharing] = useState<boolean>(false);
 
-	// Router-aware: allow canonical /recipes/:id usage and support fast-path via Link state
-	const params = useParams<{ id?: string }>();
-	const location = useLocation();
-	const routeStateRecipe = (location.state as { recipe?: RecipeModel })
-		?.recipe;
+  // Router-aware: allow canonical /recipes/:id usage and support fast-path via Link state
+  const params = useParams<{ id?: string }>();
+  const location = useLocation();
+  const routeStateRecipe = (location.state as { recipe?: RecipeModel })?.recipe;
 
-	const { recipe: fetchedRecipe, loading: fetchingRecipe } = useRecipe(
-		params?.id,
-		routeStateRecipe
-	);
+  const { recipe: fetchedRecipe, loading: fetchingRecipe } = useRecipe(
+    params?.id,
+    routeStateRecipe,
+  );
 
-	const activeShowRecipe =
-		showRecipe ?? routeStateRecipe ?? fetchedRecipe ?? null;
+  const activeShowRecipe =
+    showRecipe ?? routeStateRecipe ?? fetchedRecipe ?? null;
 
-	// Initialize favorite state from recipe data
-	useEffect(() => {
-		if (activeShowRecipe) {
-			setIsFavorite(activeShowRecipe.is_favorite || false);
-		}
-	}, [activeShowRecipe]);
+  // Initialize favorite state from recipe data
+  useEffect(() => {
+    if (activeShowRecipe) {
+      setIsFavorite(activeShowRecipe.is_favorite || false);
+    }
+  }, [activeShowRecipe]);
 
-	// Helper function to capitalize headings
-	const capitalizeHeading = (str: string) => {
-		return str
-			.split(" ")
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(" ");
-	};
+  // Helper function to capitalize headings
+  const capitalizeHeading = (str: string) => {
+    return str
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
-	// Function to toggle selection and update parent component
-	const handleCheckboxChange = () => {
-		onSelectedRecipesChange(activeShowRecipe);
-	};
+  // Function to toggle selection and update parent component
+  const handleCheckboxChange = () => {
+    onSelectedRecipesChange(activeShowRecipe);
+  };
 
-	// Toggle favorite status
-	const handleToggleFavorite = async () => {
-		if (!activeShowRecipe) return;
+  // Toggle favorite status
+  const handleToggleFavorite = async () => {
+    if (!activeShowRecipe) return;
 
-		try {
-			const response = await apiClient.patch<{ isFavorite: boolean }>(
-				`/api/recipes/${activeShowRecipe.id}/favorite`
-			);
-			const newFavoriteStatus = response.data.isFavorite;
-			setIsFavorite(newFavoriteStatus);
+    try {
+      const response = await apiClient.patch<{ isFavorite: boolean }>(
+        `/api/recipes/${activeShowRecipe.id}/favorite`,
+      );
+      const newFavoriteStatus = response.data.isFavorite;
+      setIsFavorite(newFavoriteStatus);
 
-			// Update the recipe object itself
-			if (activeShowRecipe) {
-				activeShowRecipe.is_favorite = newFavoriteStatus;
-			}
+      // Update the recipe object itself
+      if (activeShowRecipe) {
+        activeShowRecipe.is_favorite = newFavoriteStatus;
+      }
 
-			// Notify parent component if callback provided
-			if (onFavoriteChange) {
-				onFavoriteChange(activeShowRecipe.id, newFavoriteStatus);
-			}
-		} catch (error) {
-			console.error("Error toggling favorite:", error);
-			alert("Failed to update favorite status");
-		}
-	};
+      // Notify parent component if callback provided
+      if (onFavoriteChange) {
+        onFavoriteChange(activeShowRecipe.id, newFavoriteStatus);
+      }
+    } catch {
+      console.error("Error toggling favorite");
+      showToast("Failed to update favorite status", "error");
+    }
+  };
 
-	// Add all ingredients to grocery list
-	const handleAddToGroceryList = async () => {
-		if (!activeShowRecipe) return;
+  // Add all ingredients to grocery list
+  const handleAddToGroceryList = async () => {
+    if (!activeShowRecipe) return;
 
-		setIsAddingToList(true);
-		try {
-			const response = await apiClient.post<{
-				success: boolean;
-				itemsAdded: number;
-				totalItems: number;
-			}>(`/api/recipes/${activeShowRecipe.id}/add-to-grocery-list`);
+    setIsAddingToList(true);
+    try {
+      const response = await apiClient.post<{
+        success: boolean;
+        itemsAdded: number;
+        totalItems: number;
+      }>(`/api/recipes/${activeShowRecipe.id}/add-to-grocery-list`);
 
-			if (response.data.success) {
-				// Dispatch custom event to notify GroceryList component
-				window.dispatchEvent(new CustomEvent("groceryListUpdated"));
+      if (response.data.success) {
+        // Dispatch custom event to notify GroceryList component
+        window.dispatchEvent(new CustomEvent("groceryListUpdated"));
 
-				alert(
-					`Added ${response.data.itemsAdded} ingredients to your grocery list! Total items: ${response.data.totalItems}`
-				);
-			} else {
-				alert("Failed to add ingredients to grocery list");
-			}
-		} catch (err: unknown) {
-			console.error("Error adding to grocery list:", err);
+        showToast(
+          `Added ${response.data.itemsAdded} ingredients to your grocery list! Total items: ${response.data.totalItems}`,
+          "success",
+        );
+      } else {
+        showToast("Failed to add ingredients to grocery list", "error");
+      }
+    } catch (err: unknown) {
+      console.error("Error adding ingredients to grocery list");
 
-			let errorMsg = "Failed to add ingredients to grocery list";
+      let errorMsg = "Failed to add ingredients to grocery list";
 
-			if (err instanceof Error) {
-				errorMsg = err.message || errorMsg;
-			} else if (typeof err === "object" && err !== null) {
-				const e = err as {
-					response?: { data?: { error?: string } };
-					message?: string;
-				};
-				errorMsg = e?.response?.data?.error ?? e?.message ?? errorMsg;
-			}
+      if (err instanceof Error) {
+        errorMsg = err.message || errorMsg;
+      } else if (typeof err === "object" && err !== null) {
+        const e = err as {
+          response?: { data?: { error?: string } };
+          message?: string;
+        };
+        errorMsg = e?.response?.data?.error ?? e?.message ?? errorMsg;
+      }
 
-			alert(errorMsg);
-		} finally {
-			setIsAddingToList(false);
-		}
-	};
+      showToast(errorMsg, "error");
+    } finally {
+      setIsAddingToList(false);
+    }
+  };
 
-	// 1. Organize Ingredients by Subheading - use backend structure directly
-	const ingredientGroups: IngredientGroup[] | null = activeShowRecipe
-		? Object.entries(activeShowRecipe.ingredients)
-				.map(([name, ingredients]) => {
-					if (Array.isArray(ingredients) && ingredients.length > 0) {
-						return {
-							name,
-							ingredients: {
-								[name]: ingredients,
-							},
-						};
-					}
-					return null;
-				})
-				.filter((group): group is IngredientGroup => group !== null)
-		: null;
+  // Generate (or reuse) a share link for this recipe and copy it to the clipboard
+  const handleShareRecipe = async () => {
+    if (!activeShowRecipe) return;
 
-	if (fetchingRecipe && !activeShowRecipe) {
-		return (
-			<div className="recipe-content">
-				<div className="recipes-container">Loading recipe...</div>
-			</div>
-		);
-	}
+    setIsSharing(true);
+    try {
+      const response = await apiClient.post<{
+        shareToken: string;
+        shareUrl: string;
+      }>(`/api/recipes/${activeShowRecipe.id}/share`);
 
-	return (
-		<div className="recipe-content">
-			{(activeShowRecipe || fetchingRecipe) && ingredientGroups && (
-				<div className="recipes-container">
-					<h2>{capitalizeHeading(activeShowRecipe?.name || "")}</h2>
+      const shareUrl =
+        response.data.shareUrl ||
+        `${window.location.origin}/recipes/shared/${response.data.shareToken}`;
 
-					{/* Action buttons row */}
-					<div className="recipe-actions-row">
-						<button
-							className={`recipe-action-btn favorite-btn ${
-								isFavorite ? "active" : ""
-							}`}
-							onClick={handleToggleFavorite}
-							title={
-								isFavorite
-									? "Remove from favorites"
-									: "Add to favorites"
-							}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 24 24"
-								fill={isFavorite ? "currentColor" : "none"}
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-							</svg>
-							{isFavorite ? "Favorited" : "Favorite"}
-						</button>
+      await navigator.clipboard.writeText(shareUrl);
+      showToast("Link copied!", "success");
+    } catch (err: unknown) {
+      console.error("Error sharing recipe");
 
-						<button
-							className="recipe-action-btn add-to-list-btn"
-							onClick={handleAddToGroceryList}
-							disabled={isAddingToList}
-							title="Add all ingredients to grocery list"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<path d="M9 11l3 3L22 4" />
-								<path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-							</svg>
-							{isAddingToList
-								? "Adding..."
-								: "Add to Grocery List"}
-						</button>
+      let errorMsg = "Failed to create share link";
 
-						{/* Add to Selected Recipes toggle */}
-						{showAddToSelectedRecipes && (
-							<button
-								className={`recipe-action-btn selected-recipe-btn ${
-									isSelected ? "active" : ""
-								}`}
-								onClick={handleCheckboxChange}
-								title={
-									isSelected
-										? "Remove from selected recipes"
-										: "Add to selected recipes"
-								}
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-								>
-									<rect
-										x="3"
-										y="3"
-										width="18"
-										height="18"
-										rx="2"
-										ry="2"
-									/>
-									{isSelected && <path d="M9 12l2 2 4-4" />}
-								</svg>
-								{isSelected
-									? "Selected"
-									: "Add to Selected Recipes"}
-							</button>
-						)}
-					</div>
+      if (err instanceof Error) {
+        errorMsg = err.message || errorMsg;
+      } else if (typeof err === "object" && err !== null) {
+        const e = err as {
+          response?: { data?: { error?: string } };
+          message?: string;
+        };
+        errorMsg = e?.response?.data?.error ?? e?.message ?? errorMsg;
+      }
 
-					{/* 2. Display Other Details (with capitalized headings) */}
-					<div className="recipe-info">
-						<p>
-							<strong>{capitalizeHeading("Cuisine")}:</strong>{" "}
-							{activeShowRecipe?.cuisine}
-						</p>
-						<p>
-							<strong>{capitalizeHeading("Meal Type")}:</strong>{" "}
-							{capitalizeHeading(
-								activeShowRecipe?.meal_type || ""
-							)}
-						</p>
-					</div>
+      showToast(errorMsg, "error");
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
-					{/* 3. Display Ingredients by Subheading (with capitalized headings) */}
-					<section id="ingredients">
-						<h2>{capitalizeHeading("Ingredients")}</h2>
-						{ingredientGroups?.map((group) => (
-							<div className="eachIngredientSet" key={group.name}>
-								<h3 className="eachIngredientSetTitle">
-									{capitalizeHeading(group.name)}
-								</h3>
-								<ul>
-									{/* Access the ingredients array for the specific group */}
-									{Object.values(group.ingredients).flatMap(
-										(ingredientsArray) =>
-											Array.isArray(ingredientsArray) // Check if ingredientsArray is an array
-												? ingredientsArray
-														.filter(
-															(ingredient) =>
-																ingredient.name &&
-																ingredient.quantity
-														)
-														.map((ingredient) => (
-															<li
-																key={
-																	ingredient.id
-																}
-															>
-																{`${
-																	ingredient.quantity
-																} ${
-																	ingredient.unit
-																		? ingredient.unit
-																		: ""
-																} ${
-																	ingredient.name
-																}`}
-															</li>
-														))
-												: []
-									)}
-								</ul>
-							</div>
-						))}
-					</section>
+  // 1. Organize Ingredients by Subheading - use backend structure directly
+  const ingredientGroups: IngredientGroup[] | null = activeShowRecipe
+    ? Object.entries(activeShowRecipe.ingredients)
+        .map(([name, ingredients]) => {
+          if (Array.isArray(ingredients) && ingredients.length > 0) {
+            return {
+              name,
+              ingredients: {
+                [name]: ingredients,
+              },
+            };
+          }
+          return null;
+        })
+        .filter((group): group is IngredientGroup => group !== null)
+    : null;
 
-					{/* 4. Display Instructions (with capitalized heading) */}
-					<section id="instructions">
-						<h2>{capitalizeHeading("Instructions")}</h2>
-						<ol className="instructionSet">
-							{activeShowRecipe?.instructions?.map(
-								(instruction) => (
-									<li
-										className="singleInstructions"
-										key={instruction.number}
-									>
-										{instruction.text}
-									</li>
-								)
-							)}
-						</ol>
-					</section>
+  if (fetchingRecipe && !activeShowRecipe) {
+    return (
+      <div className="recipe-content">
+        <div className="recipes-container">Loading recipe...</div>
+      </div>
+    );
+  }
 
-					{/* 5. Display Notes if available */}
-					{activeShowRecipe?.notes &&
-						activeShowRecipe.notes.length > 0 && (
-							<section id="notes">
-								<h2>{capitalizeHeading("Notes")}</h2>
-								<ul>
-									{activeShowRecipe?.notes?.map(
-										(note, index) => (
-											<li key={index}>{note}</li>
-										)
-									)}
-								</ul>
-							</section>
-						)}
-				</div>
-			)}
-		</div>
-	);
+  return (
+    <div className="recipe-content">
+      {(activeShowRecipe || fetchingRecipe) && ingredientGroups && (
+        <div className="recipes-container">
+          <h2>{capitalizeHeading(activeShowRecipe?.name || "")}</h2>
+
+          {/* Action buttons row */}
+          <div className="recipe-actions-row">
+            <button
+              className={`recipe-action-btn favorite-btn ${
+                isFavorite ? "active" : ""
+              }`}
+              onClick={handleToggleFavorite}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill={isFavorite ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {isFavorite ? "Favorited" : "Favorite"}
+            </button>
+
+            <button
+              className="recipe-action-btn add-to-list-btn"
+              onClick={handleAddToGroceryList}
+              disabled={isAddingToList}
+              title="Add all ingredients to grocery list"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+              {isAddingToList ? "Adding..." : "Add to Grocery List"}
+            </button>
+
+            <button
+              className="recipe-action-btn share-btn"
+              onClick={handleShareRecipe}
+              disabled={isSharing}
+              title="Copy a shareable link to this recipe"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+              {isSharing ? "Sharing..." : "Share"}
+            </button>
+
+            {/* Add to Selected Recipes toggle */}
+            {showAddToSelectedRecipes && (
+              <button
+                className={`recipe-action-btn selected-recipe-btn ${
+                  isSelected ? "active" : ""
+                }`}
+                onClick={handleCheckboxChange}
+                title={
+                  isSelected
+                    ? "Remove from selected recipes"
+                    : "Add to selected recipes"
+                }
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  {isSelected && <path d="M9 12l2 2 4-4" />}
+                </svg>
+                {isSelected ? "Selected" : "Add to Selected Recipes"}
+              </button>
+            )}
+          </div>
+
+          {/* 2. Display Other Details (with capitalized headings) */}
+          <div className="recipe-info">
+            <p>
+              <strong>{capitalizeHeading("Cuisine")}:</strong>{" "}
+              {activeShowRecipe?.cuisine}
+            </p>
+            <p>
+              <strong>{capitalizeHeading("Meal Type")}:</strong>{" "}
+              {capitalizeHeading(activeShowRecipe?.meal_type || "")}
+            </p>
+          </div>
+
+          {/* 3. Display Ingredients by Subheading (with capitalized headings) */}
+          <section id="ingredients">
+            <h2>{capitalizeHeading("Ingredients")}</h2>
+            {ingredientGroups?.map((group) => (
+              <div className="eachIngredientSet" key={group.name}>
+                <h3 className="eachIngredientSetTitle">
+                  {capitalizeHeading(group.name)}
+                </h3>
+                <ul>
+                  {/* Access the ingredients array for the specific group */}
+                  {Object.values(group.ingredients).flatMap(
+                    (ingredientsArray) =>
+                      Array.isArray(ingredientsArray) // Check if ingredientsArray is an array
+                        ? ingredientsArray
+                            .filter(
+                              (ingredient) =>
+                                ingredient.name && ingredient.quantity,
+                            )
+                            .map((ingredient) => (
+                              <li key={ingredient.id}>
+                                {`${ingredient.quantity} ${
+                                  ingredient.unit ? ingredient.unit : ""
+                                } ${ingredient.name}`}
+                              </li>
+                            ))
+                        : [],
+                  )}
+                </ul>
+              </div>
+            ))}
+          </section>
+
+          {/* 4. Display Instructions (with capitalized heading) */}
+          <section id="instructions">
+            <h2>{capitalizeHeading("Instructions")}</h2>
+            <ol className="instructionSet">
+              {activeShowRecipe?.instructions?.map((instruction) => (
+                <li className="singleInstructions" key={instruction.number}>
+                  {instruction.text}
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* 5. Display Notes if available */}
+          {activeShowRecipe?.notes && activeShowRecipe.notes.length > 0 && (
+            <section id="notes">
+              <h2>{capitalizeHeading("Notes")}</h2>
+              <ul>
+                {activeShowRecipe?.notes?.map((note, index) => (
+                  <li key={index}>{note}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default RecipeDetails;

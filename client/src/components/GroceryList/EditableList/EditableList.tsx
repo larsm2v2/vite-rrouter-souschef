@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../InputField/InputField.css";
 import { ListItem } from "../../../types";
 import SingleListItem from "../SingleListItem/SingleListItem";
+import { useToast } from "../../common/Toast";
 
 interface Props {
 	listItems: ListItem[];
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const EditableList: React.FC<Props> = ({ listItems, setListItems }: Props) => {
+	const { showToast } = useToast();
 	// State to manage the new list item being added
 	const [newItem, setNewItem] = useState<ListItem>({
 		id: Date.now(),
@@ -71,7 +73,7 @@ const EditableList: React.FC<Props> = ({ listItems, setListItems }: Props) => {
 			});
 		} else {
 			// Handle invalid input (e.g., show an error message)
-			alert("Please enter a valid quantity and item name.");
+			showToast("Please enter a valid quantity and item name.", "error");
 		}
 	};
 

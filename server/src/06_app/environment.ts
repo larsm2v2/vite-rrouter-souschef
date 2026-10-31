@@ -18,11 +18,16 @@ export function validateEnvironment() {
     }
   });
 
-  // Warn if no encryption key is present - this will break token storage
+  // Missing encryption key silently breaks OAuth token encryption/decryption.
+  // In production this must be a hard failure -- fail fast at boot rather
+  // than letting every OAuth token operation fail unpredictably at runtime.
   if (!process.env.ENCRYPTION_KEY && !process.env.DB_ENCRYPTION_KEY) {
-    console.error(
-      "⚠️ Missing encryption key — OAuth tokens will fail unless ENCRYPTION_KEY or DB_ENCRYPTION_KEY is set"
-    );
+    const message =
+      "Missing encryption key — OAuth tokens will fail unless ENCRYPTION_KEY or DB_ENCRYPTION_KEY is set";
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(message);
+    }
+    console.error(`⚠️ ${message}`);
   }
 
   console.log("✅ Environment variables validated successfully.");

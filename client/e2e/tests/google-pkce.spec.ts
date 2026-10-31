@@ -1,4 +1,23 @@
 import { test, expect } from "@playwright/test";
+import { getGoogleRedirectUri } from "../../src/utils/pkce";
+
+test("uses a same-origin frontend callback URI for PKCE", () => {
+  expect(getGoogleRedirectUri("https://recipes.example.org")).toBe(
+    "https://recipes.example.org/auth/callback",
+  );
+  expect(
+    getGoogleRedirectUri(
+      "https://recipes.example.org",
+      "https://recipes.example.org/auth/callback",
+    ),
+  ).toBe("https://recipes.example.org/auth/callback");
+  expect(() =>
+    getGoogleRedirectUri(
+      "https://recipes.example.org",
+      "https://api.example.org/auth/callback",
+    ),
+  ).toThrow("must be this app's /auth/callback URL");
+});
 
 test("writes PKCE params before redirect", async ({ page }) => {
   // Intercept the Google OAuth navigation and redirect back to /login.
@@ -54,9 +73,6 @@ test("writes PKCE params before redirect", async ({ page }) => {
       { timeout: 8000 },
     )
     .toBeTruthy();
-
-  console.log("PKCE-VERIFIER:", verifier);
-  console.log("OAUTH-STATE:", state);
 
   expect(verifier && state).toBeTruthy();
 });

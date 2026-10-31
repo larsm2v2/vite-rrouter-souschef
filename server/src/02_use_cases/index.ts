@@ -14,3 +14,7 @@ export { LogRecipeActivity } from "./LogRecipeActivity";
 export { GetRecipeActivityLog } from "./GetRecipeActivityLog";
 export { GetAlreadyStocked } from "./GetAlreadyStocked";
 export { UpdateAlreadyStocked } from "./UpdateAlreadyStocked";
+export { GenerateShareToken } from "./GenerateShareToken";
+export { GetRecipeByShareToken } from "./GetRecipeByShareToken";
+export { AcceptSharedRecipe } from "./AcceptSharedRecipe";
+export { ImportRecipeFromUrl } from "./ImportRecipeFromUrl";

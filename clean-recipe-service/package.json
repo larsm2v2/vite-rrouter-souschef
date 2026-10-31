@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Microservice for recipe normalization and ingredient canonicalization",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",

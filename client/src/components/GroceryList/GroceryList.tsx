@@ -4,9 +4,10 @@ import { RecipeModel } from "../../types";
 import EditableList from "./EditableList/EditableList";
 import { ListItem } from "../../types";
 import apiClient from "../pages/Client";
+import { useToast } from "../common/Toast";
 
 interface GroceryListProps {
-	selectedRecipeIds: string[];
+  selectedRecipeIds: string[];
 }
 
 // Fetch recipe by ID (from the imported Recipes.json)
@@ -33,210 +34,219 @@ interface GroceryListProps {
 	return fixedRecipe as RecipeModel
 } */
 const GroceryList: React.FC<GroceryListProps> = ({
-	selectedRecipeIds = [],
+  selectedRecipeIds = [],
 }) => {
-	const [, setRecipeIngredients] = useState<{
-		[recipeId: string]: ListItem[];
-	}>({});
-	const [recipes, setRecipes] = useState<RecipeModel[]>([]);
-	const [listItems, setListItems] = useState<ListItem[]>([]);
-	const [loading, setLoading] = useState(true);
-	const saveTimerRef = useRef<number | null>(null);
+  const { showToast } = useToast();
+  const previousSelectedRecipeIds = useRef([...selectedRecipeIds]);
+  const [recipes, setRecipes] = useState<RecipeModel[]>([]);
+  const [listItems, setListItems] = useState<ListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const saveTimerRef = useRef<number | null>(null);
 
-	// Fetch backend grocery list version
-	const fetchGroceryList = useCallback(async () => {
-		try {
-			const response = await apiClient.get<{
-				id: number;
-				userId: number;
-				version: number;
-				listData: {
-					quantity?: number;
-					unit?: string;
-					name?: string;
-					checked?: boolean;
-				}[];
-				createdAt: string;
-				isCurrent: boolean;
-			}>("/api/grocery-list/version");
+  // Fetch backend grocery list version
+  const fetchGroceryList = useCallback(async () => {
+    try {
+      const response = await apiClient.get<{
+        id: number;
+        userId: number;
+        version: number;
+        listData: {
+          quantity?: number;
+          unit?: string;
+          name?: string;
+          checked?: boolean;
+        }[];
+        createdAt: string;
+        isCurrent: boolean;
+      }>("/api/grocery-list/version");
 
-			if (response.status === 200 && response.data?.listData) {
-				// Convert backend format to ListItem format
-				const backendItems: ListItem[] = response.data.listData.map(
-					(
-						item: {
-							quantity?: number;
-							unit?: string;
-							name?: string;
-							checked?: boolean;
-						},
-						index: number
-					) => ({
-						id: index,
-						quantity: item.quantity || 0,
-						unit: item.unit || "",
-						listItem: item.name || "",
-						isDone: item.checked || false,
-						toTransfer: false,
-					})
-				);
-				setListItems(backendItems);
-			}
-		} catch (error) {
-			console.error("Error fetching grocery list:", error);
-			// Initialize with empty list if fetch fails
-			setListItems([]);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
+      if (response.status === 200 && response.data?.listData) {
+        // Convert backend format to ListItem format
+        const backendItems: ListItem[] = response.data.listData.map(
+          (
+            item: {
+              quantity?: number;
+              unit?: string;
+              name?: string;
+              checked?: boolean;
+            },
+            index: number,
+          ) => ({
+            id: index,
+            quantity: item.quantity || 0,
+            unit: item.unit || "",
+            listItem: item.name || "",
+            isDone: item.checked || false,
+            toTransfer: false,
+          }),
+        );
+        setListItems(backendItems);
+      }
+    } catch {
+      console.error("Error fetching grocery list");
+      // Initialize with empty list if fetch fails
+      setListItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-	useEffect(() => {
-		fetchGroceryList();
-	}, [fetchGroceryList]);
+  const copyForGoogleKeep = async () => {
+    const uncheckedItems = listItems.filter((item) => !item.isDone);
+    if (uncheckedItems.length === 0) {
+      showToast("No unchecked items to copy", "info");
+      return;
+    }
 
-	// Persist grocery list edits/deletions by creating a new backend version
-	useEffect(() => {
-		if (loading) return; // don't persist during initial load
+    const text = uncheckedItems
+      .map((item) =>
+        `${item.quantity || ""} ${item.unit || ""} ${item.listItem}`
+          .replace(/\s+/g, " ")
+          .trim(),
+      )
+      .join("\n");
 
-		// Debounce rapid changes to avoid spamming the server
-		if (saveTimerRef.current) {
-			window.clearTimeout(saveTimerRef.current);
-		}
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`Copied ${uncheckedItems.length} items!`, "success");
+    } catch {
+      console.error("Failed to copy grocery list");
+      showToast("Could not access the clipboard", "error");
+    }
+  };
 
-		const timerId = window.setTimeout(async () => {
-			try {
-				// Prepare payload in backend expected format
-				const payload = {
-					listData: listItems.map((item) => ({
-						name: item.listItem,
-						quantity: item.quantity,
-						unit: item.unit,
-						checked: item.isDone,
-					})),
-				};
+  useEffect(() => {
+    fetchGroceryList();
+  }, [fetchGroceryList]);
 
-				// Create a new shopping list version marked current on the server
-				// Endpoint: POST /api/grocery-list/version
-				const resp = await apiClient.post(
-					"/api/grocery-list/version",
-					payload
-				);
-				if (resp.status >= 200 && resp.status < 300) {
-					// Notify other components to refresh if needed
-					window.dispatchEvent(new Event("groceryListUpdated"));
-				}
-			} catch (err) {
-				console.error("Failed to persist grocery list changes:", err);
-			}
-		}, 500); // 500ms debounce
-		saveTimerRef.current = timerId;
+  // Persist grocery list edits/deletions by creating a new backend version
+  useEffect(() => {
+    if (loading) return; // don't persist during initial load
 
-		// Cleanup if list changes again quickly
-		return () => {
-			window.clearTimeout(timerId);
-		};
-	}, [listItems, loading]);
+    // Debounce rapid changes to avoid spamming the server
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+    }
 
-	// Listen for custom event when grocery list is updated
-	useEffect(() => {
-		const handleGroceryListUpdate = () => {
-			console.log("Grocery list update event received, refreshing...");
-			fetchGroceryList();
-		};
+    const timerId = window.setTimeout(async () => {
+      try {
+        // Prepare payload in backend expected format
+        const payload = {
+          listData: listItems.map((item) => ({
+            name: item.listItem,
+            quantity: item.quantity,
+            unit: item.unit,
+            checked: item.isDone,
+          })),
+        };
 
-		window.addEventListener("groceryListUpdated", handleGroceryListUpdate);
+        // Create a new shopping list version marked current on the server
+        // Endpoint: POST /api/grocery-list/version
+        const resp = await apiClient.post("/api/grocery-list/version", payload);
+        if (resp.status >= 200 && resp.status < 300) {
+          // Notify other components to refresh if needed
+          window.dispatchEvent(new Event("groceryListUpdated"));
+        }
+      } catch {
+        console.error("Failed to persist grocery list changes");
+      }
+    }, 500); // 500ms debounce
+    saveTimerRef.current = timerId;
 
-		return () => {
-			window.removeEventListener(
-				"groceryListUpdated",
-				handleGroceryListUpdate
-			);
-		};
-	}, [fetchGroceryList]);
+    // Cleanup if list changes again quickly
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [listItems, loading]);
 
-	// Listen for already stocked items to be added to grocery list
-	useEffect(() => {
-		const handleAddAlreadyStockedToGrocery = (event: Event) => {
-			const customEvent = event as CustomEvent;
-			const stockedItems = customEvent.detail;
-			if (Array.isArray(stockedItems)) {
-				// Add each already stocked item to listItems
-				const newItems = stockedItems.map(
-					(item: {
-						name: string;
-						quantity: number;
-						unit: string;
-					}) => ({
-						id: Date.now() + Math.random(),
-						quantity: item.quantity,
-						unit: item.unit,
-						listItem: item.name,
-						isDone: false,
-						toTransfer: false,
-					})
-				);
+  // Listen for custom event when grocery list is updated
+  useEffect(() => {
+    const handleGroceryListUpdate = () => {
+      console.log("Grocery list update event received, refreshing...");
+      fetchGroceryList();
+    };
 
-				// Merge with existing list items
-				setListItems((prevItems) => {
-					const merged = [...prevItems];
-					newItems.forEach((newItem) => {
-						const existingIndex = merged.findIndex(
-							(item) =>
-								item.listItem.toLowerCase() ===
-								newItem.listItem.toLowerCase()
-						);
-						if (existingIndex >= 0) {
-							if (merged[existingIndex].unit === newItem.unit) {
-								merged[existingIndex].quantity +=
-									newItem.quantity;
-							} else {
-								merged.push(newItem);
-							}
-						} else {
-							merged.push(newItem);
-						}
-					});
-					return merged;
-				});
-			}
-		};
+    window.addEventListener("groceryListUpdated", handleGroceryListUpdate);
 
-		window.addEventListener(
-			"addAlreadyStockedToGrocery",
-			handleAddAlreadyStockedToGrocery
-		);
+    return () => {
+      window.removeEventListener("groceryListUpdated", handleGroceryListUpdate);
+    };
+  }, [fetchGroceryList]);
 
-		return () => {
-			window.removeEventListener(
-				"addAlreadyStockedToGrocery",
-				handleAddAlreadyStockedToGrocery
-			);
-		};
-	}, []);
+  // Listen for already stocked items to be added to grocery list
+  useEffect(() => {
+    const handleAddAlreadyStockedToGrocery = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const stockedItems = customEvent.detail;
+      if (Array.isArray(stockedItems)) {
+        // Add each already stocked item to listItems
+        const newItems = stockedItems.map(
+          (item: { name: string; quantity: number; unit: string }) => ({
+            id: Date.now() + Math.random(),
+            quantity: item.quantity,
+            unit: item.unit,
+            listItem: item.name,
+            isDone: false,
+            toTransfer: false,
+          }),
+        );
 
-	//Fetch Backend Recipes
-	useEffect(() => {
-		const fetchRecipes = async () => {
-			try {
-				const response = await apiClient.get<RecipeModel[]>(
-					`/api/recipes`
-				);
+        // Merge with existing list items
+        setListItems((prevItems) => {
+          const merged = [...prevItems];
+          newItems.forEach((newItem) => {
+            const existingIndex = merged.findIndex(
+              (item) =>
+                item.listItem.toLowerCase() === newItem.listItem.toLowerCase(),
+            );
+            if (existingIndex >= 0) {
+              if (merged[existingIndex].unit === newItem.unit) {
+                merged[existingIndex].quantity += newItem.quantity;
+              } else {
+                merged.push(newItem);
+              }
+            } else {
+              merged.push(newItem);
+            }
+          });
+          return merged;
+        });
+      }
+    };
 
-				if (response.status === 200) {
-					setRecipes(response.data); // Update recipes state
-				} else {
-					throw new Error("Failed to fetch recipes.");
-				}
-			} catch (error) {
-				console.error("Error fetching recipes:", error);
-			}
-		};
+    window.addEventListener(
+      "addAlreadyStockedToGrocery",
+      handleAddAlreadyStockedToGrocery,
+    );
 
-		fetchRecipes(); // Fetch recipes on component mount
-	}, []);
-	// Helper function to consolidate ingredients
-	/* 	const consolidateIngredients = (
+    return () => {
+      window.removeEventListener(
+        "addAlreadyStockedToGrocery",
+        handleAddAlreadyStockedToGrocery,
+      );
+    };
+  }, []);
+
+  //Fetch Backend Recipes
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const response = await apiClient.get<RecipeModel[]>(`/api/recipes`);
+
+        if (response.status === 200) {
+          setRecipes(response.data); // Update recipes state
+        } else {
+          throw new Error("Failed to fetch recipes.");
+        }
+      } catch {
+        console.error("Error fetching recipes");
+      }
+    };
+
+    fetchRecipes(); // Fetch recipes on component mount
+  }, []);
+  // Helper function to consolidate ingredients
+  /* 	const consolidateIngredients = (
 		listItems: ListItem[],
 		newItems: ListItem[],
 		removingRecipe?: RecipeModel
@@ -273,7 +283,7 @@ const GroceryList: React.FC<GroceryListProps> = ({
 			}, [] as ListItem[])
 			.filter((item) => item.quantity > 0) // Remove items with zero quantity
 	} */
-	/* 	const handleAdd = (e: React.FormEvent) => {
+  /* 	const handleAdd = (e: React.FormEvent) => {
 		e.preventDefault()
 		if (newItem.listItem.trim() !== "") {
 			setListItems((prevItems) =>
@@ -289,90 +299,101 @@ const GroceryList: React.FC<GroceryListProps> = ({
 			})
 		}
 	} */
-	// Intentional deps: we avoid including listItems to prevent feedback loops
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	useEffect(() => {
-		const updateGroceryList = async () => {
-			if (loading) return; // Wait for initial grocery list to load
+  useEffect(() => {
+    if (loading || recipes.length === 0) return;
 
-			const newRecipeIngredients: { [recipeId: string]: ListItem[] } = {};
-			const validRecipeIds = selectedRecipeIds.filter(
-				(recipeId) => recipeId !== null && recipeId !== ""
-			);
-			await Promise.all(
-				validRecipeIds.map(async (recipeId) => {
-					const recipe = recipes.find((r) => r.id === recipeId);
-					if (recipe) {
-						newRecipeIngredients[recipeId] = Object.values(
-							recipe.ingredients
-						)
-							.flat()
-							.map((ingredient) => {
-								// Ingredient names are already stored in canonical form in the database
-								return {
-									id: Date.now() + Math.random(), // Generate a unique ID
-									quantity: ingredient.quantity || 0,
-									unit: ingredient.unit || "",
-									listItem: ingredient.name,
-									isDone: false,
-									toTransfer: false,
-								};
-							});
-					}
-				})
-			);
+    const newlySelectedIds = selectedRecipeIds.filter(
+      (recipeId) =>
+        recipeId && !previousSelectedRecipeIds.current.includes(recipeId),
+    );
+    previousSelectedRecipeIds.current = [...selectedRecipeIds];
+    if (newlySelectedIds.length === 0) return;
 
-			setRecipeIngredients(newRecipeIngredients);
-			const allIngredients = Object.values(newRecipeIngredients).flat();
+    const newIngredients: ListItem[] = [];
+    newlySelectedIds.forEach((recipeId) => {
+      const recipe = recipes.find((item) => item.id === recipeId);
+      if (!recipe) return;
 
-			// Merge selected recipe ingredients with existing grocery list items
-			const mergedList = [...listItems];
+      Object.values(recipe.ingredients)
+        .flat()
+        .forEach((ingredient) => {
+          newIngredients.push({
+            id: Date.now() + Math.random(),
+            quantity: ingredient.quantity || 0,
+            unit: ingredient.unit || "",
+            listItem: ingredient.name,
+            isDone: false,
+            toTransfer: false,
+          });
+        });
+    });
 
-			allIngredients.forEach((ingredient) => {
-				const existingIndex = mergedList.findIndex(
-					(item) =>
-						item.listItem.toLowerCase() ===
-						ingredient.listItem.toLowerCase()
-				);
+    if (newIngredients.length === 0) return;
 
-				if (existingIndex >= 0) {
-					// If item exists and units match, add quantities
-					if (mergedList[existingIndex].unit === ingredient.unit) {
-						mergedList[existingIndex].quantity +=
-							ingredient.quantity;
-					} else {
-						// Different units, add as new item
-						mergedList.push(ingredient);
-					}
-				} else {
-					// New item, add to list
-					mergedList.push(ingredient);
-				}
-			});
+    setListItems((currentItems) => {
+      const mergedList = [...currentItems];
+      newIngredients.forEach((ingredient) => {
+        const existingIndex = mergedList.findIndex(
+          (item) =>
+            item.listItem.toLowerCase() === ingredient.listItem.toLowerCase(),
+        );
 
-			setListItems(mergedList);
-		};
+        if (existingIndex >= 0) {
+          if (mergedList[existingIndex].unit === ingredient.unit) {
+            mergedList[existingIndex] = {
+              ...mergedList[existingIndex],
+              quantity:
+                mergedList[existingIndex].quantity + ingredient.quantity,
+            };
+          } else {
+            mergedList.push(ingredient);
+          }
+        } else {
+          mergedList.push(ingredient);
+        }
+      });
+      return mergedList;
+    });
+  }, [selectedRecipeIds, recipes, loading]);
 
-		updateGroceryList();
-	}, [selectedRecipeIds, recipes, loading]);
-
-	return (
-		<div className="grocerylist-container">
-			<h1 className="grocerylist-title">myGroceryList</h1>
-			{loading ? (
-				<div className="loading">Loading grocery list...</div>
-			) : (
-				<div className="flex-container">
-					<div className="edit-box">
-						<EditableList
-							listItems={listItems}
-							setListItems={setListItems}
-						/>
-					</div>
-				</div>
-			)}
-		</div>
-	);
+  return (
+    <div className="grocerylist-container">
+      <h1 className="grocerylist-title">myGroceryList</h1>
+      {loading ? (
+        <div className="loading">Loading grocery list...</div>
+      ) : (
+        <>
+          <div className="grocery-list-toolbar">
+            <button
+              className="grocery-copy-btn"
+              type="button"
+              onClick={copyForGoogleKeep}
+              disabled={!listItems.some((item) => !item.isDone)}
+              title="Copy unchecked items for Google Keep"
+            >
+              <svg
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="8" y="8" width="13" height="13" rx="2" />
+                <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+              </svg>
+              Copy for Google Keep
+            </button>
+          </div>
+          <div className="flex-container">
+            <div className="edit-box">
+              <EditableList listItems={listItems} setListItems={setListItems} />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 export default GroceryList;

@@ -1,6 +1,7 @@
 import { pool } from "..";
 import { migrateAddProfileFeatures } from "../../../migrations/add_profile_features";
 import { migrateAddRefreshTokens } from "../../../migrations/add_refresh_tokens";
+import { migrateAddShareTokenIndex } from "../../../migrations/add_share_token_index";
 
 export async function migrateRecipeTables() {
   const client = await pool.connect();
@@ -11,6 +12,8 @@ export async function migrateRecipeTables() {
     await migrateAddProfileFeatures();
     // Ensure refresh token allowlist table exists. This migration is idempotent.
     await migrateAddRefreshTokens();
+    // Ensure the recipe share-token lookup index exists. This migration is idempotent.
+    await migrateAddShareTokenIndex();
 
     await client.query("COMMIT");
     console.log("✅ Recipe tables created successfully");

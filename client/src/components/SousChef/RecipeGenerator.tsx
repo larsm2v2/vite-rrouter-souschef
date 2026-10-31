@@ -1,6 +1,7 @@
 import { useState, useImperativeHandle, forwardRef, useEffect } from "react";
 import { preprompt } from "../Models/Prompts";
-import axios from "axios";
+import apiClient from "../pages/Client";
+import { useToast } from "../common/Toast";
 import "./RecipeGenerator.css";
 import FormInput from "../FormInputs/FormInput";
 
@@ -18,6 +19,7 @@ export type PrefillHandle = {
 };
 
 const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
+  const { showToast } = useToast();
   const [cuisine, setCuisine] = useState("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState("");
   const [knownIngredients, setKnownIngredients] = useState("");
@@ -42,7 +44,7 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
             (arr || []).forEach((it: Record<string, unknown>) => {
               if (it && it.name) ingLines.push(String(it.name));
             });
-          }
+          },
         );
         if (ingLines.length) setKnownIngredients(ingLines.join("\n"));
       } catch {
@@ -67,7 +69,7 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
             (arr || []).forEach((it: Record<string, unknown>) => {
               if (it && it.name) ingLines.push(String(it.name));
             });
-          }
+          },
         );
         if (ingLines.length) setKnownIngredients(ingLines.join("\n"));
       } catch {
@@ -90,17 +92,17 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
         knownIngredients,
         avoidIngredients,
         otherInfo,
-        ""
+        "",
       );
 
-      const response = await axios.post("/recipes/generate", {
+      const response = await apiClient.post("/api/recipes/generate", {
         message: prompt,
         history: [],
       });
 
       // Extract JSON from the response text
       const jsonMatch = (response.data as string).match(
-        /```json\s*([\s\S]*?)\s*```/
+        /```json\s*([\s\S]*?)\s*```/,
       );
       if (jsonMatch && jsonMatch[1]) {
         try {
@@ -111,12 +113,12 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
         }
       } else {
         setError(
-          "No valid recipe format found in the response. Please try again."
+          "No valid recipe format found in the response. Please try again.",
         );
       }
-    } catch (err) {
+    } catch {
       setError("Failed to generate recipe. Please try again later.");
-      console.error(err);
+      console.error("Recipe generation request failed");
     } finally {
       setLoading(false);
     }
@@ -127,13 +129,13 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
 
     try {
       setLoading(true);
-      await axios.post("/recipes", generatedRecipe);
-      alert("Recipe saved successfully!");
+      await apiClient.post("/api/recipes", generatedRecipe);
+      showToast("Recipe saved successfully!", "success");
       // Optionally navigate to view the saved recipe
       // navigate(`/recipes/${response.data.id}`);
-    } catch (err) {
+    } catch {
       setError("Failed to save recipe");
-      console.error(err);
+      console.error("Recipe save request failed");
     } finally {
       setLoading(false);
     }
@@ -229,8 +231,7 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
                     {String(serving?.cook_time ?? "")}
                   </p>
                   <p>
-                    <strong>Servings:</strong>{" "}
-                    {String(serving?.servings ?? "")}
+                    <strong>Servings:</strong> {String(serving?.servings ?? "")}
                   </p>
                 </>
               );
@@ -254,7 +255,7 @@ const RecipeGenerator = forwardRef<PrefillHandle | null>((_props, ref) => {
                   })}
                 </ul>
               </div>
-            )
+            ),
           )}
 
           <h4>Instructions</h4>

@@ -47,7 +47,7 @@ router.get(
       WHERE r.user_id = $1
       ORDER BY r.created_at DESC
     `,
-        [(req.user as User).id]
+        [(req.user as User).id],
       );
 
       // Return snake_case format matching frontend interfaces
@@ -90,7 +90,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Get a specific recipe by ID
@@ -125,7 +125,7 @@ router.get(
       LEFT JOIN recipe_nutrition rnut ON r.id = rnut.recipe_id
       WHERE r.id = $1 AND r.user_id = $2
     `,
-        [req.params.id, (req.user as User).id]
+        [req.params.id, (req.user as User).id],
       );
 
       if (result.rows.length === 0) {
@@ -171,7 +171,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Generate a recipe with Gemini AI
@@ -202,26 +202,35 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Save a recipe to the database (delegate to controller)
 import "../../../04_factories/di";
 import { container } from "tsyringe";
 import { RecipeController } from "../../../03_adapters/controllers/RecipeController";
+import { RecipeImportController } from "../../../03_adapters/controllers/RecipeImportController";
+import { asyncHandler } from "../utils/asyncHandler";
+import { recipeImportLimiter, shareTokenLimiter } from "../gateway";
 
 const recipeController = container.resolve(RecipeController);
+const recipeImportController = container.resolve(RecipeImportController);
 
 router.post(
   "/",
   authenticateJWT,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      await recipeController.create(req, res);
-    } catch (err) {
-      next(err);
-    }
-  }
+  asyncHandler(async (req: Request, res: Response) => {
+    await recipeController.create(req, res);
+  }),
+);
+
+router.post(
+  "/import-url",
+  authenticateJWT,
+  recipeImportLimiter,
+  asyncHandler(async (req: Request, res: Response) => {
+    await recipeImportController.importUrl(req, res);
+  }),
 );
 
 // Toggle favorite status for a recipe
@@ -236,7 +245,7 @@ router.patch(
       // Get current favorite status
       const currentStatus = await db.query(
         `SELECT is_favorite FROM recipes WHERE id = $1 AND user_id = $2`,
-        [recipeId, userId]
+        [recipeId, userId],
       );
 
       if (currentStatus.rows.length === 0) {
@@ -248,14 +257,14 @@ router.patch(
 
       await db.query(
         `UPDATE recipes SET is_favorite = $1 WHERE id = $2 AND user_id = $3`,
-        [newFavoriteStatus, recipeId, userId]
+        [newFavoriteStatus, recipeId, userId],
       );
 
       res.json({ isFavorite: newFavoriteStatus });
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 // Add all recipe ingredients to grocery list
@@ -279,7 +288,7 @@ router.post(
         FROM recipes r
         WHERE r.id = $1 AND r.user_id = $2
       `,
-        [recipeId, userId]
+        [recipeId, userId],
       );
 
       if (recipeResult.rows.length === 0) {
@@ -299,7 +308,7 @@ router.post(
          WHERE user_id = $1 
          ORDER BY created_at DESC 
          LIMIT 1`,
-        [userId]
+        [userId],
       );
 
       let currentItems: any[] = [];
@@ -349,14 +358,14 @@ router.post(
       // Mark all existing versions as not current
       await db.query(
         `UPDATE shopping_list_versions SET is_current = false WHERE user_id = $1`,
-        [userId]
+        [userId],
       );
 
       // Create a new grocery list version as the current one
       await db.query(
         `INSERT INTO shopping_list_versions (user_id, version, list_data, is_current, created_at) 
          VALUES ($1, $2, $3, true, NOW())`,
-        [userId, 1, JSON.stringify(mergedItems)]
+        [userId, 1, JSON.stringify(mergedItems)],
       );
 
       res.json({
@@ -367,7 +376,38 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  },
+);
+
+// Generate (or reuse) a share link for a recipe. Owner-only.
+router.post(
+  "/:id/share",
+  authenticateJWT,
+  asyncHandler(async (req: Request, res: Response) => {
+    await recipeController.shareRecipe(req, res);
+  }),
+);
+
+// Read-only preview of a shared recipe by its share token. Rate limited to
+// blunt token brute-forcing.
+router.get(
+  "/shared/:token",
+  authenticateJWT,
+  shareTokenLimiter,
+  asyncHandler(async (req: Request, res: Response) => {
+    await recipeController.getSharedRecipe(req, res);
+  }),
+);
+
+// Copy a shared recipe into the current user's own recipes. Rate limited to
+// blunt token brute-forcing.
+router.post(
+  "/shared/:token/accept",
+  authenticateJWT,
+  shareTokenLimiter,
+  asyncHandler(async (req: Request, res: Response) => {
+    await recipeController.acceptSharedRecipe(req, res);
+  }),
 );
 
 export default router;

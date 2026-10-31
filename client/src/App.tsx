@@ -7,33 +7,38 @@ import GoogleCallback from "./components/auth/GoogleCallback";
 import SousChefPage from "./components/pages/SousChefPage";
 import RecipesPage from "./components/pages/RecipesPage";
 import RecipeDetailPage from "./components/pages/RecipeDetailPage";
+import SharedRecipePreview from "./components/pages/SharedRecipePreview";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 
 function App() {
-	return (
-		<Routes>
-			<Route path="/" element={<Login />} />
-			<Route path="/login" element={<Login />} />
-			<Route path="/auth/callback" element={<GoogleCallback />} />
+  return (
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/auth/callback" element={<GoogleCallback />} />
 
-			{/* Dev login removed */}
+      {/* Dev login removed */}
 
-			{/* Protected routes with shared layout */}
-			<Route
-				element={
-					<ProtectedRoute>
-						<MainLayout />
-					</ProtectedRoute>
-				}
-			>
-				<Route path="/profile" element={<Profile />} />
-				<Route path="/sous-chef" element={<SousChefPage />} />
-				<Route path="/recipes" element={<RecipesPage />} />
-				<Route path="/recipes/:id" element={<RecipeDetailPage />} />
-			</Route>
-		</Routes>
-	);
+      {/* Protected routes with shared layout */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/sous-chef" element={<SousChefPage />} />
+        <Route path="/recipes" element={<RecipesPage />} />
+        <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+        <Route
+          path="/recipes/shared/:token"
+          element={<SharedRecipePreview />}
+        />
+      </Route>
+    </Routes>
+  );
 }
 
 export default App;

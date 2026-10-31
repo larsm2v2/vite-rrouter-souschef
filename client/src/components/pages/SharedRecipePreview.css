@@ -1,0 +1,32 @@
+/* Banner shown at the top of a read-only shared-recipe preview */
+.shared-recipe-banner {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background: #f3e5f5;
+  color: #7b1fa2;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* "Add to My Recipes" button on the shared recipe preview */
+.accept-share-btn {
+  border-color: #9c27b0;
+  color: #9c27b0;
+}
+
+.accept-share-btn:hover {
+  background: #f5e9f7;
+  border-color: #7b1fa2;
+}
+
+.accept-share-btn:disabled {
+  border-color: #ccc;
+  color: #999;
+}
+
+.shared-recipe-error {
+  color: #c62828;
+  margin-bottom: 1rem;
+}

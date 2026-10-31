@@ -31,8 +31,10 @@ https://accounts.google.com/signin/oauth/error?authError=...
 
 ### 2. **Environment Configuration**
 
-- **Production (.env):** `GOOGLE_CALLBACK_URL=https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
-- **Local (.env.local):** `GOOGLE_CALLBACK_URL=http://localhost:8080/auth/google/callback`
+- **Production legacy server flow:** `GOOGLE_CALLBACK_URL=https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
+- **Production PKCE flow:** `GOOGLE_PKCE_REDIRECT_URI=https://<frontend-origin>/auth/callback` (optional; defaults to `CLIENT_URL/auth/callback`)
+- **Local legacy server flow:** `GOOGLE_CALLBACK_URL=http://localhost:8080/auth/google/callback`
+- **Local PKCE flow:** `GOOGLE_PKCE_REDIRECT_URI=http://localhost:5173/auth/callback` (or `http://127.0.0.1:5173/auth/callback` if that is the browser origin)
 - **Status:** ✅ Correct
 
 ### 3. **Google Secret Manager**
@@ -45,10 +47,16 @@ https://accounts.google.com/signin/oauth/error?authError=...
 
 ### 4. **Google Cloud Console OAuth Credentials**
 
-- Verified both redirect URIs are registered:
+- Register the exact frontend callback URI for the client-side PKCE flow, and the API callback only if the legacy server-side flow is still enabled:
+  - `https://<frontend-origin>/auth/callback`
   - ✅ `https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
-  - ✅ `http://localhost:8080/auth/google/callback`
-- **Status:** ✅ Verified
+  - `http://localhost:5173/auth/callback` (local PKCE)
+  - `http://localhost:8080/auth/google/callback` (legacy local flow)
+- **Status:** Verify the frontend callback URI against the exact URI shown in Google's `redirect_uri_mismatch` error.
+
+### Redirect URI Mismatch
+
+Google checks the complete `redirect_uri` value, including scheme, hostname, port, and path. The current PKCE client requests `${window.location.origin}/auth/callback`; add that exact URI under the OAuth client’s **Authorized redirect URIs**. For example, `http://localhost:5173/auth/callback` and `http://127.0.0.1:5173/auth/callback` are distinct values. The client’s optional `VITE_GOOGLE_PKCE_REDIRECT_URI` and server’s optional `GOOGLE_PKCE_REDIRECT_URI` must match this same URI. `GOOGLE_CALLBACK_URL` remains reserved for the legacy API callback.
 
 ### 5. **Entry Point Configuration**
 
@@ -74,18 +82,15 @@ Google is rejecting the OAuth flow due to "secure response handling" policy viol
 ### Possible Causes
 
 1. **Response Type Issue**
-
    - We're using authorization code flow but may not be handling it correctly
    - passport-google-oauth20 should handle this automatically
 
 2. **State Parameter**
-
    - Removed `state: true` from strategy config (requires sessions)
    - passport-google-oauth20 may not be generating state parameter without sessions
    - **Action Needed:** Verify if state is being sent
 
 3. **Token Handling in URL Fragment**
-
    - Currently redirecting with: `${clientUrl}/auth/callback#access_token=${accessToken}`
    - Google's policy may not allow tokens in URL fragments for authorization code flow
    - **Action Needed:** Consider alternative token delivery method
@@ -102,18 +107,15 @@ Google is rejecting the OAuth flow due to "secure response handling" policy viol
 ### High Priority
 
 - [ ] **Verify OAuth Flow Type**
-
   - Check if we're using implicit flow vs authorization code flow
   - Google may require authorization code flow with PKCE
 
 - [ ] **Check OAuth App Configuration in Google Console**
-
   - Application type (Web application, SPA, etc.)
   - Is the app verified or in testing mode?
   - Are there any warnings or requirements shown?
 
 - [ ] **Review Token Response Handling**
-
   - Current: Redirect with token in URL fragment
   - Alternative: Use authorization code, exchange for token server-side
   - Consider: POST message or secure cookie-only approach
@@ -125,13 +127,11 @@ Google is rejecting the OAuth flow due to "secure response handling" policy viol
 ### Medium Priority
 
 - [ ] **Session vs Sessionless**
-
   - Current: Sessions disabled (`session: false` in passport.authenticate)
   - Consider: Enable minimal session support just for OAuth state
   - Alternative: Implement custom state store (similar to old CookieStore)
 
 - [ ] **PKCE Implementation**
-
   - Research if passport-google-oauth20 supports PKCE
   - Consider alternative library if needed (e.g., `openid-client`)
 
@@ -142,7 +142,6 @@ Google is rejecting the OAuth flow due to "secure response handling" policy viol
 ### Low Priority
 
 - [ ] **Browser Cache**
-
   - Clear browser cookies/cache
   - Try incognito mode
 
@@ -165,7 +164,7 @@ new GoogleStrategy(
     scope: ["openid", "profile", "email"],
     // NO state parameter - may be the issue
   },
-  callback
+  callback,
 );
 ```
 
@@ -177,7 +176,7 @@ router.get(
   "/google",
   passport.authenticate("google", {
     prompt: "select_account",
-  })
+  }),
 );
 
 // Callback
@@ -190,7 +189,7 @@ router.get(
   async (req, res) => {
     // Redirect with token in fragment
     res.redirect(`${clientUrl}/auth/callback#access_token=${accessToken}`);
-  }
+  },
 );
 ```
 
@@ -199,17 +198,14 @@ router.get(
 ## 🎯 Next Steps
 
 1. **Check Google Console OAuth App Status**
-
    - Verify app is in correct mode (testing vs production)
    - Check for any compliance warnings
 
 2. **Review Google OAuth 2.0 Policy**
-
    - Link: https://developers.google.com/identity/protocols/oauth2/policies#secure-response-handling
    - Identify specific policy violation
 
 3. **Consider Alternative Approaches**
-
    - Option A: Enable sessions for OAuth state management
    - Option B: Implement custom secure state handling
    - Option C: Switch to a different OAuth library that supports PKCE

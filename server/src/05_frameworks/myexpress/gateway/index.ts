@@ -6,6 +6,7 @@ import {
   requestIdMiddleware,
   loggingMiddleware,
   errorLoggingMiddleware,
+  errorResponseMiddleware,
 } from "./logging";
 import { corsMiddleware } from "./cors";
 import { apiLimiter } from "./rateLimit";
@@ -27,9 +28,16 @@ export {
   requestIdMiddleware,
   loggingMiddleware,
   errorLoggingMiddleware,
+  errorResponseMiddleware,
 } from "./logging";
 export { corsMiddleware } from "./cors";
-export { apiLimiter, authLimiter, ocrLimiter } from "./rateLimit";
+export {
+  apiLimiter,
+  authLimiter,
+  ocrLimiter,
+  shareTokenLimiter,
+  recipeImportLimiter,
+} from "./rateLimit";
 export {
   callWithCircuitBreaker,
   CircuitBreakerError,

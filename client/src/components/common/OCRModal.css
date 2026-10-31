@@ -24,8 +24,9 @@
 .preview-json {
   white-space: pre-wrap;
   text-align: left;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
-    "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New",
+    monospace;
   font-size: 0.85rem;
 }
 .preview-pretty {
@@ -141,6 +142,39 @@
 }
 .ocr-text-actions {
   margin-top: 8px;
+}
+.ocr-url-import {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+.ocr-url-import input {
+  min-width: 0;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #aebfbd;
+  border-radius: 6px;
+  font: inherit;
+}
+.ocr-url-import input:focus-visible {
+  outline: 2px solid var(--tertiary-color);
+  outline-offset: 2px;
+}
+.ocr-url-import button {
+  justify-self: start;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--primary-color);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.ocr-url-import button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .ocr-gallery-tab {
   max-height: 480px;

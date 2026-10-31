@@ -26,3 +26,22 @@ export const ocrLimiter = rateLimit({
   legacyHeaders: false,
   message: "Too many OCR requests, please try again later",
 });
+
+// Rate limiter for recipe share-token lookup/accept endpoints, to blunt
+// brute-forcing of share tokens.
+export const shareTokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit each IP to 30 share-token requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many share link requests, please try again later",
+});
+
+// Bound outbound HTML fetches used by recipe URL import.
+export const recipeImportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many recipe imports, please try again later",
+});

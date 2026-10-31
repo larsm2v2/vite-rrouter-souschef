@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../components/pages/Client";
 import type { RecipeModel } from "../types";
 
 export default function useRecipe(id?: string, initial?: RecipeModel) {
@@ -19,9 +19,8 @@ export default function useRecipe(id?: string, initial?: RecipeModel) {
 		setLoading(true);
 		setError(null);
 
-		const base = import.meta.env.VITE_API_URL ?? "";
-		axios
-			.get<RecipeModel>(`${base}/api/recipes/${id}`)
+		apiClient
+			.get<RecipeModel>(`/api/recipes/${id}`)
 			.then((resp) => {
 				if (!cancelled) {
 					setRecipe(resp.data);

@@ -1,4 +1,4 @@
-FROM node:18-bullseye AS build
+FROM node:24-bookworm-slim AS build
 WORKDIR /app
 
 # Install dependencies
@@ -12,7 +12,7 @@ RUN npm install --no-audit --no-fund --unsafe-perm
 COPY . .
 RUN npm run build
 
-FROM node:18-bullseye AS runtime
+FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 
 # Copy package files and install production dependencies

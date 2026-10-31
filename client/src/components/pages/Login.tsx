@@ -1,15 +1,62 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import apiClient from "./Client";
+import apiClient, { setInMemoryAccessToken } from "./Client";
 import GoogleLoginButton from "../auth/GoogleLoginButton";
 import "./Login.css";
 
+const POST_LOGIN_REDIRECT_KEY = "postLoginRedirect";
+
+function safeInternalPath(path: string | null | undefined): string | null {
+  if (
+    !path ||
+    !path.startsWith("/") ||
+    path.startsWith("//") ||
+    path.includes("\\")
+  ) {
+    return null;
+  }
+  return path;
+}
+
+function getPostLoginRedirectTarget(state: unknown): string {
+  const from = (
+    state as {
+      from?: { pathname?: string; search?: string; hash?: string };
+    } | null
+  )?.from;
+  const stateTarget = from?.pathname
+    ? safeInternalPath(`${from.pathname}${from.search || ""}${from.hash || ""}`)
+    : null;
+  const storedTarget = safeInternalPath(
+    sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY),
+  );
+
+  return stateTarget || storedTarget || "/profile";
+}
+
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [postLoginTarget] = useState(() =>
+    getPostLoginRedirectTarget(location.state),
+  );
+
+  // React Router state is lost when Google OAuth leaves the SPA. Persist the
+  // protected route before the user chooses a sign-in method.
+  useEffect(() => {
+    const from = (
+      location.state as {
+        from?: { pathname?: string };
+      } | null
+    )?.from;
+    if (from?.pathname && postLoginTarget !== "/profile") {
+      sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, postLoginTarget);
+    }
+  }, [location.state, postLoginTarget]);
 
   // Form state
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -33,16 +80,18 @@ const Login = () => {
           login(accessToken, user);
           // Clear hash from URL
           window.history.replaceState(null, "", window.location.pathname);
-          navigate("/profile", { replace: true });
-        } catch (err) {
-          console.error("Failed to parse OAuth response:", err);
+          sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+          navigate(postLoginTarget, { replace: true });
+        } catch {
+          console.error("Failed to parse OAuth response");
           setError("Authentication failed. Please try again.");
         }
       } else if (accessToken && !userStr) {
         // If server returned tokens but not user data, try to fetch the user profile
         try {
-          // Persist the access token immediately so apiClient will include it
-          localStorage.setItem("accessToken", accessToken);
+          // Set the token in memory (never localStorage) so apiClient will
+          // include it on the /auth/check request below.
+          setInMemoryAccessToken(accessToken);
 
           const resp = await apiClient.get<{
             authenticated: boolean;
@@ -52,19 +101,20 @@ const Login = () => {
           if (resp.data && resp.data.authenticated && resp.data.user) {
             login(accessToken, resp.data.user);
             window.history.replaceState(null, "", window.location.pathname);
-            navigate("/profile", { replace: true });
+            sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+            navigate(postLoginTarget, { replace: true });
           } else {
             setError("Authentication failed. Please try again.");
           }
-        } catch (err) {
-          console.error("Failed to fetch user after OAuth:", err);
+        } catch {
+          console.error("Failed to fetch user after OAuth");
           setError("Authentication failed. Please try again.");
         }
       }
     };
 
     handleOAuth();
-  }, [login, navigate]);
+  }, [login, navigate, postLoginTarget]);
 
   // Check URL parameters for error
   useEffect(() => {
@@ -74,7 +124,7 @@ const Login = () => {
       setError(
         errorParam === "auth_failed"
           ? "Authentication failed. Please try again."
-          : `Login error: ${errorParam}`
+          : `Login error: ${errorParam}`,
       );
     }
   }, []);
@@ -82,11 +132,12 @@ const Login = () => {
   // Check if user is already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/profile", { replace: true });
+      sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+      navigate(postLoginTarget, { replace: true });
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, postLoginTarget]);
 
   const handleLocalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,11 +168,10 @@ const Login = () => {
           user: { id: string; email: string; display_name: string };
         };
         login(accessToken, user);
-        navigate("/profile");
+        sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+        navigate(postLoginTarget);
       }
     } catch (error: unknown) {
-      console.error("Login failed:", error);
-
       const axiosError = error as {
         response?: {
           data?: { message?: string };
@@ -134,18 +184,16 @@ const Login = () => {
 
       // More detailed error reporting
       if (axiosError.response) {
-        console.error("Response data:", axiosError.response.data);
-        console.error("Response status:", axiosError.response.status);
-        console.error("Response headers:", axiosError.response.headers);
+        console.error("Login failed with status:", axiosError.response.status);
         setFormError(
           axiosError.response.data?.message ||
-            "Login failed. Please check your credentials."
+            "Login failed. Please check your credentials.",
         );
       } else if (axiosError.request) {
-        console.error("No response received:", axiosError.request);
+        console.error("Login request received no response");
         setFormError("No response from server. Please try again later.");
       } else {
-        console.error("Error during request setup:", axiosError.message);
+        console.error("Login request setup failed:", axiosError.message);
         setFormError("Error setting up request. Please try again.");
       }
     } finally {
@@ -183,11 +231,7 @@ const Login = () => {
         display_name: email.split("@")[0],
       };
 
-      console.log("Sending registration payload:", JSON.stringify(payload));
-
       const response = await apiClient.post("/auth/register", payload);
-
-      console.log("Registration response:", response);
 
       if (response.status === 201) {
         const { accessToken, user } = response.data as {
@@ -195,11 +239,10 @@ const Login = () => {
           user: { id: string; email: string; display_name: string };
         };
         login(accessToken, user);
-        navigate("/profile");
+        sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+        navigate(postLoginTarget);
       }
     } catch (error: unknown) {
-      console.error("Registration failed:", error);
-
       const axiosError = error as {
         response?: {
           data?: { message?: string };
@@ -212,18 +255,19 @@ const Login = () => {
 
       // More detailed error reporting
       if (axiosError.response) {
-        console.error("Response data:", axiosError.response.data);
-        console.error("Response status:", axiosError.response.status);
-        console.error("Response headers:", axiosError.response.headers);
+        console.error(
+          "Registration failed with status:",
+          axiosError.response.status,
+        );
         setFormError(
           axiosError.response.data?.message ||
-            "Registration failed. Please try again."
+            "Registration failed. Please try again.",
         );
       } else if (axiosError.request) {
-        console.error("No response received:", axiosError.request);
+        console.error("Registration request received no response");
         setFormError("No response from server. Please try again later.");
       } else {
-        console.error("Error during request setup:", axiosError.message);
+        console.error("Registration request setup failed:", axiosError.message);
         setFormError("Error setting up request. Please try again.");
       }
     } finally {

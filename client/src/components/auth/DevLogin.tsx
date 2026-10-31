@@ -9,6 +9,13 @@ export default function DevLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Defense-in-depth: this component must never be reachable in a
+  // production build, even if it's accidentally wired into a route.
+  // Do not rely solely on App.tsx omitting the route.
+  if (!import.meta.env.DEV) {
+    return null;
+  }
+
   const handleDevLogin = () => {
     const fakeUser = {
       id: "dev-user",
@@ -17,13 +24,13 @@ export default function DevLogin() {
     };
     const fakeToken = "dev-token-local";
 
-    // Populate AuthContext and localStorage like a real login
+    // Populate AuthContext like a real login
     try {
       login(fakeToken, fakeUser);
     } catch (e) {
       console.warn(`DevLogin: AuthContext login failed: ${e}`);
-      // Fallback: directly write to localStorage
-      localStorage.setItem("accessToken", fakeToken);
+      // Fallback: persist just the user profile; the token stays in memory
+      // only and is set via AuthContext/Client's in-memory store.
       localStorage.setItem("user", JSON.stringify(fakeUser));
     }
 

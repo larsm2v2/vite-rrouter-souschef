@@ -28,6 +28,10 @@ import { CheckAuthentication } from "../02_use_cases/CheckAuthentication";
 import { LogoutUser } from "../02_use_cases/LogoutUser";
 import { GetAlreadyStocked } from "../02_use_cases/GetAlreadyStocked";
 import { UpdateAlreadyStocked } from "../02_use_cases/UpdateAlreadyStocked";
+import { GenerateShareToken } from "../02_use_cases/GenerateShareToken";
+import { GetRecipeByShareToken } from "../02_use_cases/GetRecipeByShareToken";
+import { AcceptSharedRecipe } from "../02_use_cases/AcceptSharedRecipe";
+import { ImportRecipeFromUrl } from "../02_use_cases/ImportRecipeFromUrl";
 
 // Controllers
 import { UserController } from "../03_adapters/controllers/UserController";
@@ -36,6 +40,7 @@ import { MealPlanController } from "../03_adapters/controllers/MealPlanControlle
 import { ShoppingListController } from "../03_adapters/controllers/ShoppingListController";
 import { RecipeActivityController } from "../03_adapters/controllers/RecipeActivityController";
 import { AlreadyStockedController } from "../03_adapters/controllers/AlreadyStockedController";
+import { RecipeImportController } from "../03_adapters/controllers/RecipeImportController";
 
 // Register repositories as singletons
 container.registerSingleton(UserRepository, UserRepository);
@@ -44,11 +49,11 @@ container.registerSingleton(GroceryRepository, GroceryRepository);
 container.registerSingleton(MealPlanRepository, MealPlanRepository);
 container.registerSingleton(
   ShoppingListVersionRepository,
-  ShoppingListVersionRepository
+  ShoppingListVersionRepository,
 );
 container.registerSingleton(
   RecipeActivityLogRepository,
-  RecipeActivityLogRepository
+  RecipeActivityLogRepository,
 );
 container.registerSingleton(AlreadyStockedRepository, AlreadyStockedRepository);
 
@@ -61,7 +66,7 @@ container.registerSingleton(CreateMealPlan, CreateMealPlan);
 container.registerSingleton(GetShoppingListVersion, GetShoppingListVersion);
 container.registerSingleton(
   CreateShoppingListVersion,
-  CreateShoppingListVersion
+  CreateShoppingListVersion,
 );
 container.registerSingleton(LogRecipeActivity, LogRecipeActivity);
 container.registerSingleton(GetRecipeActivityLog, GetRecipeActivityLog);
@@ -76,9 +81,13 @@ container.registerSingleton(LogoutUser, LogoutUser);
 container.registerSingleton(CreateRecipe, CreateRecipe);
 container.registerSingleton(UpdateRecipe, UpdateRecipe);
 container.registerSingleton(DeleteRecipe, DeleteRecipe);
+container.registerSingleton(GenerateShareToken, GenerateShareToken);
+container.registerSingleton(GetRecipeByShareToken, GetRecipeByShareToken);
+container.registerSingleton(AcceptSharedRecipe, AcceptSharedRecipe);
+container.registerSingleton(ImportRecipeFromUrl, ImportRecipeFromUrl);
 container.registerSingleton(
   require("../03_adapters/controllers/RecipeController").RecipeController,
-  require("../03_adapters/controllers/RecipeController").RecipeController
+  require("../03_adapters/controllers/RecipeController").RecipeController,
 );
 
 // Register controllers
@@ -88,5 +97,6 @@ container.registerSingleton(MealPlanController, MealPlanController);
 container.registerSingleton(ShoppingListController, ShoppingListController);
 container.registerSingleton(RecipeActivityController, RecipeActivityController);
 container.registerSingleton(AlreadyStockedController, AlreadyStockedController);
+container.registerSingleton(RecipeImportController, RecipeImportController);
 
 export default container;

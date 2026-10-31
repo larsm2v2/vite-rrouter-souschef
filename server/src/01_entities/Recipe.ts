@@ -37,6 +37,7 @@ export interface Recipe {
   nutrition?: {
     [key: string]: string;
   };
+  shareToken?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -102,6 +103,11 @@ export const RecipeSchema = new EntitySchema<Recipe>({
     updatedAt: {
       type: Date,
       updateDate: true,
+    },
+    shareToken: {
+      type: String,
+      nullable: true,
+      unique: true,
     },
   },
 });

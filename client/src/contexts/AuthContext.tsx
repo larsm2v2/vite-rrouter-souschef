@@ -6,7 +6,10 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import apiClient from "../components/pages/Client";
+import apiClient, {
+  setInMemoryAccessToken,
+  abortAllInFlightRequests,
+} from "../components/pages/Client";
 
 interface User {
   id: string;
@@ -33,51 +36,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     setAccessToken(null);
+    setInMemoryAccessToken(null);
     setUser(null);
+    // Cancel any requests still in flight so a late response can't
+    // repopulate UI state for a user that just logged out.
+    abortAllInFlightRequests();
+    // One-time cleanup in case an older build persisted a token here.
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
     // Notify server (optional, for token allowlist cleanup)
-    apiClient.post("/auth/logout", {}, { withCredentials: true }).catch(console.error);
+    apiClient
+      .post("/auth/logout", {}, { withCredentials: true })
+      .catch(console.error);
   }, []);
 
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await apiClient.post<{ accessToken: string }>("/auth/refresh");
+      const response = await apiClient.post<{ accessToken: string }>(
+        "/auth/refresh",
+      );
       const { accessToken: newAccessToken } = response.data;
       setAccessToken(newAccessToken);
-      // Persist access token so axios interceptor can pick it up
-      localStorage.setItem("accessToken", newAccessToken);
+      // Keep the token in memory only -- never persist it to localStorage.
+      setInMemoryAccessToken(newAccessToken);
       return true;
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.error(
+        "Token refresh failed:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
       logout();
       return false;
     }
   }, [logout]);
 
-  // Load user and possibly refresh access token on mount
+  // Load user and (re)establish an access token on mount. The access token
+  // itself is never persisted, so on every fresh page load we must obtain a
+  // new one via a silent refresh against the HttpOnly refresh-token cookie.
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    const storedAccess = localStorage.getItem("accessToken");
+    // Defensive cleanup: older builds persisted the access token here.
+    localStorage.removeItem("accessToken");
 
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-    }
-
-    if (storedAccess) {
-      setAccessToken(storedAccess);
-    } else if (storedUser) {
-      // If no access token but we have a user, try to refresh (cookie may exist)
       refreshAccessToken();
     }
   }, [refreshAccessToken]);
 
   const formatDisplayName = (user?: User | null) => {
     if (!user) return null;
-    if (user.display_name && user.display_name.trim().length > 0) return user.display_name;
+    if (user.display_name && user.display_name.trim().length > 0)
+      return user.display_name;
     if (user.email) {
       const username = user.email.split("@")[0];
-      return username.replace(/[._\-+]/g, " ")
+      return username
+        .replace(/[._\-+]/g, " ")
         .split(/\s+/)
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
@@ -87,9 +101,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (newAccessToken: string, userData: User) => {
     setAccessToken(newAccessToken);
+    setInMemoryAccessToken(newAccessToken);
     setUser(userData);
-    // Persist access token and user; refresh token is stored as HttpOnly cookie by server
-    localStorage.setItem("accessToken", newAccessToken);
+    // Persist the user profile only; the refresh token is stored as an
+    // HttpOnly cookie by the server and the access token stays in memory.
     localStorage.setItem("user", JSON.stringify(userData));
   };
 

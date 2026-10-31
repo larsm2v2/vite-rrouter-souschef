@@ -158,10 +158,14 @@
 }
 
 .grocery-list__item__icon {
+  border: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font: inherit;
   padding: 4px;
   border-radius: 6px;
   transition: background 0.15s;
@@ -169,6 +173,11 @@
 }
 .grocery-list__item__icon:hover {
   background: rgba(0, 0, 0, 0.06);
+}
+
+.grocery-list__item__icon:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .todos {

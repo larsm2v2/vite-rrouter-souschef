@@ -1,5 +1,6 @@
 // jest.global-setup.ts
 import { initializeDatabase } from "./src/05_frameworks/database/schema";
+import runMigrations from "./src/05_frameworks/database/migrations/migrations";
 import { testPool } from "./src/07_tests/test-config";
 import { Pool } from "pg";
 
@@ -21,7 +22,7 @@ export default async () => {
     const dbName = process.env.PG_DATABASE || "SousChefDB";
     const result = await adminPool.query(
       "SELECT 1 FROM pg_database WHERE datname = $1",
-      [dbName]
+      [dbName],
     );
 
     if (result.rowCount === 0) {
@@ -38,6 +39,10 @@ export default async () => {
 
     // Initialize schema
     await initializeDatabase();
+
+    // Apply migrations (e.g. profile_features, refresh_tokens) once for the
+    // whole test run, so every suite can rely on the full schema existing.
+    await runMigrations();
   } catch (err) {
     console.error("❌ Test database connection failed");
     console.error("Current DB config:", {

@@ -93,12 +93,21 @@ nav li:hover {
   margin-left: 6px;
 }
 
-/* Backdrop element that sits above the page content but beneath the sidebar */
+/* Backdrop element that sits above the page content but beneath the sidebar.
+   This is a real <button> (for a11y/native keyboard+click semantics), so
+   reset the default button chrome. */
 .sidebar-backdrop {
   position: fixed;
   inset: var(--header-height) 0 0 0;
   z-index: 160;
   background: rgba(0, 0, 0, 0.32);
+  border: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  cursor: default;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .nav-links {

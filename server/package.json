@@ -1,4 +1,7 @@
 {
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/06_app/main.js",
@@ -16,6 +19,7 @@
     "@google-cloud/pubsub": "^5.2.0",
     "@google-cloud/secret-manager": "^4.0.0",
     "@google/generative-ai": "^0.24.1",
+    "cheerio": "1.0.0",
     "connect-pg-simple": "10.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -49,7 +53,7 @@
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "@types/node": "^20.19.25",
+    "@types/node": "^24.10.1",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/pg": "^8.11.11",

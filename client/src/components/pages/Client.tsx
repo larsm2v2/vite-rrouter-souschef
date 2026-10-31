@@ -14,6 +14,39 @@ interface QueueItem {
 // Get the API URL from environment variables or use default
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+// --- In-memory access token store ------------------------------------------
+// The access token is intentionally kept in memory only (never persisted to
+// localStorage/sessionStorage) to reduce the blast radius of an XSS bug --
+// any injected script that can read localStorage would otherwise be able to
+// exfiltrate a live session token. On page load there is no cached token;
+// AuthContext performs a silent refresh via the HttpOnly refresh-token
+// cookie to repopulate it (see AuthContext's mount effect).
+let inMemoryAccessToken: string | null = null;
+
+export function getInMemoryAccessToken(): string | null {
+  return inMemoryAccessToken;
+}
+
+export function setInMemoryAccessToken(token: string | null): void {
+  inMemoryAccessToken = token;
+}
+
+// --- In-flight request cancellation (for logout) ----------------------------
+// Tracks an AbortController per outgoing request so that logout() can cancel
+// every pending request. Without this, a slow request that resolves after
+// logout could still run its .then()/setState handler and repopulate the UI
+// with the previous user's data.
+const inFlightControllers = new Set<AbortController>();
+
+export function abortAllInFlightRequests(): void {
+  inFlightControllers.forEach((controller) => controller.abort());
+  inFlightControllers.clear();
+}
+
+interface RequestConfigWithController {
+  __abortController?: AbortController;
+}
+
 // Create a typed wrapper around Axios
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -28,12 +61,21 @@ const apiClient = axios.create({
 // Add request interceptor for debugging and JWT token
 apiClient.interceptors.request.use(
   (config) => {
-    // Add JWT token to requests
-    const accessToken = localStorage.getItem("accessToken");
-    // console.log("API Request Interceptor - Token present:", !!accessToken);
+    // Add JWT token to requests (from memory, never from localStorage)
+    const accessToken = getInMemoryAccessToken();
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
-      // console.log("API Request Interceptor - Authorization header set");
+    }
+
+    // Track this request so it can be aborted on logout, unless the caller
+    // already supplied their own AbortSignal.
+    if (!config.signal) {
+      const controller = new AbortController();
+      config.signal = controller.signal;
+      inFlightControllers.add(controller);
+      (
+        config as typeof config & RequestConfigWithController
+      ).__abortController = controller;
     }
 
     // Log requests in development
@@ -44,7 +86,7 @@ apiClient.interceptors.request.use(
   },
   (error: unknown) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Track the last auth redirect to avoid loops
@@ -74,6 +116,11 @@ const processQueue = (error: unknown, token: string | null = null) => {
 // Response interceptor for consistent typing and token refresh
 apiClient.interceptors.response.use(
   (response) => {
+    const controller = (
+      response.config as typeof response.config & RequestConfigWithController
+    ).__abortController;
+    if (controller) inFlightControllers.delete(controller);
+
     // Log successful responses in development
     if (import.meta.env.DEV) {
       console.log(`Response: ${response.status} ${response.config?.url}`);
@@ -85,6 +132,11 @@ apiClient.interceptors.response.use(
     if (!originalRequest) {
       return Promise.reject(error);
     }
+
+    const controller = (
+      originalRequest as typeof originalRequest & RequestConfigWithController
+    ).__abortController;
+    if (controller) inFlightControllers.delete(controller);
 
     // Add retry flag
     const requestWithRetry = originalRequest as typeof originalRequest & {
@@ -120,7 +172,7 @@ apiClient.interceptors.response.use(
       // Check if we've exceeded max attempts
       if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
         console.error("Max refresh attempts exceeded, logging out...");
-        localStorage.removeItem("accessToken");
+        setInMemoryAccessToken(null);
         localStorage.removeItem("user");
         processQueue(new Error("Max refresh attempts exceeded"), null);
         failedQueue = [];
@@ -164,14 +216,14 @@ apiClient.interceptors.response.use(
           {
             withCredentials: true,
             timeout: 10000, // 10 second timeout for refresh
-          }
+          },
         );
 
-        console.debug("Refresh response:", response.status, response.data);
+        console.debug("Refresh response status:", response.status);
         const { accessToken: newAccessToken } = response.data;
 
-        // Store new access token
-        localStorage.setItem("accessToken", newAccessToken);
+        // Store new access token in memory only
+        setInMemoryAccessToken(newAccessToken);
 
         // Update the original request with new token
         if (originalRequest.headers) {
@@ -194,11 +246,17 @@ apiClient.interceptors.response.use(
 
         // Only log out if it's not a rate limit error
         // Type guard for axios error with response
-        const isAxiosErrorWithResponse = (error: unknown): error is { response: { status: number } } => {
-          return typeof error === 'object' && error !== null && 'response' in error;
+        const isAxiosErrorWithResponse = (
+          error: unknown,
+        ): error is { response: { status: number } } => {
+          return (
+            typeof error === "object" && error !== null && "response" in error
+          );
         };
-        
-        const isRateLimit = isAxiosErrorWithResponse(refreshError) && refreshError.response?.status === 429;
+
+        const isRateLimit =
+          isAxiosErrorWithResponse(refreshError) &&
+          refreshError.response?.status === 429;
 
         if (isRateLimit) {
           console.warn("Rate limited on refresh, will retry after cooldown");
@@ -206,7 +264,7 @@ apiClient.interceptors.response.use(
           return Promise.reject(refreshError);
         }
 
-        localStorage.removeItem("accessToken");
+        setInMemoryAccessToken(null);
         localStorage.removeItem("user");
 
         const now = Date.now();
@@ -224,7 +282,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

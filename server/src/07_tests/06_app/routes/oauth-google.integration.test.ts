@@ -82,7 +82,7 @@ describe("POST /api/oauth/google/token (mocked Google)", () => {
         "DEBUG: check response:",
         check.status,
         check.body,
-        check.text
+        check.text,
       );
     }
     expect(check.status).toBe(400);
@@ -108,8 +108,25 @@ describe("POST /api/oauth/google/token (mocked Google)", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe(
-      "Failed to exchange authorization code with Google"
+      "Failed to exchange authorization code with Google",
     );
+  });
+
+  it("rejects a PKCE exchange that changes the authorized redirect URI", async () => {
+    const res = await request(app)
+      .post("/api/oauth/google/token")
+      .send({
+        code: "valid",
+        code_verifier: "verifier",
+        redirect_uri: "https://attacker.example/auth/callback",
+      })
+      .set("Content-Type", "application/json");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe(
+      "PKCE redirect URI does not match server configuration",
+    );
+    expect((global as any).fetch).not.toHaveBeenCalled();
   });
 
   it("creates user and returns tokens on valid token exchange", async () => {
@@ -150,19 +167,32 @@ describe("POST /api/oauth/google/token (mocked Google)", () => {
 
     const res = await request(app)
       .post("/api/oauth/google/token")
-      .send({ code: "valid", code_verifier: "verifier" })
+      .send({
+        code: "valid",
+        code_verifier: "verifier",
+        redirect_uri:
+          process.env.GOOGLE_PKCE_REDIRECT_URI ||
+          `${(process.env.CLIENT_URL || "http://localhost:5173").replace(/\/+$/, "")}/auth/callback`,
+      })
       .set("Content-Type", "application/json");
 
     expect(res.status).toBe(200);
     expect(res.body.access_token).toBeDefined();
     expect(res.body.user).toBeDefined();
+    const tokenRequestBody = new URLSearchParams(
+      (global as any).fetch.mock.calls[0][1].body,
+    );
+    expect(tokenRequestBody.get("redirect_uri")).toBe(
+      process.env.GOOGLE_PKCE_REDIRECT_URI ||
+        `${(process.env.CLIENT_URL || "http://localhost:5173").replace(/\/+$/, "")}/auth/callback`,
+    );
     // server should set a refresh token cookie
     expect(res.header["set-cookie"]).toBeDefined();
 
     // Verify user in DB
     const userRes = await db.query(
       "SELECT id, google_sub, email, google_access_token FROM users WHERE google_sub = $1",
-      ["google-123"]
+      ["google-123"],
     );
     expect(userRes.rows.length).toBe(1);
     const dbUser = userRes.rows[0];

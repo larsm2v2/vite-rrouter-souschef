@@ -21,6 +21,43 @@
   width: 100%;
   padding: 0 0vw 0 0vw;
 }
+
+.grocery-list-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.75rem;
+}
+
+.grocery-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  background: var(--primary-color);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.grocery-copy-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.grocery-copy-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.grocery-copy-btn:focus-visible {
+  outline: 3px solid var(--tertiary-color);
+  outline-offset: 2px;
+}
 .grocerylist-title {
   background-color: var(--tertiary-color);
   font-size: 1.5rem;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../pages/Client";
+import { useToast } from "./Toast";
 
 type Item = {
   id: string;
@@ -10,17 +11,17 @@ type Item = {
 };
 
 export default function ImageGallery() {
+  const { showToast } = useToast();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchList = async () => {
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const resp = await axios.get(`${apiUrl}/api/ocr/gallery`);
+      const resp = await apiClient.get("/api/ocr/gallery");
       setItems((resp.data as Item[]) || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      console.error("Failed to load image gallery");
     } finally {
       setLoading(false);
     }
@@ -33,12 +34,11 @@ export default function ImageGallery() {
   const onDelete = async (id: string) => {
     if (!confirm("Delete this artifact?")) return;
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      await axios.delete(`${apiUrl}/api/ocr/${id}`);
+      await apiClient.delete(`/api/ocr/${id}`);
       setItems((s) => s.filter((it) => it.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete");
+    } catch {
+      console.error("Failed to update image gallery");
+      showToast("Failed to delete", "error");
     }
   };
 

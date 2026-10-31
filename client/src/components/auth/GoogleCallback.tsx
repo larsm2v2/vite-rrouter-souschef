@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { retrieveAndClearPKCEParams } from "../../utils/pkce";
+import {
+  getGoogleRedirectUri,
+  retrieveAndClearPKCEParams,
+} from "../../utils/pkce";
 import { useAuth } from "../../contexts/AuthContext";
+import { setInMemoryAccessToken } from "../pages/Client";
 
 /**
  * Google OAuth Callback Handler
@@ -24,7 +28,6 @@ export default function GoogleCallback() {
 
         // Only proceed if we're actually at the callback URL with a code
         if (!window.location.pathname.includes("/auth/callback")) {
-          console.log("Not at callback path, skipping OAuth handling");
           return;
         }
 
@@ -41,31 +44,29 @@ export default function GoogleCallback() {
         }
 
         if (!code) {
-          console.error("No code found. Full search:", window.location.search);
           throw new Error("No authorization code received from Google");
         }
 
         // Retrieve PKCE parameters from sessionStorage
-        // Diagnostic: log what's in storage first to help debugging
-        console.debug("Storage before callback:", sessionStorage);
         const pkceParams = retrieveAndClearPKCEParams();
-        console.debug("PKCE params retrieved:", pkceParams);
         if (!pkceParams) {
           // If PKCE params are missing, check for server-side token fragment
           const hashParams = new URLSearchParams(
-            window.location.hash.replace("#", "?")
+            window.location.hash.replace("#", "?"),
           );
           const fallbackAccess = hashParams.get("access_token");
 
           if (fallbackAccess) {
             // Server returned the access token in the fragment (server-side PKCE flow).
-            localStorage.setItem("access_token", fallbackAccess);
+            // Keep it in memory only; there is no user object in this branch so
+            // AuthContext.login() can't be called yet.
+            setInMemoryAccessToken(fallbackAccess);
             navigate("/", { replace: true });
             return;
           }
 
           throw new Error(
-            "PKCE parameters not found. Please try logging in again (open in same tab)."
+            "PKCE parameters not found. Please try logging in again (open in same tab).",
           );
         }
 
@@ -77,6 +78,10 @@ export default function GoogleCallback() {
         // Exchange code + verifier for tokens via backend
         // Match server default (client/.env uses 8000 locally) and other client code
         const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const redirectUri = getGoogleRedirectUri(
+          window.location.origin,
+          import.meta.env.VITE_GOOGLE_PKCE_REDIRECT_URI,
+        );
         // console.log(
         //   "Exchanging code with server at:",
         //   `${apiUrl}/api/oauth/google/token`
@@ -91,6 +96,7 @@ export default function GoogleCallback() {
           body: JSON.stringify({
             code,
             code_verifier: pkceParams.verifier,
+            redirect_uri: redirectUri,
           }),
         });
 
@@ -98,35 +104,35 @@ export default function GoogleCallback() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.error("Token exchange failed:", errorData);
+          console.error("Token exchange failed with status:", response.status);
           throw new Error(
-            errorData.error || "Failed to exchange authorization code"
+            errorData.error || "Failed to exchange authorization code",
           );
         }
 
         const { access_token, user } = await response.json();
-        // console.log("Token exchange successful! User:", user);
 
-        // Persist the access token under the expected key
+        // Keep the access token in memory (never localStorage)
         const accessToken = access_token;
-        localStorage.setItem("accessToken", accessToken);
+        setInMemoryAccessToken(accessToken);
 
         // If server provided user data, populate AuthContext immediately
         if (user && typeof login === "function") {
           login(accessToken, user);
         } else {
           // Fallback: store just the access token, let ProtectedRoute/AuthContext handle user fetch
-          console.debug(
-            "No user data in token response, will fetch via /profile or /auth/check"
-          );
+          console.warn("OAuth response did not include user profile data");
         }
 
         // Navigate to profile - ProtectedRoute will verify authentication
         navigate("/profile", { replace: true });
       } catch (err) {
-        console.error("OAuth callback error:", err);
+        console.error(
+          "OAuth callback failed:",
+          err instanceof Error ? err.message : "Unknown error",
+        );
         setError(
-          err instanceof Error ? err.message : "An unknown error occurred"
+          err instanceof Error ? err.message : "An unknown error occurred",
         );
         setLoading(false);
       }

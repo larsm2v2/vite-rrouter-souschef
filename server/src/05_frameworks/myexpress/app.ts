@@ -6,7 +6,11 @@ import cookieParser from "cookie-parser";
 // `./routes/index.ts` (which mounts /api/oauth etc.) is used in production.
 import routes from "./routes/index";
 // API Gateway Layer - Phase 1A
-import { createGatewayMiddleware, errorLoggingMiddleware } from "./gateway";
+import {
+  createGatewayMiddleware,
+  errorLoggingMiddleware,
+  errorResponseMiddleware,
+} from "./gateway";
 // Passport is no longer used - replaced with openid-client for PKCE support
 // import passport from "passport";
 // import { configurePassport } from "../auth/passport";
@@ -15,7 +19,7 @@ console.log("📋 Loading routes...");
 // Diagnostic: flag app creation so we can detect multiple app instances
 if ((global as any).__souschef_app_created__) {
   console.warn(
-    "⚠️ Express app instance already created elsewhere in the process — multiple apps may be running"
+    "⚠️ Express app instance already created elsewhere in the process — multiple apps may be running",
   );
 } else {
   (global as any).__souschef_app_created__ = true;
@@ -46,7 +50,7 @@ app.use(cookieParser());
 app.use(routes);
 console.log(
   "✅ Routes mounted. App stack layers:",
-  app._router?.stack?.length || 0
+  app._router?.stack?.length || 0,
 );
 
 // Print a compact summary of layers and mounted route paths for quick diagnostics
@@ -72,5 +76,7 @@ try {
 
 // Error logging middleware (must be after routes)
 app.use(errorLoggingMiddleware);
+// Centralized JSON error response (must be last)
+app.use(errorResponseMiddleware);
 
 export default app;

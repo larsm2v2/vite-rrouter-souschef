@@ -1,0 +1,16 @@
+[
+  {
+    "name": "delete-all-images",
+    "action": {"type": "Delete"},
+    "condition": {
+      "tagState": "any"
+    }
+  },
+  {
+    "name": "keep-latest-5",
+    "action": {"type": "Keep"},
+    "mostRecentVersions": {
+      "keepCount": 5
+    }
+  }
+]

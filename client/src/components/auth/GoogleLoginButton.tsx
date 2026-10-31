@@ -4,7 +4,9 @@ import {
   generateState,
   storePKCEParams,
   buildGoogleAuthUrl,
+  getGoogleRedirectUri,
 } from "../../utils/pkce";
+import { useToast } from "../common/Toast";
 import "./GoogleLoginButton.css";
 
 interface GoogleLoginButtonProps {
@@ -16,8 +18,8 @@ export default function GoogleLoginButton({
   className,
   children,
 }: GoogleLoginButtonProps) {
+  const { showToast } = useToast();
   const handleGoogleLogin = async () => {
-    console.log("LOGIN CLICK FIRED");
     try {
       // Generate PKCE parameters
       const verifier = generateCodeVerifier();
@@ -27,30 +29,14 @@ export default function GoogleLoginButton({
       // Synchronously store in sessionStorage
       storePKCEParams(verifier, state);
 
-      // Diagnostics
-      console.debug("WRITING PKCE", { verifierLength: verifier.length, state });
-      console.debug("STORAGE NOW:", {
-        session: {
-          verifier: sessionStorage.getItem("pkce_code_verifier")
-            ? "present"
-            : null,
-          state: sessionStorage.getItem("oauth_state") ? "present" : null,
-          length: sessionStorage.length,
-        },
-        local: {
-          verifier: localStorage.getItem("pkce_code_verifier")
-            ? "present"
-            : null,
-          state: localStorage.getItem("oauth_state") ? "present" : null,
-          length: localStorage.length,
-        },
-      });
-
       // Build OAuth URL
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (!clientId) throw new Error("VITE_GOOGLE_CLIENT_ID is not configured");
 
-      const redirectUri = `${window.location.origin}/auth/callback`;
+      const redirectUri = getGoogleRedirectUri(
+        window.location.origin,
+        import.meta.env.VITE_GOOGLE_PKCE_REDIRECT_URI,
+      );
       const authUrl = buildGoogleAuthUrl({
         clientId,
         redirectUri,
@@ -62,7 +48,7 @@ export default function GoogleLoginButton({
       window.location.href = authUrl;
     } catch (error) {
       console.error("Failed to initiate Google login:", error);
-      alert("Failed to start login process. Please try again.");
+      showToast("Failed to start login process. Please try again.", "error");
     }
   };
 

@@ -46,6 +46,9 @@ export function cleanRecipe(recipe: any): any {
   } else if (out.uniqueId && !out.unique_id) {
     out.unique_id = out.uniqueId;
   }
+  // Keep the camelCase mirror in sync too, since callers (e.g. CreateRecipe
+  // use case) expect the canonical camelCase field to be populated.
+  if (!out.uniqueId) out.uniqueId = out.unique_id;
 
   // mealType canonical - handle both formats
   if (!out.mealType && !out.meal_type) {
@@ -73,6 +76,10 @@ export function cleanRecipe(recipe: any): any {
   } else if (out.dietaryRestrictions && !out.dietary_restrictions) {
     out.dietary_restrictions = out.dietaryRestrictions;
   }
+  // Keep the camelCase mirror in sync too, since callers (e.g. CreateRecipe
+  // use case) expect the canonical camelCase field to be populated.
+  if (!out.dietaryRestrictions)
+    out.dietaryRestrictions = out.dietary_restrictions;
 
   // servingInfo - handle both formats and map to snake_case
   if (!out.servingInfo && !out.serving_info) {
@@ -110,7 +117,7 @@ export function cleanRecipe(recipe: any): any {
         (item: any) => ({
           ...item,
           quantity: typeof item.quantity === "number" ? item.quantity : 0,
-        })
+        }),
       );
     } else {
       out.ingredients[category] = [];
@@ -123,7 +130,7 @@ export function cleanRecipe(recipe: any): any {
     (instruction: any, index: number) => ({
       ...instruction,
       stepNumber: instruction.stepNumber || instruction.number || index + 1,
-    })
+    }),
   );
 
   if (!Array.isArray(out.notes)) out.notes = [];

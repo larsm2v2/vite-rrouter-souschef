@@ -9,12 +9,12 @@ describe("Database migrations runner", () => {
   });
 
   afterAll(async () => {
-    // Clean up - drop table if it exists
-    try {
-      await pool.query("DROP TABLE IF EXISTS refresh_tokens");
-    } catch (err) {
-      // ignore
-    }
+    // Note: refresh_tokens is permanent app schema (created once for the
+    // whole test run by jest.global-setup.ts) and is relied upon by other
+    // suites (e.g. auth.refresh.integration.test.ts), so it must NOT be
+    // dropped here. Previously this dropped the table without clearing its
+    // schema_version marker, which caused the migration runner to
+    // permanently "skip" recreating it on every subsequent run.
     await pool.end();
   });
 
@@ -24,7 +24,7 @@ describe("Database migrations runner", () => {
 
     // Verify the table exists
     const res = await pool.query(
-      "SELECT EXISTS(SELECT FROM information_schema.tables WHERE table_name='refresh_tokens') as exists"
+      "SELECT EXISTS(SELECT FROM information_schema.tables WHERE table_name='refresh_tokens') as exists",
     );
     expect(res.rows[0].exists).toBe(true);
   }, 15000);
