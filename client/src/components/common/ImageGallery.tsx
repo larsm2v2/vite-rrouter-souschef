@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import apiClient from "../pages/Client";
 import { useToast } from "./Toast";
+import AuthImage from "./AuthImage";
+import { useUndoable } from "../../hooks/useUndoable";
 
 type Item = {
   id: string;
@@ -12,6 +14,7 @@ type Item = {
 
 export default function ImageGallery() {
   const { showToast } = useToast();
+  const undoable = useUndoable();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -31,15 +34,31 @@ export default function ImageGallery() {
     fetchList();
   }, []);
 
-  const onDelete = async (id: string) => {
-    if (!confirm("Delete this artifact?")) return;
-    try {
-      await apiClient.delete(`/api/ocr/${id}`);
-      setItems((s) => s.filter((it) => it.id !== id));
-    } catch {
-      console.error("Failed to update image gallery");
-      showToast("Failed to delete", "error");
-    }
+  const onDelete = (id: string) => {
+    const index = items.findIndex((it) => it.id === id);
+    const removed = items[index];
+    if (!removed) return;
+    // The server delete is irreversible, so it waits until the undo window closes.
+    undoable({
+      message: "Image deleted",
+      apply: () => setItems((s) => s.filter((it) => it.id !== id)),
+      revert: () =>
+        setItems((s) => {
+          if (s.some((it) => it.id === id)) return s;
+          const next = [...s];
+          next.splice(Math.min(index, next.length), 0, removed);
+          return next;
+        }),
+      commit: async () => {
+        try {
+          await apiClient.delete(`/api/ocr/${encodeURIComponent(id)}`);
+        } catch {
+          console.error("Failed to update image gallery");
+          showToast("Failed to delete", "error");
+          fetchList();
+        }
+      },
+    });
   };
 
   return (
@@ -59,14 +78,17 @@ export default function ImageGallery() {
               <tr key={it.id}>
                 <td style={{ padding: 8 }}>
                   {it.originalUrl ? (
-                    <img src={it.originalUrl} style={{ maxWidth: 200 }} />
+                    <AuthImage src={it.originalUrl} alt={`Original ${it.id}`} />
                   ) : (
                     <em>n/a</em>
                   )}
                 </td>
                 <td style={{ padding: 8 }}>
                   {it.processedUrl ? (
-                    <img src={it.processedUrl} style={{ maxWidth: 200 }} />
+                    <AuthImage
+                      src={it.processedUrl}
+                      alt={`Processed ${it.id}`}
+                    />
                   ) : (
                     <em>n/a</em>
                   )}

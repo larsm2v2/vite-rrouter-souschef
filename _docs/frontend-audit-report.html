@@ -262,6 +262,111 @@
                 be registered in Google Cloud Console.
               </td>
             </tr>
+            <tr>
+              <td>FE-11</td>
+              <td>High</td>
+              <td>
+                Mobile shell was broken: the drawer was 100% wide so the
+                backdrop could never be tapped, the close tab was pinned over
+                the header, drawers used conflicting CSS in two files, the
+                two-row header overflowed its fixed height, the
+                <code>.nav-search*</code> classes had no CSS, closed drawers
+                stayed focusable, and there was no Escape or in-panel Close.
+              </td>
+              <td class="status">
+                Rebuilt: 88vw drawers with a tappable scrim, in-panel Close,
+                Escape, swipe-to-close, close on route change, one drawer at a
+                time, scroll lock, focus trap, <code>inert</code> when closed, a
+                bottom dock (Grocery, Copy to Google Keep, Recipe index),
+                single-row header with collapsible search, FAB and toasts moved
+                clear of the dock. Desktop edge tabs unchanged.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-12</td>
+              <td>High</td>
+              <td>
+                The chef graphic rendered at a fixed 500px and overflowed phone
+                viewports; Chrome then enlarged the layout viewport (545px vs
+                393px), stretching every fixed element. Old overflow tests
+                passed anyway because they compared against the inflated
+                <code>innerWidth</code>.
+              </td>
+              <td class="status">
+                Capped the SVG; overflow tests now compare against the emulated
+                viewport width.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-13</td>
+              <td>Feature</td>
+              <td>
+                The Keep export button lived only inside the closed drawer.
+              </td>
+              <td class="status">
+                "Copy to Google Keep" is now in the mobile dock and desktop
+                header via a shared event; the drawer also offers Share (native
+                share sheet where supported) and an Open Keep link.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-14</td>
+              <td>Feature</td>
+              <td>
+                Import confirmation showed only the parsed result, so users
+                could not verify it against the source.
+              </td>
+              <td class="status">
+                New <code>ImportReview</code>: swipeable Original vs Parsed on
+                phones/tablets (scroll-snap, tabs, arrow keys), side by side at
+                1100px+. Original shows zoomable uploaded images, recognized
+                text, pasted text, or the source URL and its images.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-15</td>
+              <td>Medium</td>
+              <td>
+                <code>OCRModal</code> lost selected files on tab switch, did not
+                reset after import/close, had no Escape, focus trap or scroll
+                lock, and was unusable on phones.
+              </td>
+              <td class="status">
+                Files retained with thumbnails and validation; state resets on
+                close; Escape, focus trap and scroll lock; full-screen sheet
+                with sticky actions on phones; 16px inputs.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-16</td>
+              <td>High/Security</td>
+              <td>
+                OCR routes had no per-route auth or ownership checks; DELETE
+                joined a client id into a path with no traversal guard; the
+                image guard used <code>startsWith(dir)</code>; uploads used the
+                client filename with no type/count limits;
+                <code>/ocr/parse</code>
+                logged a token fragment and the request body. (The
+                <code>/api</code> stack already required a JWT, so these were
+                not anonymous in practice, but nothing scoped files to owners.)
+              </td>
+              <td class="status">
+                Router-level auth, owner-prefixed sanitized filenames resolved
+                only for their owner, path containment, multer limits, job
+                ownership check, logging removed, authenticated gallery images.
+                Regression suite added.
+              </td>
+            </tr>
+            <tr>
+              <td>FE-17</td>
+              <td>Test</td>
+              <td>Flaky OAuth-callback e2e (2 of 5 runs failed).</td>
+              <td class="status">
+                Test-isolation bug, not a product bug: the silent
+                <code>/auth/refresh</code> after reload hit the real network.
+                The test now stubs <code>/auth/</code>.
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -299,6 +404,18 @@
           Firefox/WebKit and a dedicated live client-to-server URL-import
           browser test remain follow-up coverage.
         </li>
+        <li>
+          Mobile verification used Chromium device emulation (Pixel 5) with real
+          CDP touch drags; no physical iOS or Android device was used.
+          iOS-specific behavior (<code>100dvh</code>, safe-area insets,
+          <code>inert</code>) is untested.
+        </li>
+        <li>
+          Uploaded OCR images live on ephemeral container disk
+          (<code>data/ocr</code>) and vanish on Cloud Run recycle; move to Cloud
+          Storage. Server <code>dist/</code> is tracked in git and churns on
+          every build.
+        </li>
       </ul>
 
       <h2>Runtime Upgrade</h2>
@@ -325,11 +442,12 @@
         <li>Client production build: passed.</li>
         <li>
           Playwright desktop Chromium + Mobile Chrome:
-          <strong>64 passed, 4 skipped</strong> under Node 24.
+          <strong>175 passed, 13 skipped (viewport-specific), 0 failed</strong>
+          under Node 24.
         </li>
         <li>
           Server: build passed;
-          <strong>19/19 suites, 68/68 tests</strong> passed under Node 24.
+          <strong>23/23 suites, 136/136 tests</strong> passed under Node 24.
         </li>
         <li>
           Clean-recipe-service: TypeScript build and

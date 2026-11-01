@@ -117,6 +117,23 @@ test("OAuth callback restores the protected shared-recipe destination", async ({
   await page.addInitScript(() => {
     sessionStorage.setItem("postLoginRedirect", "/recipes/shared/share-token");
   });
+  // The app silently refreshes its in-memory token on every load; stub it so
+  // the test never depends on a live auth server.
+  await page.route(
+    (url) => url.pathname.includes("/auth/"),
+    (route) => {
+      const type = route.request().resourceType();
+      if (type !== "xhr" && type !== "fetch") return route.continue();
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          authenticated: true,
+          accessToken: "test-access-token",
+        }),
+      });
+    },
+  );
   await page.route(
     (url) => url.pathname.includes("/api/"),
     (route) => {

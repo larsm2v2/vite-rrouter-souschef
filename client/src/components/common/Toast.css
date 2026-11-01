@@ -1,8 +1,8 @@
 .toast-viewport {
   position: fixed;
-  bottom: 20px;
+  bottom: 96px; /* clears the floating action button */
   right: 20px;
-  z-index: 500;
+  z-index: 1200;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -47,6 +47,26 @@
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.toast-action {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toast-action:focus-visible,
+.toast-dismiss:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
 }
 
 .toast-success {
@@ -59,4 +79,17 @@
 
 .toast-info {
   background-color: var(--primary-color, #154153);
+}
+
+/* Keep toasts clear of the bottom dock and FAB on touch layouts */
+@media (max-width: 900px) {
+  .toast-viewport {
+    left: 12px;
+    right: 12px;
+    bottom: calc(
+      var(--dock-height, 60px) + env(safe-area-inset-bottom, 0px) + 84px
+    );
+    max-width: none;
+    z-index: 1200;
+  }
 }

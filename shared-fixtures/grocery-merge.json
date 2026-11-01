@@ -1,0 +1,196 @@
+[
+  {
+    "name": "counts fold plurals and sum",
+    "existing": [
+      { "name": "egg", "quantity": 1, "unit": "", "checked": false }
+    ],
+    "incoming": [
+      { "name": "eggs", "quantity": 2, "unit": "", "checked": false }
+    ],
+    "expected": [{ "name": "egg", "quantity": 3, "unit": "", "checked": false }]
+  },
+  {
+    "name": "volume units convert (1 cup + 250 ml)",
+    "existing": [
+      { "name": "milk", "quantity": 1, "unit": "cup", "checked": false }
+    ],
+    "incoming": [
+      { "name": "milk", "quantity": 250, "unit": "ml", "checked": false }
+    ],
+    "expected": [
+      { "name": "milk", "quantity": 2.0567, "unit": "cups", "checked": false }
+    ]
+  },
+  {
+    "name": "teaspoons and tablespoons sum in the existing unit",
+    "existing": [
+      { "name": "salt", "quantity": 2, "unit": "tsp", "checked": false }
+    ],
+    "incoming": [
+      { "name": "salt", "quantity": 1, "unit": "tbsp", "checked": false }
+    ],
+    "expected": [
+      { "name": "salt", "quantity": 5, "unit": "tsp", "checked": false }
+    ]
+  },
+  {
+    "name": "different unit families stay on separate lines",
+    "existing": [
+      { "name": "onion", "quantity": 1, "unit": "", "checked": false }
+    ],
+    "incoming": [
+      { "name": "onion", "quantity": 200, "unit": "g", "checked": false }
+    ],
+    "expected": [
+      { "name": "onion", "quantity": 1, "unit": "", "checked": false },
+      { "name": "onion", "quantity": 200, "unit": "g", "checked": false }
+    ]
+  },
+  {
+    "name": "no fuzzy matching between similar names",
+    "existing": [
+      { "name": "tomato", "quantity": 1, "unit": "", "checked": false }
+    ],
+    "incoming": [
+      { "name": "tomato paste", "quantity": 1, "unit": "can", "checked": false }
+    ],
+    "expected": [
+      { "name": "tomato", "quantity": 1, "unit": "", "checked": false },
+      { "name": "tomato paste", "quantity": 1, "unit": "can", "checked": false }
+    ]
+  },
+  {
+    "name": "names match regardless of case and spacing",
+    "existing": [
+      { "name": "Olive  Oil", "quantity": 1, "unit": "tbsp", "checked": false }
+    ],
+    "incoming": [
+      {
+        "name": "olive oil",
+        "quantity": 2,
+        "unit": "tablespoons",
+        "checked": false
+      }
+    ],
+    "expected": [
+      { "name": "Olive  Oil", "quantity": 3, "unit": "tbsp", "checked": false }
+    ]
+  },
+  {
+    "name": "a checked line is un-checked when more is needed",
+    "existing": [
+      { "name": "bread", "quantity": 1, "unit": "loaf", "checked": true }
+    ],
+    "incoming": [
+      { "name": "bread", "quantity": 1, "unit": "loaf", "checked": false }
+    ],
+    "expected": [
+      { "name": "bread", "quantity": 2, "unit": "loaf", "checked": false }
+    ]
+  },
+  {
+    "name": "duplicates inside one incoming batch are summed, not overwritten",
+    "existing": [],
+    "incoming": [
+      { "name": "flour", "quantity": 1, "unit": "cup", "checked": false },
+      { "name": "flour", "quantity": 1, "unit": "cup", "checked": false },
+      { "name": "flour", "quantity": 100, "unit": "g", "checked": false },
+      { "name": "flour", "quantity": 100, "unit": "g", "checked": false }
+    ],
+    "expected": [
+      { "name": "flour", "quantity": 2, "unit": "cups", "checked": false },
+      { "name": "flour", "quantity": 200, "unit": "g", "checked": false }
+    ]
+  },
+  {
+    "name": "sources are unioned",
+    "existing": [
+      {
+        "name": "garlic",
+        "quantity": 2,
+        "unit": "clove",
+        "checked": false,
+        "sources": ["a"]
+      }
+    ],
+    "incoming": [
+      {
+        "name": "garlic",
+        "quantity": 1,
+        "unit": "cloves",
+        "checked": false,
+        "sources": ["b"]
+      }
+    ],
+    "expected": [
+      {
+        "name": "garlic",
+        "quantity": 3,
+        "unit": "cloves",
+        "checked": false,
+        "sources": ["a", "b"]
+      }
+    ]
+  },
+  {
+    "name": "invalid input is skipped or coerced without throwing",
+    "existing": [],
+    "incoming": [
+      { "name": "", "quantity": 1, "unit": "", "checked": false },
+      { "name": "   ", "quantity": 1, "unit": "", "checked": false },
+      { "name": "rice", "quantity": "2", "unit": "cup", "checked": false },
+      { "name": "pepper", "quantity": -3, "unit": "", "checked": false },
+      { "name": "thyme", "quantity": null, "unit": null, "checked": false }
+    ],
+    "expected": [
+      { "name": "rice", "quantity": 2, "unit": "cup", "checked": false },
+      { "name": "pepper", "quantity": 0, "unit": "", "checked": false },
+      { "name": "thyme", "quantity": 0, "unit": "", "checked": false }
+    ]
+  },
+  {
+    "name": "unquantified items merge without inventing a quantity",
+    "existing": [
+      { "name": "salt", "quantity": 0, "unit": "", "checked": false }
+    ],
+    "incoming": [
+      { "name": "salt", "quantity": 0, "unit": "", "checked": false }
+    ],
+    "expected": [
+      { "name": "salt", "quantity": 0, "unit": "", "checked": false }
+    ]
+  },
+  {
+    "name": "irregular plurals fold (leaves, berries, tomatoes)",
+    "existing": [
+      { "name": "bay leaf", "quantity": 1, "unit": "", "checked": false },
+      { "name": "blueberry", "quantity": 1, "unit": "cup", "checked": false },
+      { "name": "tomato", "quantity": 2, "unit": "", "checked": false }
+    ],
+    "incoming": [
+      { "name": "bay leaves", "quantity": 2, "unit": "", "checked": false },
+      { "name": "blueberries", "quantity": 1, "unit": "cup", "checked": false },
+      { "name": "tomatoes", "quantity": 1, "unit": "", "checked": false }
+    ],
+    "expected": [
+      { "name": "bay leaf", "quantity": 3, "unit": "", "checked": false },
+      { "name": "blueberry", "quantity": 2, "unit": "cups", "checked": false },
+      { "name": "tomato", "quantity": 3, "unit": "", "checked": false }
+    ]
+  },
+  {
+    "name": "words that look plural are left alone (hummus, molasses)",
+    "existing": [
+      { "name": "hummus", "quantity": 1, "unit": "", "checked": false }
+    ],
+    "incoming": [
+      { "name": "hummu", "quantity": 1, "unit": "", "checked": false },
+      { "name": "molasses", "quantity": 1, "unit": "tbsp", "checked": false }
+    ],
+    "expected": [
+      { "name": "hummus", "quantity": 1, "unit": "", "checked": false },
+      { "name": "hummu", "quantity": 1, "unit": "", "checked": false },
+      { "name": "molasses", "quantity": 1, "unit": "tbsp", "checked": false }
+    ]
+  }
+]

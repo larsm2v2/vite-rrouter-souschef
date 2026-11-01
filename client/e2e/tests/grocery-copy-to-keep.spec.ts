@@ -87,7 +87,7 @@ test("copies only unchecked grocery items in Keep-friendly lines", async ({
 }) => {
   await preparePage(page);
   await page.goto("/sous-chef");
-  await page.locator(".sidebar-toggle-tab.left-toggle").click();
+  await page.locator('[data-action="toggle-grocery"]:visible').click();
 
   const copyButton = page.getByRole("button", { name: "Copy for Google Keep" });
   await expect(copyButton).toBeVisible();
@@ -102,7 +102,7 @@ test("copies only unchecked grocery items in Keep-friendly lines", async ({
 test("grocery completion action is keyboard accessible", async ({ page }) => {
   await preparePage(page);
   await page.goto("/sous-chef");
-  await page.locator(".sidebar-toggle-tab.left-toggle").click();
+  await page.locator('[data-action="toggle-grocery"]:visible').click();
 
   const doneButton = page.getByRole("button", { name: "Mark apples done" });
   await expect(doneButton).toBeVisible();
@@ -120,23 +120,28 @@ test("does not re-add persisted selected recipes to the grocery list on reload",
   const recipesResponse = page.waitForResponse((response) =>
     response.url().endsWith("/api/recipes"),
   );
-  const saveRequest = page.waitForRequest(
-    (request) =>
+  const saves: { listData: { name: string; quantity: number }[] }[] = [];
+  page.on("request", (request) => {
+    if (
       request.url().endsWith("/api/grocery-list/version") &&
-      request.method() === "POST",
-  );
+      request.method() === "POST"
+    ) {
+      saves.push(request.postDataJSON());
+    }
+  });
   await page.goto("/sous-chef");
   await recipesResponse;
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("selectedRecipeIds")))
     .toBe('["recipe-1"]');
-  const savedList = (await saveRequest).postDataJSON() as {
-    listData: { name: string; quantity: number }[];
-  };
-  expect(
-    savedList.listData.find((item) => item.name === "apples")?.quantity,
-  ).toBe(3);
-  await page.locator(".sidebar-toggle-tab.left-toggle").click();
+  // An unchanged list is no longer re-saved; if anything is saved it must not be doubled.
+  await page.waitForTimeout(1500);
+  for (const saved of saves) {
+    expect(
+      saved.listData.find((item) => item.name === "apples")?.quantity,
+    ).toBe(3);
+  }
+  await page.locator('[data-action="toggle-grocery"]:visible').click();
 
   const copyButton = page.getByRole("button", { name: "Copy for Google Keep" });
   await expect(copyButton).toBeVisible();
@@ -148,4 +153,31 @@ test("does not re-add persisted selected recipes to the grocery list on reload",
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("copiedGroceryText")))
     .not.toContain("6 apples");
+});
+
+test("Keep copy is reachable without opening the grocery drawer", async ({
+  page,
+  isMobile,
+}) => {
+  await preparePage(page);
+  await page.goto("/sous-chef");
+
+  // Mobile exposes it in the bottom dock, desktop in the header.
+  const external = page.getByRole("button", { name: "Copy to Google Keep" });
+  await expect(external).toBeVisible();
+  await expect(page.locator(".app-body")).not.toHaveClass(/sidebar-open/);
+  if (isMobile) {
+    const box = await external.boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
+
+  // GroceryList loads inside the (closed) drawer; wait for its data first.
+  await expect(page.getByText("Copied")).toHaveCount(0);
+  await expect
+    .poll(async () => {
+      await external.click();
+      return page.evaluate(() => localStorage.getItem("copiedGroceryText"));
+    })
+    .toBe("3 apples\n1 tbsp olive oil");
+  await expect(page.getByText("Copied 2 items!").first()).toBeVisible();
 });

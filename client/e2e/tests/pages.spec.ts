@@ -189,7 +189,8 @@ test.describe("SousChef page layout", () => {
     await page.waitForLoadState("domcontentloaded");
 
     const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > window.innerWidth,
+      (width) => document.documentElement.scrollWidth > width,
+      page.viewportSize()!.width,
     );
     expect(overflow).toBe(false);
   });
@@ -228,7 +229,8 @@ test.describe("Recipes page layout", () => {
     await page.waitForLoadState("domcontentloaded");
 
     const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > window.innerWidth,
+      (width) => document.documentElement.scrollWidth > width,
+      page.viewportSize()!.width,
     );
     expect(overflow).toBe(false);
   });

@@ -1,106 +1,154 @@
-/* * {
-    box-sizing: border-box;
-} */
+/* Header navigation: one row at every width. */
+
+.nav {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  position: relative;
+}
 
 .nav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-}
-.nav {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0 0.5rem 0 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 0.5rem;
+  border-radius: 8px;
+  color: var(--tertiary-color);
+  text-decoration: none;
 }
 
+.nav a:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nav a:focus-visible,
+.nav button:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 2px;
+}
+
+/* ---- Search ---- */
+.nav-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nav-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--primary-text-color);
+  font: inherit;
+  font-size: 1rem; /* >=16px prevents iOS focus-zoom */
+}
+
+.nav-search-btn,
+.nav-search-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tertiary-color);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.nav-search-btn:hover,
+.nav-search-icon:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-search-icon {
+  display: none;
+}
+
+/* ---- Links ---- */
 .nav ul {
   padding: 0;
   margin: 0;
   list-style: none;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-.nav Link {
-  color: inherit;
-  text-decoration: none;
-  height: 100%;
-  display: flex;
-  list-style: none;
-  align-items: center;
-  padding: 0.25vw;
 }
 
-nav li:active {
-  background-color: #555;
-}
-nav li:hover {
-  background-color: #777;
+.nav-links {
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
-.navbar.fixed {
-  background-color: rgb(202, 202, 202);
-  text-decoration: none;
-  list-style: none;
-  transition: 0.3s ease-in-out;
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-@media (max-width: 600px) {
-  .nav {
-    flex-direction: column;
-    gap: 0vw;
-    padding: 0;
-  }
-  .nav ul {
-    flex-direction: row;
-    gap: 0.2rem;
-  }
-  .sidebar-toggle {
-    width: 10vw;
-  }
-}
-
-.sidebar-toggle {
-  background: transparent;
-  border: 1px solid #ddd;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition:
-    transform 180ms ease,
-    background-color 180ms ease,
-    color 180ms ease;
+/* full label shown on larger screens */
+.nav-full {
+  display: inline-flex;
   color: var(--tertiary-color);
-}
-.sidebar-toggle.open {
-  transform: rotate(90deg) scale(1.04);
-  background-color: rgba(0, 0, 0, 0.06);
-  color: var(--tertiary-color);
-}
-.site-title {
   font-weight: 600;
-  margin-left: 6px;
 }
 
-/* Backdrop element that sits above the page content but beneath the sidebar.
-   This is a real <button> (for a11y/native keyboard+click semantics), so
-   reset the default button chrome. */
+/* compact token used for small screens */
+.nav-compact {
+  display: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: inherit;
+}
+
+.nav-compact.avatar {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  line-height: 1;
+  background: var(--tertiary-color);
+  color: var(--primary-color);
+}
+
+.nav-keep-btn {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--secondary-color);
+  color: var(--primary-color);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nav-keep-btn:hover {
+  filter: brightness(1.06);
+}
+
+/* Scrim that sits above page content but beneath the drawers. It is a real
+   <button> (keyboard + click semantics), so reset the default chrome. */
 .sidebar-backdrop {
   position: fixed;
   inset: var(--header-height) 0 0 0;
   z-index: 160;
-  background: rgba(0, 0, 0, 0.32);
+  background: rgba(0, 0, 0, 0.4);
   border: none;
   margin: 0;
   padding: 0;
@@ -108,49 +156,50 @@ nav li:hover {
   cursor: default;
   -webkit-appearance: none;
   appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.nav-links {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-  width: 80%;
+/* ---- Tablet / phone ---- */
+@media (max-width: 900px) {
+  .nav-keep-item {
+    display: none; /* the bottom dock carries this action on small screens */
+  }
+
+  .nav-search-icon {
+    display: inline-flex;
+  }
+
+  /* Search collapses to an icon; tapping it expands the field in place. */
+  .nav-search {
+    display: none;
+  }
+
+  .nav-search.open {
+    display: flex;
+    max-width: none;
+  }
+
+  .nav-search.open ~ .nav-links {
+    display: none;
+  }
+
+  .nav-search-icon {
+    order: -1;
+  }
+
+  .nav-search.open ~ .nav-search-icon {
+    order: 1;
+  }
+
+  .sidebar-backdrop {
+    inset: 0;
+  }
 }
 
-/* full label shown on larger screens */
-.nav-full {
-  display: flex;
-  color: var(--tertiary-color);
-}
-
-/* compact token used for small screens */
-.nav-compact {
-  display: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
-}
-
-.nav-compact.avatar {
-  width: 2rem;
-  aspect-ratio: 1 / 1; /* keep width and height equal */
-  height: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  overflow: hidden; /* ensure contents don't overflow the circle */
-  line-height: 1;
-  background: var(--tertiary-color);
-  color: var(--primary-text-color, #222);
+@media (max-width: 600px) {
+  .nav {
+    padding: 0 0.5rem;
+  }
 }
 
 /* On small viewports show compact tokens and hide the long labels */
@@ -159,10 +208,6 @@ nav li:hover {
     display: none;
   }
   .nav-compact {
-    display: inline-block;
-  }
-  .nav-links {
-    gap: 0.6rem;
-    width: auto;
+    display: inline-flex;
   }
 }

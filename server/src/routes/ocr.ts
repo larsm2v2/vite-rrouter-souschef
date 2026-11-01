@@ -16,6 +16,7 @@ import { ocrParsePrompt } from "../utils/prompts";
 const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 import { ocrLimiter } from "../05_frameworks/myexpress/gateway";
+import { authenticateJWT } from "../05_frameworks/myexpress/jwtAuth";
 import {
   publishOcrJob,
   isPubSubAvailable,
@@ -29,6 +30,33 @@ const router = Router();
 // Apply OCR rate limiter to all OCR routes
 router.use(ocrLimiter);
 
+// Every OCR route handles user content, so require a valid access token
+// (defense in depth: the router is also mounted behind /api auth).
+router.use("/ocr", authenticateJWT);
+
+const OCR_DIR = path.join(process.cwd(), "data/ocr");
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+/** Strip any directory components and unsafe characters from a client filename. */
+function sanitizeFilename(name: string): string {
+  const base = path
+    .basename(String(name || "upload"))
+    .replace(/[^\w.-]+/g, "_");
+  return base.replace(/^\.+/, "").slice(0, 100) || "upload";
+}
+
+/**
+ * Resolve a stored OCR file for a user. Stored names are prefixed with the
+ * owner's id, so a user can never address another user's file, and the
+ * resolved path must stay inside the OCR directory.
+ */
+function resolveUserFile(userId: number, rawName: string): string | null {
+  const name = path.basename(String(rawName));
+  if (name !== rawName || !name.startsWith(`${userId}_`)) return null;
+  const resolved = path.resolve(OCR_DIR, name);
+  return resolved.startsWith(OCR_DIR + path.sep) ? resolved : null;
+}
+
 // Check if async processing is enabled
 let asyncProcessingEnabled = false;
 (async () => {
@@ -37,12 +65,23 @@ let asyncProcessingEnabled = false;
     console.log("OCR async processing enabled (Pub/Sub available)");
   } else {
     console.log(
-      "OCR async processing disabled (Pub/Sub unavailable, using sync mode)"
+      "OCR async processing disabled (Pub/Sub unavailable, using sync mode)",
     );
   }
 })();
 
-const upload = multer({ dest: path.join(process.cwd(), "data/ocr_tmp") });
+const upload = multer({
+  dest: path.join(process.cwd(), "data/ocr_tmp"),
+  limits: { fileSize: MAX_UPLOAD_BYTES, files: 10 },
+  fileFilter: (_req, file, cb) => {
+    if (
+      /^image\/(png|jpe?g|webp|gif|bmp|tiff?|heic|heif)$/i.test(file.mimetype)
+    ) {
+      return cb(null, true);
+    }
+    cb(new Error("Only image uploads are allowed"));
+  },
+});
 // Use native tesseract binary via child_process for server-side OCR
 // The server environment (container) must have `tesseract` installed.
 
@@ -72,14 +111,16 @@ async function handleOcrUpload(req: any, res: any) {
       return res.status(400).json({ message: "No files uploaded" });
     }
 
-    const destDir = path.join(process.cwd(), "data/ocr");
+    const destDir = OCR_DIR;
     fs.mkdirSync(destDir, { recursive: true });
+    const ownerId = (req as any).user?.id;
 
     const stored: any[] = [];
     for (const file of files) {
       const id =
         Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      const destPath = path.join(destDir, `${id}_${file.originalname}`);
+      const safeName = sanitizeFilename(file.originalname);
+      const destPath = path.join(destDir, `${ownerId}_${id}_${safeName}`);
       try {
         fs.renameSync(file.path, destPath);
       } catch (e) {
@@ -125,7 +166,7 @@ async function handleOcrUpload(req: any, res: any) {
             userId,
             fileCount: filePaths.length,
             timestamp: new Date().toISOString(),
-          })
+          }),
         );
 
         return res.json({
@@ -137,7 +178,7 @@ async function handleOcrUpload(req: any, res: any) {
       } catch (pubsubError) {
         console.error(
           "Async OCR job creation failed, falling back to sync:",
-          pubsubError
+          pubsubError,
         );
         // Fall through to synchronous processing
       }
@@ -151,14 +192,14 @@ async function handleOcrUpload(req: any, res: any) {
         const { stdout } = await execFileAsync(
           "tesseract",
           [filePath, "stdout", "-l", "eng"],
-          { maxBuffer: 10 * 1024 * 1024 }
+          { maxBuffer: 10 * 1024 * 1024 },
         );
         return (stdout || "").toString();
       } catch (err: any) {
         // If the binary isn't found, surface a helpful error
         if (err && err.code === "ENOENT") {
           throw new Error(
-            "Tesseract binary not found (install tesseract-ocr in the container)"
+            "Tesseract binary not found (install tesseract-ocr in the container)",
           );
         }
         throw err;
@@ -203,14 +244,14 @@ async function handleOcrUpload(req: any, res: any) {
     } catch (err) {
       console.warn(
         "Forwarding to clean service failed, returning raw parse",
-        err && (err as Error).message
+        err && (err as Error).message,
       );
       cleaned = parsed;
     }
 
     // Generate image URLs for stored files (relative to server)
     const imageUrls = stored.map(
-      (s) => `/api/ocr/images/${path.basename(s.storedAt)}`
+      (s) => `/api/ocr/images/${path.basename(s.storedAt)}`,
     );
 
     res.json({
@@ -249,35 +290,6 @@ router.post("/ocr/upload", uploadHandlerWrapper(uploadAny, handleOcrUpload));
 // POST /api/ocr/parse - accept JSON { text } and return parsed recipe
 router.post("/ocr/parse", async (req, res) => {
   try {
-    // Concise diagnostic logging for troubleshooting requests reaching Express
-    try {
-      const origin = req.headers?.origin || null;
-      const cookiePresent = !!req.headers?.cookie;
-      const contentLength = req.headers?.["content-length"] || null;
-      const hasAuth = !!req.headers?.authorization;
-      let authSummary: string | null = null;
-      if (hasAuth) {
-        const a = String(req.headers.authorization || "");
-        authSummary = a.length > 40 ? `${a.slice(0, 20)}...${a.slice(-12)}` : a;
-      }
-      console.log(
-        `/ocr/parse called: ip=${
-          req.ip || req.connection?.remoteAddress || "unknown"
-        } method=${req.method} url=${
-          req.originalUrl || req.url
-        } origin=${origin} cookie=${cookiePresent} content-length=${contentLength} authPresent=${hasAuth}`
-      );
-      if (authSummary) console.log(`/ocr/parse auth-summary: ${authSummary}`);
-      // Body preview (trimmed) — avoid logging full tokens or very large payloads
-      const bodyPreview =
-        typeof req.body === "string"
-          ? req.body.slice(0, 2048)
-          : JSON.stringify(req.body || {}).slice(0, 2048);
-      console.log(`/ocr/parse body-preview: ${bodyPreview}`);
-    } catch (logErr) {
-      console.warn("Failed to log /ocr/parse details:", logErr);
-    }
-
     const ocrText = (req.body && (req.body.text || req.body.ocrText)) || "";
 
     if (!ocrText || ocrText.trim().length === 0) {
@@ -306,7 +318,7 @@ router.post("/ocr/parse", async (req, res) => {
         const response = result.response.text();
         console.log(`/ocr/parse: AI response length: ${response.length} chars`);
         console.log(
-          `/ocr/parse: AI response preview: ${response.slice(0, 200)}...`
+          `/ocr/parse: AI response preview: ${response.slice(0, 200)}...`,
         );
 
         // Clean up response - remove markdown code blocks if present
@@ -322,15 +334,15 @@ router.post("/ocr/parse", async (req, res) => {
         jsonText = jsonText.trim();
 
         console.log(
-          `/ocr/parse: Cleaned JSON length: ${jsonText.length} chars`
+          `/ocr/parse: Cleaned JSON length: ${jsonText.length} chars`,
         );
         console.log(`/ocr/parse: Attempting to parse JSON...`);
 
         const aiParsed = JSON.parse(jsonText);
         console.log(
           `/ocr/parse: Successfully parsed JSON. Keys: ${Object.keys(
-            aiParsed
-          ).join(", ")}`
+            aiParsed,
+          ).join(", ")}`,
         );
 
         // Merge AI parsed data with defaults
@@ -339,7 +351,7 @@ router.post("/ocr/parse", async (req, res) => {
       } catch (aiErr) {
         console.error(
           "/ocr/parse: ❌ AI parsing failed:",
-          aiErr instanceof Error ? aiErr.message : String(aiErr)
+          aiErr instanceof Error ? aiErr.message : String(aiErr),
         );
         if (aiErr instanceof Error && aiErr.stack) {
           console.error("/ocr/parse: Error stack:", aiErr.stack);
@@ -348,7 +360,7 @@ router.post("/ocr/parse", async (req, res) => {
       }
     } else {
       console.warn(
-        "/ocr/parse: ⚠️ GEMINI_API_KEY not configured, skipping AI parsing"
+        "/ocr/parse: ⚠️ GEMINI_API_KEY not configured, skipping AI parsing",
       );
     }
 
@@ -359,7 +371,7 @@ router.post("/ocr/parse", async (req, res) => {
     } catch (err) {
       console.warn(
         "/ocr/parse: clean service forwarding failed",
-        err && (err as Error).message
+        err && (err as Error).message,
       );
       return res.json({ parsed, text: ocrText });
     }
@@ -369,14 +381,18 @@ router.post("/ocr/parse", async (req, res) => {
   }
 });
 
-// GET /api/ocr/gallery - list files
-router.get("/ocr/gallery", async (_req, res) => {
+// GET /api/ocr/gallery - list the caller's files
+router.get("/ocr/gallery", async (req, res) => {
   try {
-    const dir = path.join(process.cwd(), "data/ocr");
-    if (!fs.existsSync(dir)) return res.json([]);
+    const userId = (req as any).user.id as number;
+    if (!fs.existsSync(OCR_DIR)) return res.json([]);
     const files = fs
-      .readdirSync(dir)
-      .map((name) => ({ id: name, originalUrl: `/data/ocr/${name}` }));
+      .readdirSync(OCR_DIR)
+      .filter((name) => name.startsWith(`${userId}_`))
+      .map((name) => ({
+        id: name,
+        originalUrl: `/api/ocr/images/${encodeURIComponent(name)}`,
+      }));
     res.json(files);
   } catch (err) {
     console.error(err);
@@ -384,22 +400,15 @@ router.get("/ocr/gallery", async (_req, res) => {
   }
 });
 
-// GET /api/ocr/images/:filename - serve uploaded images
+// GET /api/ocr/images/:filename - serve one of the caller's uploaded images
 router.get("/ocr/images/:filename", async (req, res) => {
   try {
-    const filename = req.params.filename;
-    const dir = path.join(process.cwd(), "data/ocr");
-    const filePath = path.join(dir, filename);
-    
-    // Security: prevent directory traversal
-    if (!filePath.startsWith(dir)) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-    
-    if (!fs.existsSync(filePath)) {
+    const filePath = resolveUserFile((req as any).user.id, req.params.filename);
+    if (!filePath || !fs.existsSync(filePath)) {
       return res.status(404).json({ message: "Image not found" });
     }
-    
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, max-age=300");
     res.sendFile(filePath);
   } catch (err) {
     console.error(err);
@@ -407,13 +416,14 @@ router.get("/ocr/images/:filename", async (req, res) => {
   }
 });
 
-// DELETE /api/ocr/:id
+// DELETE /api/ocr/:id - delete one of the caller's files
 router.delete("/ocr/:id", async (req, res) => {
   try {
-    const id = req.params.id;
-    const dir = path.join(process.cwd(), "data/ocr");
-    const file = path.join(dir, id);
-    if (fs.existsSync(file)) fs.unlinkSync(file);
+    const file = resolveUserFile((req as any).user.id, req.params.id);
+    if (!file || !fs.existsSync(file)) {
+      return res.status(404).json({ message: "File not found" });
+    }
+    fs.unlinkSync(file);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
@@ -446,7 +456,8 @@ router.get("/ocr/status/:jobId", async (req, res) => {
 
     const job = await ocrJobRepository.findByJobId(jobId);
 
-    if (!job) {
+    // Treat other users' jobs as nonexistent so job ids can't be probed.
+    if (!job || (job.userId != null && job.userId !== (req as any).user.id)) {
       return res.status(404).json({ message: "Job not found" });
     }
 

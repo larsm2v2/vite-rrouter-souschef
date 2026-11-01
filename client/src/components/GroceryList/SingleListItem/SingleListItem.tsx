@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { ListItem } from "../../../types";
 import { MdEdit, MdDeleteForever, MdDone } from "../../../assets/MdAssets";
+import { AISLES, aisleFor, isAisle } from "../../../utils/aisles";
+import { formatNumber } from "../../../utils/recipeMath/quantity";
 import "../InputField/InputField.css";
 
 interface SingleListItemProps {
@@ -67,6 +69,24 @@ const SingleListItem: React.FC<SingleListItemProps> = ({
               }))
             }
           />
+          <select
+            className="grocery-list__item__box grocery-list__item__aisle input__box"
+            aria-label="Aisle"
+            value={
+              isAisle(editedItem.aisle)
+                ? editedItem.aisle
+                : aisleFor(editedItem.listItem)
+            }
+            onChange={(e) =>
+              setEditedItem((prev) => ({ ...prev, aisle: e.target.value }))
+            }
+          >
+            {AISLES.map((aisle) => (
+              <option key={aisle} value={aisle}>
+                {aisle}
+              </option>
+            ))}
+          </select>
           <button
             className="grocery-list__item__submit input__submit"
             type="submit"
@@ -81,7 +101,13 @@ const SingleListItem: React.FC<SingleListItemProps> = ({
               listItem.isDone ? "done" : ""
             }`}
           >
-            {listItem.quantity} {listItem.unit} {listItem.listItem}
+            {[
+              listItem.quantity > 0 ? formatNumber(listItem.quantity) : "",
+              listItem.unit,
+              listItem.listItem,
+            ]
+              .filter((part) => part !== "")
+              .join(" ")}
           </span>
           <div className="grocery-list__item__actions">
             <button

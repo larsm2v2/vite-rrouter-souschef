@@ -1,11 +1,18 @@
-/* Layout tokens moved to `src/index.css :root` */
+/* Layout tokens live in `src/index.css :root`. */
+
+:root {
+  --dock-height: 60px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
 
 /* Root layout: header + body */
 .app-root {
   display: grid;
   grid-template-rows: var(--header-height) minmax(0, 1fr);
   min-height: 100vh;
-  padding: 0 0 0 0;
+  min-height: 100dvh;
+  padding: 0;
   width: 100%;
 }
 
@@ -15,195 +22,289 @@
   top: 0;
   z-index: 25;
   border-bottom: 1px solid #eee;
-  flex-wrap: wrap;
+  height: var(--header-height);
 }
 
 .app-body {
-  /* Single flexible column; sidebar will overlay when opened */
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--gap);
   align-items: start;
   position: relative;
 }
 
-/* When the sidebar is open the Navbar renders a clickable backdrop
-   (.sidebar-backdrop) which provides the dim and click-to-close behavior. */
-
-/* Sidebar overlays the app (off-canvas by default) */
-.app-sidebar {
-  position: fixed;
-  top: calc(var(--header-height) + var(--gap));
-  left: 0;
-  width: var(--sidebar-width);
-  height: calc(100vh - var(--header-height) - var(--gap));
-  transform: translateX(-110%);
-  transition: transform 220ms ease;
-  z-index: 200;
-  background: var(--tertiary-color);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  padding: 12px;
-  border-right: 1px solid #f0f0f0;
-  min-height: calc(100vh - var(--header-height));
-  pointer-events: none;
+.app-main {
+  padding: 20px 3.5rem 20px 20px; /* right pad clears the fixed right-sidebar tab */
+  min-height: 0;
+  min-width: 0;
 }
 
-/* Toggle tab for left sidebar */
-.sidebar-toggle-tab.left-toggle {
+/* ---- Drawers (shared) ---- */
+.app-sidebar,
+.recipe-index-sidebar {
   position: fixed;
+  top: calc(var(--header-height) + var(--gap));
+  width: var(--sidebar-width);
+  height: calc(100vh - var(--header-height) - var(--gap));
+  height: calc(100dvh - var(--header-height) - var(--gap));
+  z-index: 200;
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 220ms ease,
+    visibility 0s linear 220ms;
+  visibility: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.app-sidebar::-webkit-scrollbar,
+.recipe-index-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.app-sidebar {
   left: 0;
+  background: var(--tertiary-color);
+  border-right: 1px solid #f0f0f0;
+  transform: translateX(-110%);
+}
+
+.recipe-index-sidebar {
+  right: 0;
+  background: var(--surface, #fff);
+  border-left: 1px solid #f0f0f0;
+  transform: translateX(110%);
+}
+
+.app-body.sidebar-open .app-sidebar,
+.recipe-index-sidebar.open {
+  transform: translateX(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+/* The in-drawer header only exists for touch layouts. */
+.drawer-header {
+  display: none;
+}
+
+/* ---- Edge tabs (desktop) ---- */
+.sidebar-toggle-tab {
+  position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--primary-color);
-  border: 1px solid #e0e0e0;
-  border-left: none;
   padding: 1.25rem 0.6rem;
   cursor: pointer;
-  border-radius: 0 8px 8px 0;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
   writing-mode: vertical-rl;
   text-orientation: mixed;
   font-weight: 600;
   font-size: 0.9rem;
-  color: var(--tertiary-color);
+  z-index: 201;
   transition:
     left 220ms ease,
+    right 220ms ease,
     background-color 0.2s;
-  z-index: 201;
-  pointer-events: auto;
 }
 
-.sidebar-toggle-tab.left-toggle:hover {
-  background-color: var(--tertiary-color);
-  color: var(--primary-color);
-}
-
-.sidebar-toggle-tab.left-toggle .toggle-compact {
+.sidebar-toggle-tab .toggle-compact {
   display: none;
 }
 
-/* Move left tab when sidebar is open */
+.sidebar-toggle-tab.left-toggle {
+  left: 0;
+  background: var(--primary-color);
+  border: 1px solid #e0e0e0;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  color: var(--tertiary-color);
+}
+
 .app-body.sidebar-open .sidebar-toggle-tab.left-toggle {
   left: var(--sidebar-width);
 }
 
-/* When opened make it visible and interactive */
-.app-body.sidebar-open .app-sidebar {
-  transform: translateX(0);
-  pointer-events: auto;
-}
-
-/* Toggle tab for right sidebar
-   (.recipe-index-sidebar base styles live in RecipeIndexSidebar.css) */
 .sidebar-toggle-tab.right-toggle {
-  position: fixed;
-  left: auto;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--surface, var(--primary-color));
+  background: var(--primary-color);
   border: 1px solid #e0e0e0;
   border-right: none;
-  padding: 1.25rem 0.6rem;
-  cursor: pointer;
   border-radius: 8px 0 0 8px;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-weight: 600;
-  font-size: 0.9rem;
   color: var(--tertiary-color);
-  transition:
-    right 220ms ease,
-    background-color 0.2s;
-  z-index: 201;
-  pointer-events: auto;
 }
 
-.sidebar-toggle-tab.right-toggle:hover {
+.sidebar-toggle-tab.right-toggle.open {
+  right: var(--sidebar-width);
+}
+
+.sidebar-toggle-tab:hover {
   background-color: var(--tertiary-color);
   color: var(--primary-color);
 }
 
-.sidebar-toggle-tab.right-toggle .toggle-compact {
+.sidebar-toggle-tab:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 2px;
+}
+
+/* ---- Bottom dock (touch layouts only) ---- */
+.mobile-dock {
   display: none;
 }
 
-.sidebar-toggle-tab.right-toggle.open {
-  right: 320px;
-}
-
-.app-main {
-  padding: 20px 3.5rem 20px 20px; /* right pad clears the fixed right-sidebar tab */
-  /* allow the main area to shrink inside the grid and scroll when content overflows */
-  min-height: 0;
-  overflow: auto;
-}
-
-/* Mobile/tablet overlay: matches JS isMobile threshold (window.innerWidth <= 900) */
+/* ---- Tablet / phone: modal drawers + dock ---- */
 @media (max-width: 900px) {
-  .app-body {
-    grid-template-columns: 1fr;
-  }
-  .app-sidebar {
-    position: fixed;
-    inset: var(--header-height) 0 0 0;
-    width: 100%;
-    height: calc(100% - var(--header-height));
-    transform: translateX(-110%);
-    transition: transform 220ms ease;
-    background: var(--surface, #fff);
-    z-index: 200;
-    border-right: none;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  }
-
-  .app-body.sidebar-open .app-sidebar {
-    transform: translateX(0);
-  }
-
   .app-main {
-    padding: 12px; /* right tab goes full-screen on mobile — no side offset needed */
+    padding: 12px 12px calc(var(--dock-height) + var(--safe-bottom) + 84px);
   }
 
-  .sidebar-toggle-tab.left-toggle .toggle-full {
+  .sidebar-toggle-tab {
+    display: none; /* replaced by the dock; edge tabs were unreachable on phones */
+  }
+
+  .app-sidebar,
+  .recipe-index-sidebar {
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: min(88vw, 380px);
+    padding: 0 12px calc(16px + var(--safe-bottom));
+    background: var(--surface, #fff);
+    border: none;
+  }
+
+  .app-sidebar {
+    background: var(--tertiary-color);
+  }
+
+  .drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 -12px 12px;
+    padding: calc(8px + var(--safe-top)) 12px 8px;
+    background: inherit;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .drawer-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--primary-color);
+  }
+
+  .drawer-close {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .drawer-close:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
+  /* The drawer header already names the panel. */
+  .app-sidebar .grocerylist-title {
     display: none;
   }
 
-  .sidebar-toggle-tab.left-toggle .toggle-compact {
-    display: block;
+  .mobile-dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 150;
+    display: flex;
+    min-height: calc(var(--dock-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    background: var(--primary-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
   }
 
-  /* When sidebar is open on mobile it covers 100% width; left:100% would push
-     the tab off-screen. Pin it inside the overlay at the top-right instead. */
-  .app-body.sidebar-open .sidebar-toggle-tab.left-toggle {
-    left: auto;
-    right: 0.75rem;
-    top: 0.75rem;
-    transform: none;
-    writing-mode: horizontal-tb;
-    border-radius: 8px;
-    z-index: 202;
+  .dock-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: var(--dock-height);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--tertiary-color);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.15;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Right index sidebar narrows to 300px at tablet; position tab accordingly */
-  .sidebar-toggle-tab.right-toggle.open {
-    right: 300px;
+  .dock-btn span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .sidebar-toggle-tab.right-toggle .toggle-full {
-    display: none;
+  .dock-btn svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
-  .sidebar-toggle-tab.right-toggle .toggle-compact {
-    display: block;
+  .dock-btn:active {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .dock-btn[aria-expanded="true"] {
+    color: var(--secondary-color);
+  }
+
+  .dock-btn:focus-visible {
+    outline: 3px solid var(--secondary-color);
+    outline-offset: -3px;
+  }
+
+  .dock-keep {
+    color: var(--secondary-color);
   }
 }
 
-/* At mobile breakpoints RecipeIndexSidebar.css expands to full width;
-   slide the right toggle tab off-screen accordingly */
 @media (max-width: 600px) {
-  .sidebar-toggle-tab.right-toggle.open {
-    right: 100%;
+  :root {
+    --header-height: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar,
+  .recipe-index-sidebar,
+  .sidebar-toggle-tab {
+    transition: none;
   }
 }

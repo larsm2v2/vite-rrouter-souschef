@@ -22,9 +22,45 @@
   padding: 0 0vw 0 0vw;
 }
 
+.grocery-aisle {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.grocery-aisle__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(21, 65, 83, 0.12);
+  color: var(--primary-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.grocery-aisle__count {
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--primary-color);
+  color: #fff;
+  text-align: center;
+}
+
+.grocery-list__item__aisle {
+  min-height: 44px;
+}
+
 .grocery-list-toolbar {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
   margin: 0 0 0.75rem;
 }
 
@@ -33,14 +69,41 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 40px;
-  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
   border: 1px solid var(--primary-color);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--primary-color);
   color: #fff;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
+}
+
+.grocery-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.grocery-secondary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.grocery-secondary-btn:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .grocery-copy-btn svg {

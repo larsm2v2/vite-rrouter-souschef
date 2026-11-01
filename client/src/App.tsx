@@ -10,6 +10,7 @@ import RecipeDetailPage from "./components/pages/RecipeDetailPage";
 import SharedRecipePreview from "./components/pages/SharedRecipePreview";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
+import CookMode from "./components/Cook/CookMode";
 
 function App() {
   return (
@@ -19,6 +20,16 @@ function App() {
       <Route path="/auth/callback" element={<GoogleCallback />} />
 
       {/* Dev login removed */}
+
+      {/* Cook mode is full-screen: no dock, drawers or FAB */}
+      <Route
+        path="/recipes/:id/cook"
+        element={
+          <ProtectedRoute>
+            <CookMode />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected routes with shared layout */}
       <Route

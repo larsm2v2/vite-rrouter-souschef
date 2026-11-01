@@ -21,9 +21,22 @@
 }
 .fab-button:active {
   transform: scale(0.98);
-  box-shadow: 0 0 12px rgb(171, 172, 96), 0 0 24px rgb(171, 172, 96);
+  box-shadow:
+    0 0 12px rgb(171, 172, 96),
+    0 0 24px rgb(171, 172, 96);
 }
 .fab-plus {
   font-size: 28px;
   line-height: 0;
+}
+
+/* Sit above the bottom dock on touch layouts */
+@media (max-width: 900px) {
+  .fab-button {
+    right: 16px;
+    bottom: calc(
+      var(--dock-height, 60px) + env(safe-area-inset-bottom, 0px) + 16px
+    );
+    z-index: 140;
+  }
 }

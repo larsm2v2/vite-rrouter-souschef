@@ -69,11 +69,16 @@ async function stubApiCalls(page: Page) {
   });
 }
 
-/** Returns true when the page has no horizontal scrollbar. */
-async function hasNoHorizontalOverflow(page: Page): Promise<boolean> {
-  return page.evaluate(() => {
-    return document.documentElement.scrollWidth <= window.innerWidth;
-  });
+// The grocery toggle is an edge tab on desktop and a dock button on phones.
+const GROCERY_TOGGLE = '[data-action="toggle-grocery"]:visible';
+
+/** Returns true when the page has no horizontal scrollbar. */ async function hasNoHorizontalOverflow(
+  page: Page,
+): Promise<boolean> {
+  const width = page.viewportSize()!.width;
+  return page.evaluate((viewportWidth) => {
+    return document.documentElement.scrollWidth <= viewportWidth;
+  }, width);
 }
 
 // ---------------------------------------------------------------------------
@@ -149,81 +154,184 @@ test.describe("Left sidebar toggle", () => {
     await stubApiCalls(page);
   });
 
-  test("toggle tab is visible on page load", async ({ page }) => {
+  test("toggle control is visible on page load", async ({ page }) => {
     await page.goto("/sous-chef");
     await page.waitForLoadState("domcontentloaded");
 
-    const tab = page.locator(".sidebar-toggle-tab.left-toggle");
-    await expect(tab).toBeVisible();
+    await expect(page.locator(GROCERY_TOGGLE)).toBeVisible();
   });
 
-  test("clicking toggle tab opens the sidebar", async ({ page }) => {
+  test("clicking the toggle opens the sidebar", async ({ page }) => {
     await page.goto("/sous-chef");
     await page.waitForLoadState("domcontentloaded");
 
-    const tab = page.locator(".sidebar-toggle-tab.left-toggle");
-    await tab.click();
+    await page.locator(GROCERY_TOGGLE).click();
 
-    // After click, app-body should have sidebar-open class
-    const appBody = page.locator(".app-body");
-    await expect(appBody).toHaveClass(/sidebar-open/);
+    await expect(page.locator(".app-body")).toHaveClass(/sidebar-open/);
+    await expect(page.locator("#App-sidebar")).toBeVisible();
   });
 
-  test("clicking toggle tab again closes the sidebar", async ({ page, isMobile }) => {
-    await page.goto("/sous-chef");
-    await page.waitForLoadState("domcontentloaded");
-
-    const tab = page.locator(".sidebar-toggle-tab.left-toggle");
-    await tab.click(); // open
-
-    // On mobile the tab slides off-viewport after opening; dispatch directly via JS
-    if (isMobile) {
-      await page.evaluate(() => {
-        (document.querySelector(".sidebar-toggle-tab.left-toggle") as HTMLElement | null)?.click();
-      });
-    } else {
-      await tab.click(); // close
-    }
-
-    const appBody = page.locator(".app-body");
-    await expect(appBody).not.toHaveClass(/sidebar-open/);
-  });
-
-  test("sidebar backdrop appears on mobile when sidebar is open", async ({
+  test("the open drawer can be closed with its in-panel Close button", async ({
     page,
     isMobile,
   }) => {
     if (!isMobile) test.skip();
 
     await page.goto("/sous-chef");
-    await page.waitForLoadState("domcontentloaded");
+    await page.locator(GROCERY_TOGGLE).click();
+    await expect(page.locator(".app-body")).toHaveClass(/sidebar-open/);
 
-    const tab = page.locator(".sidebar-toggle-tab.left-toggle");
-    await tab.click();
-
-    // Backdrop div is rendered by Navbar when sidebarToggled=true
-    const backdrop = page.locator(".sidebar-backdrop");
-    await expect(backdrop).toBeVisible();
+    await page.getByRole("button", { name: "Close panel" }).click();
+    await expect(page.locator(".app-body")).not.toHaveClass(/sidebar-open/);
+    await expect(page.locator("#App-sidebar")).toBeHidden();
   });
 
-  test("clicking backdrop closes the sidebar", async ({ page, isMobile }) => {
+  test("clicking the toggle again closes the sidebar on desktop", async ({
+    page,
+    isMobile,
+  }) => {
+    if (isMobile) test.skip();
+
+    await page.goto("/sous-chef");
+    const tab = page.locator(GROCERY_TOGGLE);
+    await tab.click();
+    await expect(page.locator(".app-body")).toHaveClass(/sidebar-open/);
+    await tab.click();
+    await expect(page.locator(".app-body")).not.toHaveClass(/sidebar-open/);
+  });
+
+  test("Escape closes the sidebar", async ({ page }) => {
+    await page.goto("/sous-chef");
+    await page.locator(GROCERY_TOGGLE).click();
+    await expect(page.locator(".app-body")).toHaveClass(/sidebar-open/);
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".app-body")).not.toHaveClass(/sidebar-open/);
+  });
+
+  test("the backdrop is a real tap target that closes the sidebar", async ({
+    page,
+    isMobile,
+  }) => {
     if (!isMobile) test.skip();
 
     await page.goto("/sous-chef");
-    await page.waitForLoadState("domcontentloaded");
-
-    const tab = page.locator(".sidebar-toggle-tab.left-toggle");
-    await tab.click();
+    await page.locator(GROCERY_TOGGLE).click();
 
     const backdrop = page.locator(".sidebar-backdrop");
     await expect(backdrop).toBeVisible();
-    // sidebar-content intercepts pointer events; dispatch click directly via JS
-    await page.evaluate(() => {
-      (document.querySelector(".sidebar-backdrop") as HTMLElement | null)?.click();
-    });
 
-    const appBody = page.locator(".app-body");
-    await expect(appBody).not.toHaveClass(/sidebar-open/);
+    // Tap the visible strip to the right of the drawer (no JS click shortcut).
+    const viewport = page.viewportSize()!;
+    await page.mouse.click(viewport.width - 6, viewport.height / 2);
+
+    await expect(page.locator(".app-body")).not.toHaveClass(/sidebar-open/);
+  });
+
+  test("drawer leaves a tappable backdrop strip and fits the viewport", async ({
+    page,
+    isMobile,
+  }) => {
+    if (!isMobile) test.skip();
+
+    await page.goto("/sous-chef");
+    await page.locator(GROCERY_TOGGLE).click();
+    await expect(page.locator(".app-body")).toHaveClass(/sidebar-open/);
+
+    // Wait for the slide-in transition to settle before measuring.
+    await expect
+      .poll(async () => (await page.locator("#App-sidebar").boundingBox())?.x)
+      .toBe(0);
+    const box = await page.locator("#App-sidebar").boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(box).not.toBeNull();
+    expect(box!.x + box!.width).toBeLessThan(viewport.width);
+    expect(box!.y).toBe(0);
+  });
+
+  test("page behind the drawer does not scroll while it is open", async ({
+    page,
+    isMobile,
+  }) => {
+    if (!isMobile) test.skip();
+
+    await page.goto("/sous-chef");
+    await page.locator(GROCERY_TOGGLE).click();
+    await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+  });
+
+  test("closed drawer is not reachable by keyboard or assistive tech", async ({
+    page,
+  }) => {
+    await page.goto("/sous-chef");
+    await expect(page.locator("#App-sidebar")).toHaveAttribute("inert", "");
+    await page.locator(GROCERY_TOGGLE).click();
+    await expect(page.locator("#App-sidebar")).not.toHaveAttribute("inert", "");
+  });
+});
+
+test.describe("Mobile dock", () => {
+  test.beforeEach(async ({ page }) => {
+    await injectFakeAuth(page);
+    await stubApiCalls(page);
+  });
+
+  test("dock is shown on phones and hidden on desktop", async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto("/sous-chef");
+    const dock = page.getByRole("navigation", { name: "Quick actions" });
+    if (isMobile) {
+      await expect(dock).toBeVisible();
+      for (const button of await dock.getByRole("button").all()) {
+        const box = await button.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+      }
+    } else {
+      await expect(dock).toBeHidden();
+    }
+  });
+
+  test("the create-recipe button does not overlap the dock", async ({
+    page,
+    isMobile,
+  }) => {
+    if (!isMobile) test.skip();
+
+    await page.goto("/sous-chef");
+    const fab = await page
+      .getByRole("button", { name: "Create Recipe" })
+      .boundingBox();
+    const dock = await page
+      .getByRole("navigation", { name: "Quick actions" })
+      .boundingBox();
+    expect(fab!.y + fab!.height).toBeLessThanOrEqual(dock!.y);
+  });
+
+  test("header stays on a single row", async ({ page }) => {
+    await page.goto("/sous-chef");
+    const header = await page.locator(".app-header").boundingBox();
+    const main = await page.locator(".app-main").boundingBox();
+    expect(header!.height).toBeLessThanOrEqual(64);
+    expect(main!.y).toBeGreaterThanOrEqual(header!.y + header!.height - 2);
+  });
+
+  test("search expands in place on phones", async ({ page, isMobile }) => {
+    if (!isMobile) test.skip();
+
+    await page.goto("/sous-chef");
+    await expect(page.getByRole("searchbox")).toBeHidden();
+    await page.getByRole("button", { name: "Open search" }).click();
+    const input = page.getByLabel("Search recipes");
+    await expect(input).toBeVisible();
+    await expect(input).toBeFocused();
+    expect(await hasNoHorizontalOverflow(page)).toBe(true);
+    await page.getByRole("button", { name: "Close search" }).click();
+    await expect(input).toBeHidden();
   });
 });
 
@@ -295,7 +403,7 @@ test.describe("Open sidebar does not cause horizontal overflow", () => {
     await page.goto("/sous-chef");
     await page.waitForLoadState("domcontentloaded");
 
-    const tab = page.locator(".sidebar-toggle-tab.left-toggle");
+    const tab = page.locator(GROCERY_TOGGLE);
     await tab.click();
 
     // Wait for sidebar transition

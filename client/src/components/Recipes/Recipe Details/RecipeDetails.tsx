@@ -1,25 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useLocation, Link } from "react-router-dom";
 import useRecipe from "../../../hooks/useRecipe";
 import { RecipeModel } from "../../../types";
 import "../Recipes.css";
 import "../../SousChef/SousChef.css";
 import "./RecipeDetails.css";
+import "../../Cook/Cook.css";
 import apiClient from "../../pages/Client";
 import { useToast } from "../../common/Toast";
-
-// Interface for ingredient groups
-interface IngredientGroup {
-  name: string;
-  ingredients: {
-    [subcategory: string]: {
-      id: number;
-      quantity: number;
-      name: string;
-      unit?: string;
-    }[];
-  }; // Assuming consistent ingredient structure
-}
+import { useCookState } from "../../../hooks/useCookState";
+import { useTimers } from "../../../hooks/useTimers";
+import {
+  displayIngredient,
+  parseServings,
+  toIngredientGroups,
+} from "../../../utils/recipeIngredients";
+import InstructionText from "../../Cook/InstructionText";
+import ServingScaler from "../../Cook/ServingScaler";
+import TimerTray from "../../Cook/TimerTray";
 
 interface RecipeDetailsProps {
   isSelected: boolean;
@@ -53,6 +51,24 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
 
   const activeShowRecipe =
     showRecipe ?? routeStateRecipe ?? fetchedRecipe ?? null;
+
+  const { state: cook, patch: patchCook } = useCookState(activeShowRecipe?.id);
+  const timers = useTimers(activeShowRecipe?.id);
+  const ingredientGroups = useMemo(
+    () => toIngredientGroups(activeShowRecipe?.ingredients),
+    [activeShowRecipe?.ingredients],
+  );
+  const baseServings = parseServings(activeShowRecipe?.serving_info?.servings);
+  const hasSteps = (activeShowRecipe?.instructions?.length ?? 0) > 0;
+  const resumable =
+    cook.started && (cook.stepIndex > 0 || cook.checked.length > 0);
+
+  const toggleChecked = (key: string) =>
+    patchCook((prev) => ({
+      checked: prev.checked.includes(key)
+        ? prev.checked.filter((k) => k !== key)
+        : [...prev.checked, key],
+    }));
 
   // Initialize favorite state from recipe data
   useEffect(() => {
@@ -110,7 +126,9 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
         success: boolean;
         itemsAdded: number;
         totalItems: number;
-      }>(`/api/recipes/${activeShowRecipe.id}/add-to-grocery-list`);
+      }>(`/api/recipes/${activeShowRecipe.id}/add-to-grocery-list`, {
+        scale: cook.scale,
+      });
 
       if (response.data.success) {
         // Dispatch custom event to notify GroceryList component
@@ -182,22 +200,7 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
     }
   };
 
-  // 1. Organize Ingredients by Subheading - use backend structure directly
-  const ingredientGroups: IngredientGroup[] | null = activeShowRecipe
-    ? Object.entries(activeShowRecipe.ingredients)
-        .map(([name, ingredients]) => {
-          if (Array.isArray(ingredients) && ingredients.length > 0) {
-            return {
-              name,
-              ingredients: {
-                [name]: ingredients,
-              },
-            };
-          }
-          return null;
-        })
-        .filter((group): group is IngredientGroup => group !== null)
-    : null;
+  // 1. Ingredients are normalized in toIngredientGroups so no line is ever dropped
 
   if (fetchingRecipe && !activeShowRecipe) {
     return (
@@ -304,6 +307,16 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
           </div>
 
           {/* 2. Display Other Details (with capitalized headings) */}
+          {hasSteps && (
+            <div className="recipe-actions-row">
+              <Link
+                className="start-cooking"
+                to={`/recipes/${activeShowRecipe?.id}/cook`}
+              >
+                {resumable ? "Resume cooking" : "Start cooking"}
+              </Link>
+            </div>
+          )}
           <div className="recipe-info">
             <p>
               <strong>{capitalizeHeading("Cuisine")}:</strong>{" "}
@@ -318,42 +331,69 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
           {/* 3. Display Ingredients by Subheading (with capitalized headings) */}
           <section id="ingredients">
             <h2>{capitalizeHeading("Ingredients")}</h2>
-            {ingredientGroups?.map((group) => (
+            <ServingScaler
+              baseServings={baseServings}
+              scale={cook.scale}
+              onChange={(scale) => patchCook({ scale })}
+            />
+            {ingredientGroups.map((group) => (
               <div className="eachIngredientSet" key={group.name}>
-                <h3 className="eachIngredientSetTitle">
-                  {capitalizeHeading(group.name)}
-                </h3>
-                <ul>
-                  {/* Access the ingredients array for the specific group */}
-                  {Object.values(group.ingredients).flatMap(
-                    (ingredientsArray) =>
-                      Array.isArray(ingredientsArray) // Check if ingredientsArray is an array
-                        ? ingredientsArray
-                            .filter(
-                              (ingredient) =>
-                                ingredient.name && ingredient.quantity,
-                            )
-                            .map((ingredient) => (
-                              <li key={ingredient.id}>
-                                {`${ingredient.quantity} ${
-                                  ingredient.unit ? ingredient.unit : ""
-                                } ${ingredient.name}`}
-                              </li>
-                            ))
-                        : [],
-                  )}
+                {(ingredientGroups.length > 1 || group.name !== "default") && (
+                  <h3 className="eachIngredientSetTitle">
+                    {capitalizeHeading(group.name)}
+                  </h3>
+                )}
+                <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                  {group.items.map((entry) => {
+                    const checked = cook.checked.includes(entry.key);
+                    return (
+                      <li key={entry.key}>
+                        <label
+                          className={`ingredient-check ${checked ? "checked" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleChecked(entry.key)}
+                          />
+                          <span>{displayIngredient(entry, cook.scale)}</span>
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
+            {cook.checked.length > 0 && (
+              <button
+                type="button"
+                className="cook-reset"
+                onClick={() => patchCook({ checked: [] })}
+              >
+                Reset checks
+              </button>
+            )}
           </section>
 
           {/* 4. Display Instructions (with capitalized heading) */}
           <section id="instructions">
             <h2>{capitalizeHeading("Instructions")}</h2>
+            <TimerTray
+              timers={timers.timers}
+              now={timers.now}
+              onPause={timers.pause}
+              onResume={timers.resume}
+              onAddMinute={timers.addMinute}
+              onDismiss={timers.dismiss}
+            />
             <ol className="instructionSet">
               {activeShowRecipe?.instructions?.map((instruction) => (
                 <li className="singleInstructions" key={instruction.number}>
-                  {instruction.text}
+                  <InstructionText
+                    text={instruction.text}
+                    stepLabel={`Step ${instruction.number}`}
+                    onStartTimer={timers.start}
+                  />
                 </li>
               ))}
             </ol>

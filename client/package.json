@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:unit": "vitest run",
     "preview": "vite preview",
     "e2e": "playwright test --config e2e/playwright.config.ts",
     "e2e:webkit": "playwright test --config e2e/playwright.config.ts --browser=webkit",

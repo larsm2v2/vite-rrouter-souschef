@@ -3,9 +3,17 @@ import { User } from "../../../01_entities/User";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import db from "../../database/connection";
 import { authenticateJWT } from "../jwtAuth";
+import { mergeItems, type GroceryItem } from "../../../utils/groceryMerge";
+import { ShoppingListVersionRepository } from "../../../03_adapters/repositories/ShoppingListVersionRepository";
+import {
+  normalizeApiIngredient,
+  scaleIngredient,
+} from "../../../utils/recipeMath/ingredient";
+import { quantityValue } from "../../../utils/recipeMath/quantity";
 
 console.log("📥 Importing recipes.routes");
 const router = express.Router();
+const shoppingLists = new ShoppingListVersionRepository();
 
 // Initialize Google Generative AI
 const apiKey = process.env.API_KEY;
@@ -276,7 +284,21 @@ router.post(
       const recipeId = parseInt(req.params.id);
       const userId = (req.user as User).id;
 
-      // Fetch the recipe with ingredients
+      let scale = 1;
+      if (req.body?.scale !== undefined) {
+        const requested = req.body.scale;
+        if (
+          typeof requested !== "number" ||
+          !Number.isFinite(requested) ||
+          requested < 0.25 ||
+          requested > 20
+        ) {
+          return res
+            .status(400)
+            .json({ error: "scale must be a number between 0.25 and 20" });
+        }
+        scale = requested;
+      }
       const recipeResult = await db.query(
         `
         SELECT
@@ -302,76 +324,36 @@ router.post(
           .json({ error: "Recipe has no ingredients to add" });
       }
 
-      // Get the current grocery list version
-      const versionResult = await db.query(
-        `SELECT id, list_data FROM shopping_list_versions 
-         WHERE user_id = $1 
-         ORDER BY created_at DESC 
-         LIMIT 1`,
-        [userId],
-      );
-
-      let currentItems: any[] = [];
-      if (versionResult.rows.length > 0) {
-        currentItems = versionResult.rows[0].list_data || [];
-      }
-
-      // Extract all ingredients from all categories
-      const newItems: any[] = [];
+      // Normalize every ingredient (string or structured), scale it, and merge with the shared rules
+      const newItems: GroceryItem[] = [];
       ingredients.forEach((categoryObj: any) => {
-        if (categoryObj.ingredients && Array.isArray(categoryObj.ingredients)) {
-          categoryObj.ingredients.forEach((ingredient: any) => {
-            newItems.push({
-              name: ingredient.name,
-              quantity: ingredient.quantity,
-              unit: ingredient.unit || "",
-              checked: false,
-            });
+        if (!categoryObj.ingredients || !Array.isArray(categoryObj.ingredients))
+          return;
+        categoryObj.ingredients.forEach((entry: any) => {
+          const scaled = scaleIngredient(normalizeApiIngredient(entry), scale);
+          const name = (scaled.name || scaled.raw).trim();
+          if (!name) return;
+          newItems.push({
+            name,
+            quantity:
+              scaled.quantity === null ? 0 : quantityValue(scaled.quantity),
+            unit: scaled.unit ?? "",
+            checked: false,
+            sources: [String(recipeId)],
           });
-        }
+        });
       });
 
-      // Merge with existing items (avoiding duplicates by name)
-      const itemMap = new Map();
-      currentItems.forEach((item: any) => {
-        itemMap.set(item.name.toLowerCase(), item);
-      });
-
-      newItems.forEach((item: any) => {
-        const key = item.name.toLowerCase();
-        if (itemMap.has(key)) {
-          // If item exists, add quantities if units match
-          const existing = itemMap.get(key);
-          if (existing.unit === item.unit) {
-            existing.quantity += item.quantity;
-          } else {
-            // Different units, add as separate item
-            itemMap.set(`${key}_${item.unit}`, item);
-          }
-        } else {
-          itemMap.set(key, item);
-        }
-      });
-
-      const mergedItems = Array.from(itemMap.values());
-
-      // Mark all existing versions as not current
-      await db.query(
-        `UPDATE shopping_list_versions SET is_current = false WHERE user_id = $1`,
-        [userId],
-      );
-
-      // Create a new grocery list version as the current one
-      await db.query(
-        `INSERT INTO shopping_list_versions (user_id, version, list_data, is_current, created_at) 
-         VALUES ($1, $2, $3, true, NOW())`,
-        [userId, 1, JSON.stringify(mergedItems)],
+      // Read, merge and write under the per-user lock so a concurrent autosave cannot be lost
+      const saved = await shoppingLists.saveVersion(userId, (current) =>
+        mergeItems(current as GroceryItem[], newItems),
       );
 
       res.json({
         success: true,
         itemsAdded: newItems.length,
-        totalItems: mergedItems.length,
+        totalItems: Array.isArray(saved.listData) ? saved.listData.length : 0,
+        version: saved.version,
       });
     } catch (error) {
       next(error);

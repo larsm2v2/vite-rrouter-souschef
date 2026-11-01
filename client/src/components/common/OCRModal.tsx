@@ -1,10 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import FocusTrap from "focus-trap-react";
 import "./OCRModal.css";
 import apiClient from "../pages/Client";
 import ImageGallery from "./ImageGallery";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "./Toast";
 import ParsedRecipeEditor, { ParsedRecipe } from "./ParsedRecipeEditor";
+import ImportReview, { ImportSource } from "./ImportReview";
+import { useUserStorage } from "../../hooks/useUserStorage";
 
 interface Props {
   isOpen: boolean;
@@ -14,46 +17,227 @@ interface Props {
 interface OCRResponse {
   parsed?: ParsedRecipe;
   imageUrls?: string[];
+  text?: string;
+}
+
+interface SelectedFile {
+  file: File;
+  url: string;
+}
+
+type Tab = "upload" | "text" | "gallery" | "preview" | "url";
+
+// Local blob URLs cannot be saved, so a draft keeps the server's copies of uploaded images.
+type DraftSource =
+  | { kind: "image"; serverImages: string[]; text?: string }
+  | { kind: "text"; text: string }
+  | { kind: "url"; url: string; images: string[] };
+
+interface ImportDraft {
+  tab: Tab;
+  ocrText: string;
+  recipeUrl: string;
+  parsedResult: ParsedRecipe | null;
+  previewMode: "json" | "pretty";
+  uploadedImages: string[];
+  source: DraftSource | null;
+  savedAt: number;
+}
+
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const DRAFT_SAVE_DELAY_MS = 500;
+
+function timeAgo(timestamp: number): string {
+  const minutes = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours} h ago`;
+  return `${Math.round(hours / 24)} days ago`;
 }
 
 export default function OCRModal({ isOpen, onClose }: Props) {
   const { accessToken } = useAuth();
   const { showToast } = useToast();
-  const [tab, setTab] = useState<
-    "upload" | "text" | "gallery" | "preview" | "url"
-  >("upload");
+  const [tab, setTab] = useState<Tab>("upload");
   const [ocrText, setOcrText] = useState("");
   const [recipeUrl, setRecipeUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [parsedResult, setParsedResult] = useState<ParsedRecipe | null>(null);
   const [previewMode, setPreviewMode] = useState<"json" | "pretty">("pretty");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
+  const [source, setSource] = useState<ImportSource | null>(null);
+  const [draft, setDraft, clearDraft] = useUserStorage<ImportDraft | null>(
+    "import-draft",
+    "current",
+    null,
+    { maxAgeMs: DRAFT_MAX_AGE_MS },
+  );
+
+  const hasContent =
+    parsedResult !== null || ocrText.trim() !== "" || recipeUrl.trim() !== "";
+
+  const draftSnapshot = useMemo<ImportDraft | null>(() => {
+    if (!hasContent) return null;
+    let draftSource: DraftSource | null = null;
+    if (source?.kind === "image") {
+      draftSource = {
+        kind: "image",
+        serverImages: uploadedImages,
+        text: source.text,
+      };
+    } else if (source) {
+      draftSource = source;
+    }
+    return {
+      tab,
+      ocrText,
+      recipeUrl,
+      parsedResult,
+      previewMode,
+      uploadedImages,
+      source: draftSource,
+      savedAt: Date.now(),
+    };
+    // savedAt is refreshed only when real content changes
+  }, [
+    hasContent,
+    tab,
+    ocrText,
+    recipeUrl,
+    parsedResult,
+    previewMode,
+    uploadedImages,
+    source,
+  ]);
+
+  // Save as the user works so an interruption never loses the review.
+  useEffect(() => {
+    if (!isOpen || !draftSnapshot) return;
+    const timer = window.setTimeout(
+      () => setDraft(draftSnapshot),
+      DRAFT_SAVE_DELAY_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [isOpen, draftSnapshot, setDraft]);
+
+  // Object URLs must be revoked; track the latest list for unmount cleanup.
+  const handleCloseRef = useRef<() => void>(() => {});
+  const selectedFilesRef = useRef<SelectedFile[]>([]);
+  useEffect(() => {
+    selectedFilesRef.current = selectedFiles;
+  }, [selectedFiles]);
+  useEffect(
+    () => () => {
+      selectedFilesRef.current.forEach((item) => URL.revokeObjectURL(item.url));
+    },
+    [],
+  );
+
+  // Lock page scroll and close on Escape while the modal is open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") handleCloseRef.current();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen]);
+
+  const replaceSelectedFiles = (files: File[]) => {
+    selectedFiles.forEach((item) => URL.revokeObjectURL(item.url));
+    setSelectedFiles(
+      files.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    );
+  };
+
+  const resetAll = () => {
+    selectedFiles.forEach((item) => URL.revokeObjectURL(item.url));
+    setSelectedFiles([]);
+    setSource(null);
+    setParsedResult(null);
+    setUploadedImages([]);
+    setOcrText("");
+    setRecipeUrl("");
+    setPreviewMode("pretty");
+    setTab("upload");
+  };
+
+  const closeModal = (keepDraft: boolean) => {
+    if (keepDraft && draftSnapshot) {
+      setDraft(draftSnapshot);
+      showToast("Draft saved. Reopen Create Recipe to resume.", "info", {
+        action: { label: "Discard", onClick: clearDraft },
+      });
+    } else if (!keepDraft) {
+      clearDraft();
+    }
+    resetAll();
+    onClose();
+  };
+  // Escape, the close button and the backdrop keep the draft; finishing an import clears it.
+  const handleClose = () => closeModal(true);
+  handleCloseRef.current = handleClose;
+
+  const resumeDraft = () => {
+    if (!draft) return;
+    setOcrText(draft.ocrText);
+    setRecipeUrl(draft.recipeUrl);
+    setParsedResult(draft.parsedResult);
+    setPreviewMode(draft.previewMode);
+    setUploadedImages(draft.uploadedImages ?? []);
+    const saved = draft.source;
+    if (saved?.kind === "image") {
+      setSource({
+        kind: "image",
+        images: saved.serverImages.map((url, index) => ({
+          name: `Image ${index + 1}`,
+          url,
+          authenticated: true,
+        })),
+        text: saved.text,
+      });
+    } else {
+      setSource(saved);
+    }
+    setTab(
+      draft.parsedResult ? "preview" : draft.tab === "url" ? "url" : "text",
+    );
+  };
 
   if (!isOpen) return null;
 
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate per-file size (20 MB) and collect files
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      if (f.size > 20 * 1024 * 1024) {
+    const picked = Array.from(files);
+    for (const f of picked) {
+      if (f.size > MAX_FILE_BYTES) {
         showToast(`File ${f.name} exceeds 20 MB limit`, "error");
+        e.target.value = "";
+        return;
+      }
+      if (!f.type.startsWith("image/")) {
+        showToast(`File ${f.name} is not an image`, "error");
+        e.target.value = "";
         return;
       }
     }
 
-    // Skip client-side OCR - just show upload button
-    // Server-side OCR with Gemini AI is more reliable
-    console.log(`${files.length} file(s) selected, ready for server upload`);
+    replaceSelectedFiles(picked);
   };
 
   const onUpload = async () => {
-    const input = fileRef.current;
-    const files = input?.files;
-    if (!files || files.length === 0) {
+    const files = selectedFiles.map((item) => item.file);
+    if (files.length === 0) {
       showToast("Please choose one or more images first", "error");
       return;
     }
@@ -89,6 +273,14 @@ export default function OCRModal({ isOpen, onClose }: Props) {
           setUploadedImages(data.imageUrls);
         }
         // Show preview so user can confirm before importing
+        setSource({
+          kind: "image",
+          images: selectedFiles.map(({ file, url }) => ({
+            name: file.name,
+            url,
+          })),
+          text: data.text || ocrText || undefined,
+        });
         setParsedResult(parsed);
         setTab("preview");
         return;
@@ -129,7 +321,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
     };
 
     window.dispatchEvent(new CustomEvent("ocr:import", { detail: parsed }));
-    onClose();
+    closeModal(false);
   };
 
   const onParseText = async () => {
@@ -164,6 +356,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       const parsed = (resp.data as OCRResponse)?.parsed;
       if (parsed) {
         // Show preview so user can confirm before importing
+        setSource({ kind: "text", text: ocrText });
         setParsedResult(parsed);
         setTab("preview");
         return;
@@ -222,6 +415,11 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       }
       setParsedResult(response.data.parsed);
       setUploadedImages(response.data.imageUrls ?? []);
+      setSource({
+        kind: "url",
+        url: url.toString(),
+        images: response.data.imageUrls ?? [],
+      });
       setPreviewMode("pretty");
       setTab("preview");
     } catch (error: unknown) {
@@ -265,7 +463,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       );
 
       setParsedResult(null);
-      onClose();
+      closeModal(false);
     } catch (err: unknown) {
       console.error("Failed to save imported recipe");
       const msg =
@@ -285,162 +483,232 @@ export default function OCRModal({ isOpen, onClose }: Props) {
 
   const cancelPreview = () => {
     // keep parsedResult available but go back to text for edits
+    if (!ocrText && source?.kind === "image" && source.text) {
+      setOcrText(source.text);
+    }
     setTab("text");
   };
 
   const rejectParsed = () => {
     // discard parsed result and return to text editor
+    clearDraft();
     setParsedResult(null);
     setTab("text");
   };
 
   return (
-    <div className="ocr-modal-overlay" role="dialog" aria-modal="true">
-      <div className="ocr-modal">
-        <header className="ocr-modal-header">
-          <h3 className="ocr-modal-title">OCR Import</h3>
-          <button onClick={onClose} aria-label="Close">
-            ✕
-          </button>
-        </header>
+    <div
+      className="ocr-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ocr-modal-title"
+    >
+      <FocusTrap
+        focusTrapOptions={{
+          escapeDeactivates: false,
+          clickOutsideDeactivates: false,
+          allowOutsideClick: true,
+          fallbackFocus: ".ocr-modal",
+        }}
+      >
+        <div
+          className={`ocr-modal ${tab === "preview" ? "ocr-modal--review" : ""}`}
+          tabIndex={-1}
+        >
+          <header className="ocr-modal-header">
+            <h3 className="ocr-modal-title" id="ocr-modal-title">
+              OCR Import
+            </h3>
+            <button
+              type="button"
+              className="ocr-modal-close"
+              onClick={handleClose}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </header>
 
-        <nav className="ocr-modal-tabs">
-          <button
-            onClick={() => setTab("upload")}
-            className={tab === "upload" ? "active" : ""}
-          >
-            Upload
-          </button>
-          <button
-            onClick={() => setTab("text")}
-            className={tab === "text" ? "active" : ""}
-          >
-            Text Editor
-          </button>
-          <button
-            onClick={() => setTab("gallery")}
-            className={tab === "gallery" ? "active" : ""}
-          >
-            Gallery
-          </button>
-          <button
-            onClick={() => setTab("url")}
-            className={tab === "url" ? "active" : ""}
-          >
-            From URL
-          </button>
-        </nav>
+          <nav className="ocr-modal-tabs">
+            <button
+              onClick={() => setTab("upload")}
+              className={tab === "upload" ? "active" : ""}
+            >
+              Upload
+            </button>
+            <button
+              onClick={() => setTab("text")}
+              className={tab === "text" ? "active" : ""}
+            >
+              Text Editor
+            </button>
+            <button
+              onClick={() => setTab("gallery")}
+              className={tab === "gallery" ? "active" : ""}
+            >
+              Gallery
+            </button>
+            <button
+              onClick={() => setTab("url")}
+              className={tab === "url" ? "active" : ""}
+            >
+              From URL
+            </button>
+          </nav>
 
-        <div className="ocr-modal-body">
-          {tab === "upload" && (
-            <div className="ocr-upload">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={onFileChange}
-                aria-label="Choose one or more images"
-              />
-              <div className="ocr-upload-actions">
-                <button onClick={onUpload} disabled={loading}>
-                  {loading ? "Processing with AI..." : "Upload & Parse with AI"}
-                </button>
-                <small>Max file size: 20 MB per image</small>
-              </div>
-            </div>
-          )}
-
-          {tab === "text" && (
-            <div className="ocr-text-editor">
-              <textarea
-                value={ocrText}
-                onChange={(e) => setOcrText(e.target.value)}
-                rows={10}
-                aria-label="OCR text editor"
-              />
-              <div className="ocr-text-actions">
-                <button onClick={onParseText} disabled={loading}>
-                  {loading ? "Parsing..." : "Parse Text on Server"}
-                </button>
-                <button onClick={onImportText} disabled={loading || !ocrText}>
-                  Import Text as Instructions (raw)
-                </button>
-              </div>
-            </div>
-          )}
-
-          {tab === "url" && (
-            <form className="ocr-url-import" onSubmit={onImportUrl}>
-              <label htmlFor="recipe-import-url">Recipe URL</label>
-              <input
-                id="recipe-import-url"
-                type="url"
-                value={recipeUrl}
-                onChange={(event) => setRecipeUrl(event.target.value)}
-                placeholder="https://example.com/recipe"
-                required
-              />
-              <button type="submit" disabled={loading || !recipeUrl.trim()}>
-                {loading ? "Importing..." : "Import recipe"}
-              </button>
-            </form>
-          )}
-
-          {tab === "preview" && parsedResult && (
-            <div className="ocr-preview">
-              <div className="ocr-preview-header">
-                <h4>Parsed Recipe Preview</h4>
-                <div className="preview-toggle">
-                  <label>
-                    <input
-                      type="radio"
-                      name="previewMode"
-                      checked={previewMode === "pretty"}
-                      onChange={() => setPreviewMode("pretty")}
-                    />{" "}
-                    Pretty
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="previewMode"
-                      checked={previewMode === "json"}
-                      onChange={() => setPreviewMode("json")}
-                    />{" "}
-                    JSON
-                  </label>
+          <div className="ocr-modal-body">
+            {draft && !hasContent && (
+              <div className="ocr-draft-banner" role="status">
+                <span>
+                  Resume draft:{" "}
+                  <strong>
+                    {draft.parsedResult?.name ||
+                      draft.recipeUrl ||
+                      "Untitled import"}
+                  </strong>
+                  , saved {timeAgo(draft.savedAt)}
+                </span>
+                <div className="ocr-draft-actions">
+                  <button type="button" onClick={resumeDraft}>
+                    Resume
+                  </button>
+                  <button type="button" onClick={clearDraft}>
+                    Discard draft
+                  </button>
                 </div>
               </div>
-
-              <div className="ocr-preview-body">
-                {previewMode === "json" ? (
-                  <pre className="preview-json">
-                    {JSON.stringify(parsedResult, null, 2)}
-                  </pre>
-                ) : (
-                  <ParsedRecipeEditor
-                    recipe={parsedResult}
-                    onChange={(recipe) => setParsedResult(recipe)}
-                  />
+            )}
+            {tab === "upload" && (
+              <div className="ocr-upload">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={onFileChange}
+                  aria-label="Choose one or more images"
+                />
+                {selectedFiles.length > 0 && (
+                  <ul
+                    className="ocr-selected-files"
+                    aria-label="Selected images"
+                  >
+                    {selectedFiles.map(({ file, url }) => (
+                      <li
+                        key={`${file.name}-${file.size}-${file.lastModified}`}
+                      >
+                        <img src={url} alt={`Preview of ${file.name}`} />
+                        <span>{file.name}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
+                <div className="ocr-upload-actions">
+                  <button
+                    onClick={onUpload}
+                    disabled={loading || selectedFiles.length === 0}
+                  >
+                    {loading
+                      ? "Processing with AI..."
+                      : "Upload & Parse with AI"}
+                  </button>
+                  <small>Max file size: 20 MB per image</small>
+                </div>
               </div>
+            )}
 
-              <div className="ocr-preview-actions">
-                <button onClick={acceptParsed}>Accept & Import</button>
-                <button onClick={cancelPreview}>Edit Text</button>
-                <button onClick={rejectParsed}>Discard</button>
+            {tab === "text" && (
+              <div className="ocr-text-editor">
+                <textarea
+                  value={ocrText}
+                  onChange={(e) => setOcrText(e.target.value)}
+                  rows={10}
+                  aria-label="OCR text editor"
+                />
+                <div className="ocr-text-actions">
+                  <button onClick={onParseText} disabled={loading}>
+                    {loading ? "Parsing..." : "Parse Text on Server"}
+                  </button>
+                  <button onClick={onImportText} disabled={loading || !ocrText}>
+                    Import Text as Instructions (raw)
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {tab === "gallery" && (
-            <div className="ocr-gallery-tab">
-              <ImageGallery />
-            </div>
-          )}
+            {tab === "url" && (
+              <form className="ocr-url-import" onSubmit={onImportUrl}>
+                <label htmlFor="recipe-import-url">Recipe URL</label>
+                <input
+                  id="recipe-import-url"
+                  type="url"
+                  value={recipeUrl}
+                  onChange={(event) => setRecipeUrl(event.target.value)}
+                  placeholder="https://example.com/recipe"
+                  required
+                />
+                <button type="submit" disabled={loading || !recipeUrl.trim()}>
+                  {loading ? "Importing..." : "Import recipe"}
+                </button>
+              </form>
+            )}
+
+            {tab === "preview" && parsedResult && (
+              <div className="ocr-preview">
+                <div className="ocr-preview-header">
+                  <h4>Confirm parsed recipe</h4>
+                  <div className="preview-toggle">
+                    <label>
+                      <input
+                        type="radio"
+                        name="previewMode"
+                        checked={previewMode === "pretty"}
+                        onChange={() => setPreviewMode("pretty")}
+                      />{" "}
+                      Pretty
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="previewMode"
+                        checked={previewMode === "json"}
+                        onChange={() => setPreviewMode("json")}
+                      />{" "}
+                      JSON
+                    </label>
+                  </div>
+                </div>
+
+                <ImportReview source={source}>
+                  {previewMode === "json" ? (
+                    <pre className="preview-json">
+                      {JSON.stringify(parsedResult, null, 2)}
+                    </pre>
+                  ) : (
+                    <ParsedRecipeEditor
+                      recipe={parsedResult}
+                      onChange={(recipe) => setParsedResult(recipe)}
+                    />
+                  )}
+                </ImportReview>
+
+                <div className="ocr-preview-actions">
+                  <button onClick={acceptParsed} disabled={loading}>
+                    Accept & Import
+                  </button>
+                  <button onClick={cancelPreview}>Edit Text</button>
+                  <button onClick={rejectParsed}>Discard</button>
+                </div>
+              </div>
+            )}
+
+            {tab === "gallery" && (
+              <div className="ocr-gallery-tab">
+                <ImageGallery />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </FocusTrap>
     </div>
   );
 }

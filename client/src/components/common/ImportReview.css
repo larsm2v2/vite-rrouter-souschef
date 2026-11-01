@@ -1,0 +1,182 @@
+.import-review {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+/* ---- Segmented tabs (swipe layouts) ---- */
+.review-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.review-tab {
+  flex: 1 1 0;
+  min-height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.review-tab.active {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.review-tab:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 2px;
+}
+
+.review-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-light, #6b7280);
+  text-align: center;
+}
+
+/* ---- Swipeable track ---- */
+.review-track {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  max-height: 55vh;
+  max-height: 55dvh;
+}
+
+.review-track::-webkit-scrollbar {
+  display: none;
+}
+
+.review-pane {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  padding: 0.6rem;
+  border-radius: 8px;
+  background: var(--primary-background-color, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.review-pane + .review-pane {
+  margin-left: 8px;
+}
+
+.review-pane-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-light, #6b7280);
+}
+
+/* ---- Original pane content ---- */
+.review-figure {
+  margin: 0 0 0.9rem;
+}
+
+.review-figure figcaption,
+.review-caption {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-light, #6b7280);
+}
+
+.review-image-frame {
+  overflow: auto;
+  max-height: 60vh;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
+.review-image-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.review-image-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.review-image-frame.zoomed .review-image-btn {
+  width: 220%;
+  cursor: zoom-out;
+}
+
+.review-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New",
+    monospace;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.review-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.review-empty {
+  color: var(--text-light, #6b7280);
+  font-size: 0.95rem;
+}
+
+/* ---- Wide screens: show both panes side by side ---- */
+@media (min-width: 1100px) {
+  .review-tabs,
+  .review-hint {
+    display: none;
+  }
+
+  .review-track {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .review-pane {
+    max-height: 55vh;
+  }
+
+  .review-pane + .review-pane {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-track {
+    scroll-behavior: auto;
+  }
+}

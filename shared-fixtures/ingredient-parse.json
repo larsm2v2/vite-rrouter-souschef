@@ -1,0 +1,105 @@
+[
+  { "input": "1 cup flour", "quantity": 1, "unit": "cup", "name": "flour" },
+  {
+    "input": "1 1/2 cups all-purpose flour, sifted",
+    "quantity": 1.5,
+    "unit": "cup",
+    "name": "all-purpose flour",
+    "note": "sifted"
+  },
+  { "input": "½ tsp salt", "quantity": 0.5, "unit": "tsp", "name": "salt" },
+  {
+    "input": "1½ tablespoons olive oil",
+    "quantity": 1.5,
+    "unit": "tbsp",
+    "name": "olive oil"
+  },
+  { "input": "2 eggs", "quantity": 2, "unit": null, "name": "eggs" },
+  {
+    "input": "3 cloves garlic, minced",
+    "quantity": 3,
+    "unit": "clove",
+    "name": "garlic",
+    "note": "minced"
+  },
+  {
+    "input": "2.25 lb ground beef",
+    "quantity": 2.25,
+    "unit": "lb",
+    "name": "ground beef"
+  },
+  {
+    "input": "1-2 tbsp butter",
+    "quantity": { "min": 1, "max": 2 },
+    "unit": "tbsp",
+    "name": "butter"
+  },
+  {
+    "input": "1 to 2 cloves garlic",
+    "quantity": { "min": 1, "max": 2 },
+    "unit": "clove",
+    "name": "garlic"
+  },
+  {
+    "input": "1 can (14 oz) diced tomatoes",
+    "quantity": 1,
+    "unit": "can",
+    "name": "diced tomatoes",
+    "note": "14 oz"
+  },
+  {
+    "input": "1 (14 oz) can diced tomatoes",
+    "quantity": 1,
+    "unit": "can",
+    "name": "diced tomatoes",
+    "note": "14 oz"
+  },
+  {
+    "input": "200 g butter (softened)",
+    "quantity": 200,
+    "unit": "g",
+    "name": "butter",
+    "note": "softened"
+  },
+  { "input": "250 ml milk", "quantity": 250, "unit": "ml", "name": "milk" },
+  {
+    "input": "1 fl oz lemon juice",
+    "quantity": 1,
+    "unit": "floz",
+    "name": "lemon juice"
+  },
+  { "input": "2 cups of water", "quantity": 2, "unit": "cup", "name": "water" },
+  {
+    "input": "- 1 tsp vanilla",
+    "quantity": 1,
+    "unit": "tsp",
+    "name": "vanilla"
+  },
+  {
+    "input": "salt, to taste",
+    "quantity": null,
+    "unit": null,
+    "name": "salt",
+    "note": "to taste"
+  },
+  {
+    "input": "a pinch of nutmeg",
+    "quantity": null,
+    "unit": "pinch",
+    "name": "nutmeg"
+  },
+  {
+    "input": "Fresh basil leaves",
+    "quantity": null,
+    "unit": null,
+    "name": "Fresh basil leaves"
+  },
+  {
+    "input": "1 large onion, diced",
+    "quantity": 1,
+    "unit": null,
+    "name": "large onion",
+    "note": "diced"
+  },
+  { "input": "", "quantity": null, "unit": null, "name": "" }
+]

@@ -10,6 +10,7 @@ import apiClient, {
   setInMemoryAccessToken,
   abortAllInFlightRequests,
 } from "../components/pages/Client";
+import { clearAllUserData } from "../utils/userStorage";
 
 interface User {
   id: string;
@@ -44,6 +45,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // One-time cleanup in case an older build persisted a token here.
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
+    // Drafts, cook state and other per-user data must not outlive the session.
+    clearAllUserData();
     // Notify server (optional, for token allowlist cleanup)
     apiClient
       .post("/auth/logout", {}, { withCredentials: true })

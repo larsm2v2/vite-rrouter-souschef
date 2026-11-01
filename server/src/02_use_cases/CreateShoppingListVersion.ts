@@ -6,13 +6,16 @@ import { injectable, inject } from "tsyringe";
 export class CreateShoppingListVersion {
   constructor(
     @inject(ShoppingListVersionRepository)
-    private repo: ShoppingListVersionRepository
+    private repo: ShoppingListVersionRepository,
   ) {}
 
+  /** Replace the user's list. Pass baseVersion to refuse overwriting a newer list. */
   async execute(
-    entry: Partial<ShoppingListVersion>
+    userId: number,
+    listData: unknown[],
+    baseVersion?: number,
   ): Promise<ShoppingListVersion> {
-    return this.repo.createVersion(entry);
+    return this.repo.saveVersion(userId, () => listData, baseVersion);
   }
 }
 

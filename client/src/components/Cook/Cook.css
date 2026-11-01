@@ -1,0 +1,385 @@
+/* ---- Shared: scaler, timers, ingredient check-off ---- */
+.serving-scaler {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 12px;
+  text-align: left;
+}
+.serving-stepper,
+.serving-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.serving-scaler button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--primary-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.serving-scaler button.active {
+  background: var(--primary-color);
+  color: #fff;
+}
+.serving-scaler button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.scale-caveat {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-light, #6b7280);
+}
+
+.timer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  margin: 0 2px;
+  padding: 2px 10px;
+  border: 1px solid var(--primary-color);
+  border-radius: 999px;
+  background: var(--tertiary-color);
+  color: var(--primary-color);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.timer-tray {
+  margin: 0 12px 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  text-align: left;
+}
+.timer-tray ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.timer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.timer-row.finished {
+  background: #fff3cd;
+  border-radius: 8px;
+  padding: 6px;
+}
+.timer-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.timer-label {
+  font-size: 0.85rem;
+  color: var(--text-light, #6b7280);
+  overflow-wrap: anywhere;
+}
+.timer-time {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-color);
+}
+.timer-done {
+  color: #8a5318;
+  font-size: 1.1rem;
+}
+.timer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.timer-actions button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  cursor: pointer;
+}
+.timer-note {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-light, #6b7280);
+}
+
+.ingredient-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+  text-align: left;
+}
+.ingredient-check input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+.ingredient-check.checked span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.start-cooking {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ---- Cook mode page ---- */
+.cook-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fffdf5;
+  color: #0b2530;
+  text-align: left;
+}
+.cook-message {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  padding: 24px;
+}
+.cook-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+  background: var(--primary-color);
+  color: #fff;
+}
+.cook-exit {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.2rem;
+}
+.cook-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cook-title h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cook-title span {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+.cook-wake {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.cook-wake[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.18);
+}
+.cook-progress {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+}
+.cook-progress > div {
+  height: 100%;
+  background: var(--secondary-color);
+  transition: width 200ms ease;
+}
+.cook-step {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+.cook-step-heading {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-light, #526a72);
+}
+.cook-step-text {
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+  font-size: 1.375rem;
+  overflow-wrap: anywhere;
+}
+.cook-font {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.cook-font button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  font-weight: 700;
+}
+.cook-font button:disabled {
+  opacity: 0.4;
+}
+.cook-controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+.cook-controls button {
+  flex: 1 1 0;
+  min-height: 56px;
+  border: 2px solid var(--primary-color);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cook-controls button.primary {
+  background: var(--primary-color);
+  color: #fff;
+}
+.cook-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cook-controls button:focus-visible,
+.cook-top a:focus-visible,
+.cook-top button:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 2px;
+}
+
+.cook-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.45);
+}
+.cook-sheet {
+  width: 100%;
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-radius: 16px 16px 0 0;
+  background: #fff;
+}
+.cook-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cook-sheet-head h2 {
+  margin: 0;
+}
+.cook-sheet-head button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 1.1rem;
+}
+.cook-group h3 {
+  margin: 12px 0 4px;
+  text-transform: capitalize;
+}
+.cook-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cook-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.cook-group input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+.cook-group label.checked span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.cook-reset {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary-color);
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cook-progress > div {
+    transition: none;
+  }
+}
+@media print {
+  .cook-controls,
+  .cook-wake,
+  .timer-tray {
+    display: none;
+  }
+}

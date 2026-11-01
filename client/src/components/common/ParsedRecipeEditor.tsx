@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { useUndoable } from "../../hooks/useUndoable";
 
 export interface ParsedIngredient {
   id: number;
@@ -32,6 +33,13 @@ const ParsedRecipeEditor: React.FC<ParsedRecipeEditorProps> = ({
   recipe,
   onChange,
 }) => {
+  const undoable = useUndoable();
+  // Undo must put a row back into whatever the recipe looks like by then, not into a stale snapshot.
+  const latest = useRef(recipe);
+  useEffect(() => {
+    latest.current = recipe;
+  }, [recipe]);
+
   const updateIngredient = (group: string, index: number, value: string) => {
     const ingredients = [...recipe.ingredients[group]];
     ingredients[index] = value;
@@ -42,13 +50,28 @@ const ParsedRecipeEditor: React.FC<ParsedRecipeEditorProps> = ({
   };
 
   const removeIngredient = (group: string, index: number) => {
-    onChange({
-      ...recipe,
-      ingredients: {
-        ...recipe.ingredients,
-        [group]: recipe.ingredients[group].filter(
-          (_, itemIndex) => itemIndex !== index,
-        ),
+    const removed = recipe.ingredients[group]?.[index];
+    if (removed === undefined) return;
+    undoable({
+      message: "Ingredient removed",
+      apply: () =>
+        onChange({
+          ...recipe,
+          ingredients: {
+            ...recipe.ingredients,
+            [group]: recipe.ingredients[group].filter(
+              (_, itemIndex) => itemIndex !== index,
+            ),
+          },
+        }),
+      revert: () => {
+        const now = latest.current;
+        const list = [...(now.ingredients[group] ?? [])];
+        list.splice(Math.min(index, list.length), 0, removed);
+        onChange({
+          ...now,
+          ingredients: { ...now.ingredients, [group]: list },
+        });
       },
     });
   };
@@ -62,15 +85,30 @@ const ParsedRecipeEditor: React.FC<ParsedRecipeEditorProps> = ({
     });
   };
 
+  const renumber = (steps: ParsedRecipe["instructions"]) =>
+    steps.map((instruction, itemIndex) => ({
+      ...instruction,
+      number: itemIndex + 1,
+    }));
+
   const removeInstruction = (index: number) => {
-    onChange({
-      ...recipe,
-      instructions: recipe.instructions
-        .filter((_, itemIndex) => itemIndex !== index)
-        .map((instruction, itemIndex) => ({
-          ...instruction,
-          number: itemIndex + 1,
-        })),
+    const removed = recipe.instructions[index];
+    if (!removed) return;
+    undoable({
+      message: `Step ${index + 1} removed`,
+      apply: () =>
+        onChange({
+          ...recipe,
+          instructions: renumber(
+            recipe.instructions.filter((_, itemIndex) => itemIndex !== index),
+          ),
+        }),
+      revert: () => {
+        const now = latest.current;
+        const steps = [...now.instructions];
+        steps.splice(Math.min(index, steps.length), 0, removed);
+        onChange({ ...now, instructions: renumber(steps) });
+      },
     });
   };
 
