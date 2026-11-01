@@ -198,14 +198,30 @@ test.describe("cook mode", () => {
   test("keyboard arrows move between steps", async ({ page }) => {
     await page.goto("/recipes/7/cook");
     await expect(page.getByText("Step 1 of 3")).toBeVisible();
+    // The key listener attaches in an effect after first paint; wait for the start-up effect that runs with it.
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Object.keys(localStorage).some((k) => k.includes(":cook:")),
+        ),
+      )
+      .toBe(true);
     await page.keyboard.press("ArrowRight");
     await expect(page.getByText("Step 2 of 3")).toBeVisible();
     await page.keyboard.press("ArrowLeft");
     await expect(page.getByText("Step 1 of 3")).toBeVisible();
   });
 
-  test("swiping advances and goes back", async ({ page, isMobile }) => {
+  test("swiping advances and goes back", async ({
+    page,
+    isMobile,
+    browserName,
+  }) => {
     test.skip(!isMobile, "Touch swipe only applies to phone layouts");
+    test.skip(
+      browserName !== "chromium",
+      "Real touch swipes use the Chrome DevTools Protocol, which only Chromium has",
+    );
     await page.goto("/recipes/7/cook");
     const box = (await page.locator(".cook-step").boundingBox())!;
     const from = { x: box.x + box.width * 0.8, y: box.y + 40 };

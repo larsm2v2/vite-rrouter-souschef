@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FocusTrap from "focus-trap-react";
+import ToastSafeFocusTrap from "../common/ToastSafeFocusTrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import useRecipe from "../../hooks/useRecipe";
 import { useCookState } from "../../hooks/useCookState";
@@ -27,6 +27,7 @@ export default function CookMode() {
   const timers = useTimers(id);
   const wake = useWakeLock(true);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetEl, setSheetEl] = useState<HTMLElement | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(
     null,
   );
@@ -250,72 +251,74 @@ export default function CookMode() {
           className="cook-sheet-backdrop"
           onClick={() => setSheetOpen(false)}
         >
-          <FocusTrap
+          <ToastSafeFocusTrap
+            active
+            container={sheetEl}
             focusTrapOptions={{
               escapeDeactivates: false,
               allowOutsideClick: true,
               fallbackFocus: ".cook-sheet",
             }}
+          />
+          <div
+            ref={setSheetEl}
+            className="cook-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ingredients"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.key === "Escape" && setSheetOpen(false)}
           >
-            <div
-              className="cook-sheet"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Ingredients"
-              tabIndex={-1}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.key === "Escape" && setSheetOpen(false)}
-            >
-              <div className="cook-sheet-head">
-                <h2>Ingredients</h2>
-                <button
-                  type="button"
-                  onClick={() => setSheetOpen(false)}
-                  aria-label="Close ingredients"
-                >
-                  ✕
-                </button>
-              </div>
-              <ServingScaler
-                baseServings={baseServings}
-                scale={state.scale}
-                onChange={(scale) => patch({ scale })}
-              />
-              {groups.map((group) => (
-                <div key={group.name} className="cook-group">
-                  {groups.length > 1 || group.name !== "default" ? (
-                    <h3>{group.name}</h3>
-                  ) : null}
-                  <ul>
-                    {group.items.map((entry) => {
-                      const checked = state.checked.includes(entry.key);
-                      return (
-                        <li key={entry.key}>
-                          <label className={checked ? "checked" : ""}>
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggle(entry.key)}
-                            />
-                            <span>{displayIngredient(entry, state.scale)}</span>
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
-              {checkedCount > 0 && (
-                <button
-                  type="button"
-                  className="cook-reset"
-                  onClick={() => patch({ checked: [] })}
-                >
-                  Reset checks
-                </button>
-              )}
+            <div className="cook-sheet-head">
+              <h2>Ingredients</h2>
+              <button
+                type="button"
+                onClick={() => setSheetOpen(false)}
+                aria-label="Close ingredients"
+              >
+                ✕
+              </button>
             </div>
-          </FocusTrap>
+            <ServingScaler
+              baseServings={baseServings}
+              scale={state.scale}
+              onChange={(scale) => patch({ scale })}
+            />
+            {groups.map((group) => (
+              <div key={group.name} className="cook-group">
+                {groups.length > 1 || group.name !== "default" ? (
+                  <h3>{group.name}</h3>
+                ) : null}
+                <ul>
+                  {group.items.map((entry) => {
+                    const checked = state.checked.includes(entry.key);
+                    return (
+                      <li key={entry.key}>
+                        <label className={checked ? "checked" : ""}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggle(entry.key)}
+                          />
+                          <span>{displayIngredient(entry, state.scale)}</span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+            {checkedCount > 0 && (
+              <button
+                type="button"
+                className="cook-reset"
+                onClick={() => patch({ checked: [] })}
+              >
+                Reset checks
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

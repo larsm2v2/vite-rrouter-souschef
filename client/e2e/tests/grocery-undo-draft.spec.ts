@@ -175,7 +175,15 @@ test.describe("undo", () => {
       .getByRole("button", { name: "Delete milk" })
       .click();
     const undo = page.getByRole("button", { name: "Undo" });
-    await undo.focus();
+    // Real keyboard travel, not .focus(): the open drawer traps Tab, and the toast must stay reachable.
+    for (
+      let i = 0;
+      i < 12 && !(await undo.evaluate((el) => el === document.activeElement));
+      i++
+    ) {
+      await page.keyboard.press("Shift+Tab");
+    }
+    await expect(undo).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(
       page.locator("#App-sidebar").getByText("1 cup milk"),

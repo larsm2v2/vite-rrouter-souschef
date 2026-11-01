@@ -114,8 +114,13 @@ test.describe("Import review: original vs parsed", () => {
   test("swiping sideways switches between original and parsed", async ({
     page,
     isMobile,
+    browserName,
   }) => {
     test.skip(!isMobile, "Touch swipe only applies to phone layouts");
+    test.skip(
+      browserName !== "chromium",
+      "Real touch swipes use the Chrome DevTools Protocol, which only Chromium has",
+    );
     await openTextReview(page);
 
     const track = page.locator(".review-track");

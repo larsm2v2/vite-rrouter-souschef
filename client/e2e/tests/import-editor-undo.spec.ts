@@ -1,4 +1,4 @@
-import { test, expect, Page } from "@playwright/test";
+﻿import { test, expect, Page } from "@playwright/test";
 
 const USER = {
   id: "editor-undo",
@@ -120,6 +120,28 @@ test.describe("import editor undo", () => {
     ).toHaveValue("1 leek");
   });
 
+  test("the Undo toast is reachable with the keyboard while the import dialog traps focus", async ({
+    page,
+  }) => {
+    await openReview(page);
+    await page
+      .getByRole("button", { name: "Remove ingredient 2 from default" })
+      .click();
+    const undo = page.getByRole("button", { name: "Undo" });
+    // Real Tab travel: the dialog keeps focus inside, and the toast has to remain part of it.
+    for (
+      let i = 0;
+      i < 12 && !(await undo.evaluate((el) => el === document.activeElement));
+      i++
+    ) {
+      await page.keyboard.press("Shift+Tab");
+    }
+    await expect(undo).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByLabel("default ingredient 2", { exact: true }),
+    ).toHaveValue("2 carrots");
+  });
   test("without undoing, the removal stands", async ({ page }) => {
     await openReview(page);
     await page

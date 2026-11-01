@@ -273,8 +273,11 @@ const GroceryList: React.FC<GroceryListProps> = ({
           const current = conflict.data?.current;
           const server = toGroceryItems(current?.listData ?? []);
           const base = toGroceryItems(
-            (JSON.parse(lastSavedRef.current ?? '{"listData":[]}') as BackendList)
-              .listData ?? [],
+            (
+              JSON.parse(
+                lastSavedRef.current ?? '{"listData":[]}',
+              ) as BackendList
+            ).listData ?? [],
           );
           const local = toGroceryItems(toPayload(listItems).listData);
           versionRef.current = current?.version ?? 0;

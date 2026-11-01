@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import "./Toast.css";
+import { ToastViewportContext } from "./toastViewport";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -49,6 +50,7 @@ interface Timer {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [viewport, setViewport] = useState<HTMLElement | null>(null);
   const nextId = useRef(0);
   const timers = useRef(new Map<number, Timer>());
   const closers = useRef(new Map<number, () => void>());
@@ -130,8 +132,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   return (
     <ToastContext.Provider value={{ showToast, dismissToast: dismiss }}>
-      {children}
-      <div className="toast-viewport" aria-live="polite" aria-atomic="false">
+      <ToastViewportContext.Provider value={viewport}>
+        {children}
+      </ToastViewportContext.Provider>
+      <div
+        ref={setViewport}
+        className="toast-viewport"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}

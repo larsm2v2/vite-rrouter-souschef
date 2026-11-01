@@ -4,13 +4,13 @@ Frontend: Firebase Hosting. Backend: Cloud Run service `souschef-api` (us-centra
 
 ## What needs deploying for the current work
 
-| Part | Redeploy? | Why |
-| --- | --- | --- |
-| `server` (`souschef-api`) | **Yes, first** | Fixes `POST /api/grocery-list/version` (it always returned 500, so autosave never persisted), adds the `baseVersion` conflict check, scaled add-to-grocery, URL import, OCR and OAuth fixes |
-| `client` (Firebase Hosting) | **Yes, second** | Cook mode, timers, scaler, grocery merge/undo/conflict merge, import drafts, mobile shell |
-| `clean-recipe-service` | No | No changes since `origin/main` |
-| Database schema | No | No migration or schema file changed |
-| Secrets / env vars | No | No new `process.env` or `import.meta.env` names |
+| Part                        | Redeploy?       | Why                                                                                                                                                                                         |
+| --------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server` (`souschef-api`)   | **Yes, first**  | Fixes `POST /api/grocery-list/version` (it always returned 500, so autosave never persisted), adds the `baseVersion` conflict check, scaled add-to-grocery, URL import, OCR and OAuth fixes |
+| `client` (Firebase Hosting) | **Yes, second** | Cook mode, timers, scaler, grocery merge/undo/conflict merge, import drafts, mobile shell                                                                                                   |
+| `clean-recipe-service`      | No              | No changes since `origin/main`                                                                                                                                                              |
+| Database schema             | No              | No migration or schema file changed                                                                                                                                                         |
+| Secrets / env vars          | No              | No new `process.env` or `import.meta.env` names                                                                                                                                             |
 
 **Order matters.** `baseVersion` is optional on the server, so an old client works against the new server. A new client against the old server still gets 500s on every grocery save, so deploy the server first.
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import FocusTrap from "focus-trap-react";
+import ToastSafeFocusTrap from "./ToastSafeFocusTrap";
 import "./OCRModal.css";
 import apiClient from "../pages/Client";
 import ImageGallery from "./ImageGallery";
@@ -61,6 +61,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
   const { accessToken } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>("upload");
+  const [modalEl, setModalEl] = useState<HTMLElement | null>(null);
   const [ocrText, setOcrText] = useState("");
   const [recipeUrl, setRecipeUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -503,212 +504,207 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       aria-modal="true"
       aria-labelledby="ocr-modal-title"
     >
-      <FocusTrap
+      <ToastSafeFocusTrap
+        active
+        container={modalEl}
         focusTrapOptions={{
           escapeDeactivates: false,
           clickOutsideDeactivates: false,
           allowOutsideClick: true,
           fallbackFocus: ".ocr-modal",
         }}
+      />
+      <div
+        ref={setModalEl}
+        className={`ocr-modal ${tab === "preview" ? "ocr-modal--review" : ""}`}
+        tabIndex={-1}
       >
-        <div
-          className={`ocr-modal ${tab === "preview" ? "ocr-modal--review" : ""}`}
-          tabIndex={-1}
-        >
-          <header className="ocr-modal-header">
-            <h3 className="ocr-modal-title" id="ocr-modal-title">
-              OCR Import
-            </h3>
-            <button
-              type="button"
-              className="ocr-modal-close"
-              onClick={handleClose}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </header>
+        <header className="ocr-modal-header">
+          <h3 className="ocr-modal-title" id="ocr-modal-title">
+            OCR Import
+          </h3>
+          <button
+            type="button"
+            className="ocr-modal-close"
+            onClick={handleClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </header>
 
-          <nav className="ocr-modal-tabs">
-            <button
-              onClick={() => setTab("upload")}
-              className={tab === "upload" ? "active" : ""}
-            >
-              Upload
-            </button>
-            <button
-              onClick={() => setTab("text")}
-              className={tab === "text" ? "active" : ""}
-            >
-              Text Editor
-            </button>
-            <button
-              onClick={() => setTab("gallery")}
-              className={tab === "gallery" ? "active" : ""}
-            >
-              Gallery
-            </button>
-            <button
-              onClick={() => setTab("url")}
-              className={tab === "url" ? "active" : ""}
-            >
-              From URL
-            </button>
-          </nav>
+        <nav className="ocr-modal-tabs">
+          <button
+            onClick={() => setTab("upload")}
+            className={tab === "upload" ? "active" : ""}
+          >
+            Upload
+          </button>
+          <button
+            onClick={() => setTab("text")}
+            className={tab === "text" ? "active" : ""}
+          >
+            Text Editor
+          </button>
+          <button
+            onClick={() => setTab("gallery")}
+            className={tab === "gallery" ? "active" : ""}
+          >
+            Gallery
+          </button>
+          <button
+            onClick={() => setTab("url")}
+            className={tab === "url" ? "active" : ""}
+          >
+            From URL
+          </button>
+        </nav>
 
-          <div className="ocr-modal-body">
-            {draft && !hasContent && (
-              <div className="ocr-draft-banner" role="status">
-                <span>
-                  Resume draft:{" "}
-                  <strong>
-                    {draft.parsedResult?.name ||
-                      draft.recipeUrl ||
-                      "Untitled import"}
-                  </strong>
-                  , saved {timeAgo(draft.savedAt)}
-                </span>
-                <div className="ocr-draft-actions">
-                  <button type="button" onClick={resumeDraft}>
-                    Resume
-                  </button>
-                  <button type="button" onClick={clearDraft}>
-                    Discard draft
-                  </button>
-                </div>
-              </div>
-            )}
-            {tab === "upload" && (
-              <div className="ocr-upload">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={onFileChange}
-                  aria-label="Choose one or more images"
-                />
-                {selectedFiles.length > 0 && (
-                  <ul
-                    className="ocr-selected-files"
-                    aria-label="Selected images"
-                  >
-                    {selectedFiles.map(({ file, url }) => (
-                      <li
-                        key={`${file.name}-${file.size}-${file.lastModified}`}
-                      >
-                        <img src={url} alt={`Preview of ${file.name}`} />
-                        <span>{file.name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="ocr-upload-actions">
-                  <button
-                    onClick={onUpload}
-                    disabled={loading || selectedFiles.length === 0}
-                  >
-                    {loading
-                      ? "Processing with AI..."
-                      : "Upload & Parse with AI"}
-                  </button>
-                  <small>Max file size: 20 MB per image</small>
-                </div>
-              </div>
-            )}
-
-            {tab === "text" && (
-              <div className="ocr-text-editor">
-                <textarea
-                  value={ocrText}
-                  onChange={(e) => setOcrText(e.target.value)}
-                  rows={10}
-                  aria-label="OCR text editor"
-                />
-                <div className="ocr-text-actions">
-                  <button onClick={onParseText} disabled={loading}>
-                    {loading ? "Parsing..." : "Parse Text on Server"}
-                  </button>
-                  <button onClick={onImportText} disabled={loading || !ocrText}>
-                    Import Text as Instructions (raw)
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {tab === "url" && (
-              <form className="ocr-url-import" onSubmit={onImportUrl}>
-                <label htmlFor="recipe-import-url">Recipe URL</label>
-                <input
-                  id="recipe-import-url"
-                  type="url"
-                  value={recipeUrl}
-                  onChange={(event) => setRecipeUrl(event.target.value)}
-                  placeholder="https://example.com/recipe"
-                  required
-                />
-                <button type="submit" disabled={loading || !recipeUrl.trim()}>
-                  {loading ? "Importing..." : "Import recipe"}
+        <div className="ocr-modal-body">
+          {draft && !hasContent && (
+            <div className="ocr-draft-banner" role="status">
+              <span>
+                Resume draft:{" "}
+                <strong>
+                  {draft.parsedResult?.name ||
+                    draft.recipeUrl ||
+                    "Untitled import"}
+                </strong>
+                , saved {timeAgo(draft.savedAt)}
+              </span>
+              <div className="ocr-draft-actions">
+                <button type="button" onClick={resumeDraft}>
+                  Resume
                 </button>
-              </form>
-            )}
+                <button type="button" onClick={clearDraft}>
+                  Discard draft
+                </button>
+              </div>
+            </div>
+          )}
+          {tab === "upload" && (
+            <div className="ocr-upload">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={onFileChange}
+                aria-label="Choose one or more images"
+              />
+              {selectedFiles.length > 0 && (
+                <ul className="ocr-selected-files" aria-label="Selected images">
+                  {selectedFiles.map(({ file, url }) => (
+                    <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                      <img src={url} alt={`Preview of ${file.name}`} />
+                      <span>{file.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="ocr-upload-actions">
+                <button
+                  onClick={onUpload}
+                  disabled={loading || selectedFiles.length === 0}
+                >
+                  {loading ? "Processing with AI..." : "Upload & Parse with AI"}
+                </button>
+                <small>Max file size: 20 MB per image</small>
+              </div>
+            </div>
+          )}
 
-            {tab === "preview" && parsedResult && (
-              <div className="ocr-preview">
-                <div className="ocr-preview-header">
-                  <h4>Confirm parsed recipe</h4>
-                  <div className="preview-toggle">
-                    <label>
-                      <input
-                        type="radio"
-                        name="previewMode"
-                        checked={previewMode === "pretty"}
-                        onChange={() => setPreviewMode("pretty")}
-                      />{" "}
-                      Pretty
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="previewMode"
-                        checked={previewMode === "json"}
-                        onChange={() => setPreviewMode("json")}
-                      />{" "}
-                      JSON
-                    </label>
-                  </div>
-                </div>
+          {tab === "text" && (
+            <div className="ocr-text-editor">
+              <textarea
+                value={ocrText}
+                onChange={(e) => setOcrText(e.target.value)}
+                rows={10}
+                aria-label="OCR text editor"
+              />
+              <div className="ocr-text-actions">
+                <button onClick={onParseText} disabled={loading}>
+                  {loading ? "Parsing..." : "Parse Text on Server"}
+                </button>
+                <button onClick={onImportText} disabled={loading || !ocrText}>
+                  Import Text as Instructions (raw)
+                </button>
+              </div>
+            </div>
+          )}
 
-                <ImportReview source={source}>
-                  {previewMode === "json" ? (
-                    <pre className="preview-json">
-                      {JSON.stringify(parsedResult, null, 2)}
-                    </pre>
-                  ) : (
-                    <ParsedRecipeEditor
-                      recipe={parsedResult}
-                      onChange={(recipe) => setParsedResult(recipe)}
-                    />
-                  )}
-                </ImportReview>
+          {tab === "url" && (
+            <form className="ocr-url-import" onSubmit={onImportUrl}>
+              <label htmlFor="recipe-import-url">Recipe URL</label>
+              <input
+                id="recipe-import-url"
+                type="url"
+                value={recipeUrl}
+                onChange={(event) => setRecipeUrl(event.target.value)}
+                placeholder="https://example.com/recipe"
+                required
+              />
+              <button type="submit" disabled={loading || !recipeUrl.trim()}>
+                {loading ? "Importing..." : "Import recipe"}
+              </button>
+            </form>
+          )}
 
-                <div className="ocr-preview-actions">
-                  <button onClick={acceptParsed} disabled={loading}>
-                    Accept & Import
-                  </button>
-                  <button onClick={cancelPreview}>Edit Text</button>
-                  <button onClick={rejectParsed}>Discard</button>
+          {tab === "preview" && parsedResult && (
+            <div className="ocr-preview">
+              <div className="ocr-preview-header">
+                <h4>Confirm parsed recipe</h4>
+                <div className="preview-toggle">
+                  <label>
+                    <input
+                      type="radio"
+                      name="previewMode"
+                      checked={previewMode === "pretty"}
+                      onChange={() => setPreviewMode("pretty")}
+                    />{" "}
+                    Pretty
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="previewMode"
+                      checked={previewMode === "json"}
+                      onChange={() => setPreviewMode("json")}
+                    />{" "}
+                    JSON
+                  </label>
                 </div>
               </div>
-            )}
 
-            {tab === "gallery" && (
-              <div className="ocr-gallery-tab">
-                <ImageGallery />
+              <ImportReview source={source}>
+                {previewMode === "json" ? (
+                  <pre className="preview-json">
+                    {JSON.stringify(parsedResult, null, 2)}
+                  </pre>
+                ) : (
+                  <ParsedRecipeEditor
+                    recipe={parsedResult}
+                    onChange={(recipe) => setParsedResult(recipe)}
+                  />
+                )}
+              </ImportReview>
+
+              <div className="ocr-preview-actions">
+                <button onClick={acceptParsed} disabled={loading}>
+                  Accept & Import
+                </button>
+                <button onClick={cancelPreview}>Edit Text</button>
+                <button onClick={rejectParsed}>Discard</button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {tab === "gallery" && (
+            <div className="ocr-gallery-tab">
+              <ImageGallery />
+            </div>
+          )}
         </div>
-      </FocusTrap>
+      </div>
     </div>
   );
 }

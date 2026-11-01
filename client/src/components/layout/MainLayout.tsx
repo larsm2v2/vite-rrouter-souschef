@@ -6,7 +6,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import FocusTrap from "focus-trap-react";
+import ToastSafeFocusTrap from "../common/ToastSafeFocusTrap";
 import { RecipeModel } from "../../types"; // Adjust the path as needed
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../Navbar/Navbar";
@@ -147,6 +147,8 @@ const MainLayout = () => {
   }, [anyDrawerOpen, showOcrModal, closeDrawers]);
 
   // Lock page scroll and restore focus while a modal drawer is open.
+  const [groceryEl, setGroceryEl] = useState<HTMLElement | null>(null);
+  const [indexEl, setIndexEl] = useState<HTMLElement | null>(null);
   const prevFocused = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!overlayOpen) return;
@@ -198,8 +200,9 @@ const MainLayout = () => {
             <span className="toggle-full">Grocery List</span>
             <span className="toggle-compact">G</span>
           </button>
-          <FocusTrap
+          <ToastSafeFocusTrap
             active={overlayOpen && groceryOpen}
+            container={groceryEl}
             focusTrapOptions={{
               initialFocus: "#grocery-drawer-close",
               fallbackFocus: "#App-sidebar",
@@ -210,30 +213,30 @@ const MainLayout = () => {
               allowOutsideClick: () => true,
               returnFocusOnDeactivate: false,
             }}
+          />
+          <aside
+            ref={setGroceryEl}
+            className="app-sidebar"
+            id="App-sidebar"
+            aria-label="Grocery list"
+            tabIndex={-1}
+            inert={!groceryOpen}
+            {...swipeToClose("left", () => toggleGrocery(false))}
           >
-            <aside
-              className="app-sidebar"
-              id="App-sidebar"
-              aria-label="Grocery list"
-              tabIndex={-1}
-              inert={!groceryOpen}
-              {...swipeToClose("left", () => toggleGrocery(false))}
-            >
-              <div className="drawer-header">
-                <span className="drawer-title">Grocery list</span>
-                <button
-                  type="button"
-                  id="grocery-drawer-close"
-                  className="drawer-close"
-                  aria-label="Close panel"
-                  onClick={() => toggleGrocery(false)}
-                >
-                  ✕
-                </button>
-              </div>
-              <Sidebar selectedRecipeIds={selectedRecipeIds} />
-            </aside>
-          </FocusTrap>
+            <div className="drawer-header">
+              <span className="drawer-title">Grocery list</span>
+              <button
+                type="button"
+                id="grocery-drawer-close"
+                className="drawer-close"
+                aria-label="Close panel"
+                onClick={() => toggleGrocery(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <Sidebar selectedRecipeIds={selectedRecipeIds} />
+          </aside>
 
           <main className="app-main" id="App-main" inert={overlayOpen}>
             <Outlet
@@ -271,8 +274,9 @@ const MainLayout = () => {
                 <span className="toggle-full">Recipe Index</span>
                 <span className="toggle-compact">I</span>
               </button>
-              <FocusTrap
+              <ToastSafeFocusTrap
                 active={overlayOpen && indexOpen}
+                container={indexEl}
                 focusTrapOptions={{
                   initialFocus: "#index-drawer-close",
                   fallbackFocus: "#recipe-index-sidebar",
@@ -281,38 +285,38 @@ const MainLayout = () => {
                   allowOutsideClick: () => true,
                   returnFocusOnDeactivate: false,
                 }}
+              />
+              <aside
+                ref={setIndexEl}
+                className={`recipe-index-sidebar ${
+                  indexSidebarToggled ? "open" : ""
+                }`}
+                id="recipe-index-sidebar"
+                aria-label="Recipe index"
+                tabIndex={-1}
+                inert={!indexSidebarToggled}
+                {...swipeToClose("right", () => toggleIndex(false))}
               >
-                <aside
-                  className={`recipe-index-sidebar ${
-                    indexSidebarToggled ? "open" : ""
-                  }`}
-                  id="recipe-index-sidebar"
-                  aria-label="Recipe index"
-                  tabIndex={-1}
-                  inert={!indexSidebarToggled}
-                  {...swipeToClose("right", () => toggleIndex(false))}
-                >
-                  <div className="drawer-header">
-                    <span className="drawer-title">Recipe index</span>
-                    <button
-                      type="button"
-                      id="index-drawer-close"
-                      className="drawer-close"
-                      aria-label="Close panel"
-                      onClick={() => toggleIndex(false)}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <RecipeIndexSidebar
-                    recipe={recipeToDisplay}
-                    recipesIndex={recipes}
-                    onNavigate={() => {
-                      if (isMobile) toggleIndex(false);
-                    }}
-                  />
-                </aside>
-              </FocusTrap>
+                <div className="drawer-header">
+                  <span className="drawer-title">Recipe index</span>
+                  <button
+                    type="button"
+                    id="index-drawer-close"
+                    className="drawer-close"
+                    aria-label="Close panel"
+                    onClick={() => toggleIndex(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <RecipeIndexSidebar
+                  recipe={recipeToDisplay}
+                  recipesIndex={recipes}
+                  onNavigate={() => {
+                    if (isMobile) toggleIndex(false);
+                  }}
+                />
+              </aside>
             </>
           )}
         </div>

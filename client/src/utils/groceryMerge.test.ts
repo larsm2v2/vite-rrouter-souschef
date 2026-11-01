@@ -78,7 +78,6 @@ describe("removeRecipeSource", () => {
   });
 });
 
-
 describe("removeRecipeSource on lists saved before sources existed", () => {
   const contributions: GroceryItem[] = [
     { name: "leek", quantity: 2, unit: "", checked: false },
