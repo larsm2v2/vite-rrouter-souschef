@@ -14,6 +14,7 @@ import {
 import { normalizeApiIngredient } from "../../utils/recipeMath";
 import { quantityValue, formatNumber } from "../../utils/recipeMath/quantity";
 import { useUndoable } from "../../hooks/useUndoable";
+import { mergeConflict, type GroceryItem } from "../../utils/groceryMerge";
 
 interface BackendItem {
   quantity?: number;
@@ -27,6 +28,17 @@ interface BackendItem {
 interface BackendList {
   version?: number;
   listData?: BackendItem[];
+}
+
+function toGroceryItems(listData: BackendItem[]): GroceryItem[] {
+  return listData.map((item) => ({
+    name: item.name || "",
+    quantity: item.quantity || 0,
+    unit: item.unit || "",
+    checked: item.checked || false,
+    ...(item.aisle ? { aisle: item.aisle } : {}),
+    ...(item.sources?.length ? { sources: item.sources } : {}),
+  }));
 }
 
 function fromBackend(listData: BackendItem[]): ListItem[] {
@@ -257,14 +269,20 @@ const GroceryList: React.FC<GroceryListProps> = ({
           }
         )?.response;
         if (conflict?.status === 409) {
-          // Someone else (another tab or an added recipe) saved first: adopt theirs, tell the user.
+          // Someone else (another tab or an added recipe) saved first: merge their list with this edit.
           const current = conflict.data?.current;
-          const adopted = fromBackend(current?.listData ?? []);
+          const server = toGroceryItems(current?.listData ?? []);
+          const base = toGroceryItems(
+            (JSON.parse(lastSavedRef.current ?? '{"listData":[]}') as BackendList)
+              .listData ?? [],
+          );
+          const local = toGroceryItems(toPayload(listItems).listData);
           versionRef.current = current?.version ?? 0;
-          lastSavedRef.current = JSON.stringify(toPayload(adopted));
-          setListItems(adopted);
+          lastSavedRef.current = JSON.stringify(toPayload(fromBackend(server)));
+          // A changed list re-runs the save effect, now based on the server's version.
+          setListItems(fromBackend(mergeConflict(base, local, server)));
           showToast(
-            "Your grocery list was updated elsewhere, so your last change was not saved. Please check it and redo the change.",
+            "Your grocery list was also changed elsewhere. Your change was merged with it.",
             "info",
           );
         } else {

@@ -143,14 +143,23 @@ export function removeRecipeSource(
   recipeId: string,
   contributions: GroceryItem[],
 ): GroceryItem[] {
+  // Lists saved before sources existed carry no tags; then fall back to untagged lines.
+  const tracked = list.some(
+    (line) => line.sources && line.sources.indexOf(recipeId) !== -1,
+  );
   const out: GroceryItem[] = [];
   for (const line of list) {
-    if (!line.sources || line.sources.indexOf(recipeId) === -1) {
+    const legacy = !tracked && (!line.sources || line.sources.length === 0);
+    if (!legacy && (!line.sources || line.sources.indexOf(recipeId) === -1)) {
       out.push(line);
       continue;
     }
     const part = contributions.find((c) => sameLine(c, line));
-    const sources = line.sources.filter((s) => s !== recipeId);
+    if (legacy && !part) {
+      out.push(line);
+      continue;
+    }
+    const sources = (line.sources ?? []).filter((s) => s !== recipeId);
     const lineUnit = unitKey(line.unit);
     const partQty = part
       ? (convert(part.quantity, unitKey(part.unit), lineUnit) ?? part.quantity)
@@ -163,6 +172,97 @@ export function removeRecipeSource(
       unit: withUnitLabel(line.unit, quantity),
       ...(sources.length ? { sources } : { sources: undefined }),
     });
+  }
+  return out;
+}
+
+function fingerprint(item: GroceryItem): string {
+  return JSON.stringify([
+    item.name,
+    round4(item.quantity),
+    item.unit,
+    item.checked,
+    item.aisle ?? "",
+    (item.sources ?? []).slice().sort(),
+  ]);
+}
+
+function indexByKey(list: GroceryItem[]) {
+  const counts: Record<string, number> = Object.create(null);
+  const map: Record<string, GroceryItem> = Object.create(null);
+  const keys: string[] = [];
+  for (const item of list) {
+    const base = normalizeName(item.name) + "|" + unitKey(item.unit);
+    counts[base] = (counts[base] || 0) + 1;
+    const key = base + "#" + counts[base];
+    keys.push(key);
+    map[key] = item;
+  }
+  return { keys, map };
+}
+
+function mergeLine(
+  base: GroceryItem,
+  local: GroceryItem,
+  server: GroceryItem,
+): GroceryItem {
+  // Both sides' quantity changes apply, so a bump here and a recipe added there both count.
+  const quantity = round4(
+    Math.max(0, server.quantity + (local.quantity - base.quantity)),
+  );
+  const added = (local.sources ?? []).filter(
+    (s) => (base.sources ?? []).indexOf(s) === -1,
+  );
+  const removed = (base.sources ?? []).filter(
+    (s) => (local.sources ?? []).indexOf(s) === -1,
+  );
+  const sources = Array.from(
+    new Set((server.sources ?? []).concat(added)),
+  ).filter((s) => removed.indexOf(s) === -1);
+  const aisle = local.aisle !== base.aisle ? local.aisle : server.aisle;
+  return {
+    ...server,
+    name: local.name !== base.name ? local.name : server.name,
+    quantity,
+    unit: withUnitLabel(server.unit, quantity),
+    checked: local.checked !== base.checked ? local.checked : server.checked,
+    ...(aisle ? { aisle } : { aisle: undefined }),
+    ...(sources.length ? { sources } : { sources: undefined }),
+  };
+}
+
+/**
+ * Three-way merge after a save conflict: `base` is what this client last synced,
+ * `local` is its unsaved list, `server` is the list that won. Nothing either side
+ * added or changed is lost; when both edited the same field, the local value wins.
+ */
+export function mergeConflict(
+  base: GroceryItem[],
+  local: GroceryItem[],
+  server: GroceryItem[],
+): GroceryItem[] {
+  const b = indexByKey(base);
+  const l = indexByKey(local);
+  const s = indexByKey(server);
+  const seen: Record<string, boolean> = Object.create(null);
+  const out: GroceryItem[] = [];
+  for (const key of s.keys.concat(l.keys)) {
+    if (seen[key]) continue;
+    seen[key] = true;
+    const B = b.map[key];
+    const L = l.map[key];
+    const S = s.map[key];
+    if (B && L && S) out.push(mergeLine(B, L, S));
+    else if (B && L) {
+      // Server deleted it: keep only if this client changed it.
+      if (fingerprint(L) !== fingerprint(B)) out.push(L);
+    } else if (B && S) {
+      // This client deleted it: keep only if the server changed it.
+      if (fingerprint(S) !== fingerprint(B)) out.push(S);
+    } else if (L && S) {
+      out.push(fingerprint(L) === fingerprint(S) ? S : mergeItems([S], [L])[0]);
+    } else if (L) out.push(L);
+    else if (S) out.push(S);
   }
   return out;
 }

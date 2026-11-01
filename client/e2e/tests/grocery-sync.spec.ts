@@ -114,7 +114,7 @@ test.describe("grocery list sync", () => {
     ]);
   });
 
-  test("a conflict adopts the server's list instead of overwriting it, and says so", async ({
+  test("a conflict merges the user's edit with the server's list instead of overwriting it", async ({
     page,
   }) => {
     const server: Server = {
@@ -138,16 +138,23 @@ test.describe("grocery list sync", () => {
     ];
 
     await addItem(page, "pears");
-    await expect(page.getByText(/updated elsewhere/)).toBeVisible();
+    await expect(page.getByText(/merged with it/)).toBeVisible();
     const sidebar = page.locator("#App-sidebar");
     await expect(sidebar.getByText("2 leeks")).toBeVisible();
-    await expect(sidebar.getByText("1 pears")).toHaveCount(0);
-    expect(server.list.map((i) => i.name)).toEqual(["apples", "leeks"]);
+    await expect(sidebar.getByText("1 pears")).toBeVisible();
 
-    // The next edit is based on the adopted version and goes through.
-    await addItem(page, "figs");
+    // The merged list is saved on top of the server's version, so neither change is lost.
     await expect.poll(() => server.version).toBe(10);
+    expect(server.list.map((i) => i.name)).toEqual([
+      "apples",
+      "leeks",
+      "pears",
+    ]);
     expect(server.posts.at(-1)!.baseVersion).toBe(9);
+
+    await addItem(page, "figs");
+    await expect.poll(() => server.version).toBe(11);
+    expect(server.posts.at(-1)!.baseVersion).toBe(10);
   });
 
   test("a user with no saved list yet starts empty and the first save is based on version 0", async ({
