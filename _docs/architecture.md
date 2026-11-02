@@ -41,7 +41,7 @@ flowchart LR
 
 | Part                        | What it is                                                                          | Where                                | Deployed by                                 |
 | --------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------- |
-| **Client**                  | React 19 SPA, Vite, TypeScript, plain CSS                                           | `client/`                            | Manual Firebase Hosting deploy              |
+| **Client**                  | React 19 SPA, Vite, TypeScript, plain CSS                                           | `client/`                            | GitHub Actions Firebase deploy on push to `main`; manual fallback |
 | **Server** (`souschef-api`) | Express 4 API, JWT auth, Clean Architecture layout, `tsyringe` DI                   | `server/`                            | Cloud Build trigger on push                 |
 | **Clean recipe service**    | Stateless microservice that canonicalizes and normalizes a recipe payload. Optional | `clean-recipe-service/`              | Cloud Build trigger on push                 |
 | **OCR worker**              | Pub/Sub subscriber that runs Tesseract for async OCR jobs. Optional                 | `server/src/workers/ocr-worker.ts`   | Same image as the server (`npm run worker`) |

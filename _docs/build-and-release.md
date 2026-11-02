@@ -143,12 +143,12 @@ Conventions for end-to-end tests:
 
 ## 7. CI (GitHub Actions)
 
-| Workflow                     | Trigger                         | What it does                                                                                                                                     |
-| ---------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `server-ci.yml`              | every push and pull request     | Installs server and cleaner, builds and starts the cleaner on port 6000, runs the server tests against it                                        |
-| `client-quality.yml`         | every push and pull request     | Installs client dependencies, runs Vitest, lint, TypeScript build and Vite production build; never deploys                                       |
-| `playwright-e2e.yml`         | push and pull request to `main` | Installs the client and browsers, runs Playwright once per browser in a matrix (Chromium, WebKit, Firefox)                                       |
-| `firebase-deploy-client.yml` | push to `main`                  | Builds and deploys the client, then runs Playwright against the live site. **Not used for releases** (the client is deployed by hand, see below) |
+| Workflow                     | Trigger                         | What it does                                                                                                                                                                           |
+| ---------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server-ci.yml`              | every push and pull request     | Installs server and cleaner, builds and starts the cleaner on port 6000, runs the server tests against it                                                                              |
+| `client-quality.yml`         | every push and pull request     | Installs client dependencies, runs Vitest, lint, TypeScript build and Vite production build; never deploys                                                                             |
+| `playwright-e2e.yml`         | push and pull request to `main` | Installs the client and browsers, runs Playwright once per browser in a matrix (Chromium, WebKit, Firefox)                                                                             |
+| `firebase-deploy-client.yml` | push to `main`                  | Builds and deploys the client, then runs Playwright against the live site. Requires `FIREBASE_PROJECT`, `FIREBASE_TOKEN`, `VITE_API_URL`, and `VITE_GOOGLE_CLIENT_ID` Actions secrets. |
 
 Caveat: the matrix passes `--browser=<engine>` to Playwright. Confirm in a CI run that the phone projects (`Mobile Chrome`, `Mobile Safari`) execute as intended, because they are what exercise the mobile layout; the local gate in section 4 runs all five projects.
 
@@ -252,6 +252,6 @@ One-off maintenance scripts live in `server/scripts/` (`inspect*`, `dump*`, `fin
 
 - There is **no formatter or lint-staged hook** (no Prettier config, no git hooks). Editors format on save, which reflows shared files and trips the drift test. Adding a Prettier config and a pre-commit hook would make this repeatable.
 - `npm run check-env` in `server/` points at a `check-env.ts` that does not exist.
-- The client deploy is manual, so a forgotten Firebase step leaves users on the old frontend. A single script or workflow that waits for the server build and then deploys would remove that risk.
-- `client-quality.yml` now enforces client unit tests, lint and build on push and pull request. Playwright remains a separate matrix workflow; Firebase deployment remains manual.
+- The Firebase client workflow deploys automatically on pushes to `main`, independently of the Cloud Build server triggers; it does not wait for the server build to finish.
+- `client-quality.yml` enforces client unit tests, lint and build on push and pull request. The Firebase deploy workflow runs Playwright against the live site after deployment; a test failure does not roll back the release.
 - The rewritten `main` history no longer contains `client/.env`, `client/.env.development`, `server/dist/`, `node_modules/`, or the Firebase hosting cache. The root ignore file is still uncommitted locally; collaborators should resync to the rewritten branch because their existing clones may retain old commits.

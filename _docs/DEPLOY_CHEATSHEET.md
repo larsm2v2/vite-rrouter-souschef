@@ -5,20 +5,20 @@ Frontend: Firebase Hosting. Backend: Cloud Run service `souschef-api` (us-centra
 > **Remember**
 >
 > - **Server (`souschef-api`) and `clean-recipe-service` deploy automatically from Cloud Build triggers** when you push. The manual `gcloud builds submit` commands below are a fallback, not the normal path.
-> - **The Firebase client does not.** Deploy it by hand (section 3), and only **after the server build is green**.
-> - Pushing is therefore what starts the server deploy. Wait for it to finish before deploying the client.
+> - **The Firebase client deploys through GitHub Actions** on pushes to `main` (`firebase-deploy-client.yml`). It runs independently of the Cloud Build server triggers, so the two deployments can overlap.
+> - For changes that require the server first, monitor both builds and use the manual client deploy in section 3 only after the server build is green.
 
 ## What needs deploying for the current work
 
-| Part                        | Redeploy?       | How                    | Why                                                                                                                                         |
-| --------------------------- | --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server` (`souschef-api`)   | **Yes, first**  | Trigger on push        | Fixes grocery autosave and adds `baseVersion` conflict checks, saved-recipe editing, scaled add-to-grocery, URL import, OCR and OAuth fixes |
-| `client` (Firebase Hosting) | **Yes, second** | **Manual** (section 3) | Cook mode, timers, scaler, grocery merge/undo/conflict merge, import drafts, saved-recipe editor, mobile shell, toast-safe focus traps      |
-| `clean-recipe-service`      | No              | Trigger on push        | No changes since `origin/main`; its trigger may rebuild it anyway, which is harmless                                                        |
-| Database schema             | No              | -                      | No migration or schema file changed                                                                                                         |
-| Secrets / env vars          | No              | -                      | No new `process.env` or `import.meta.env` names                                                                                             |
+| Part                        | Redeploy?      | How                                                           | Why                                                                                                                                         |
+| --------------------------- | -------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server` (`souschef-api`)   | **Yes, first** | Trigger on push                                               | Fixes grocery autosave and adds `baseVersion` conflict checks, saved-recipe editing, scaled add-to-grocery, URL import, OCR and OAuth fixes |
+| `client` (Firebase Hosting) | **Yes**        | GitHub Actions on push to `main`; manual fallback (section 3) | Cook mode, timers, scaler, grocery merge/undo/conflict merge, import drafts, saved-recipe editor, mobile shell, toast-safe focus traps      |
+| `clean-recipe-service`      | No             | Trigger on push                                               | No changes since `origin/main`; its trigger may rebuild it anyway, which is harmless                                                        |
+| Database schema             | No             | -                                                             | No migration or schema file changed                                                                                                         |
+| Secrets / env vars          | No             | -                                                             | No new `process.env` or `import.meta.env` names                                                                                             |
 
-**Order matters.** `baseVersion` is optional on the server, so an old client works against the new server. A new client against the old server still gets 500s on every grocery save, so the server build must finish first.
+**Order matters, but the automatic workflows do not enforce it.** `baseVersion` is optional on the server, so an old client works against the new server. A new client against the old server still gets 500s on every grocery save. The client workflow can deploy before the server build finishes; monitor the server build and use the manual fallback below if you need to control the order.
 
 ## 1. Before you deploy
 
@@ -72,9 +72,9 @@ gcloud run revisions list --service souschef-api --region us-central1 --limit 3
 
 To redeploy both services together by hand, use `.\scripts\deploy-cloudrun.ps1 -ProjectId <PROJECT_ID>`.
 
-## 3. Deploy the client (Firebase Hosting): manual
+## 3. Deploy the client (Firebase Hosting): automatic and manual fallback
 
-The client is **not** on a trigger. Deploy it yourself once the server build above is `SUCCESS`.
+The normal path is the GitHub Actions workflow `.github/workflows/firebase-deploy-client.yml`, which builds, deploys, and runs Playwright after each push to `main`. It requires the Actions secrets `FIREBASE_PROJECT`, `FIREBASE_TOKEN`, `VITE_API_URL`, and `VITE_GOOGLE_CLIENT_ID`. This workflow is independent of Cloud Build and does not wait for the server deployment. The steps below are a manual fallback; use them after the server build is `SUCCESS` when deployment order matters.
 
 Firebase Hosting has no environment settings. The variables are read when the client is **built** and baked into the bundle, so "adding the vars" means loading them before the build. They come from your `client/.env`; no values live in this doc. Run these in order (the loaded values last for this terminal window only), **all in the same terminal window**:
 
@@ -114,7 +114,7 @@ Then open your hosting URL and hard-refresh.
 
 Notes: `client/.env` needs `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID` and a `FIREBASE_PROJECT=` line (the Firebase project id). Loading `.env` into the shell also overrides any stale value Vite would otherwise pick up. `client/.env.development` sets `VITE_DEV_BYPASS=true`, but only `npm run dev` reads it, not `npm run build`.
 
-The repo also contains `.github/workflows/firebase-deploy-client.yml` (deploys on push to `main`, then runs Playwright against the live site on all five browsers). It is not what you rely on; if you ever turn it on, it needs the secrets `FIREBASE_TOKEN`, `FIREBASE_PROJECT` and `VITE_API_URL`, and it would deploy the client at push time, before the server build has finished.
+The workflow builds with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`, deploys to the project in `FIREBASE_PROJECT`, then runs Playwright against `https://${FIREBASE_PROJECT}.web.app`. A Playwright failure happens after deployment and does not roll back Hosting.
 
 ## 4. Smoke test the live site
 
@@ -143,8 +143,9 @@ Firebase: console, Hosting, Release history, **Rollback** on the previous releas
 
 - `VITE_API_URL` is baked in at build time. A bundle built without it, or with `<DB_HOST>`, breaks every API call.
 - Never set `VITE_DEV_BYPASS` in a deploy build.
-- Pushing deploys the server and microservice (triggers) but **not** the client. Forgetting the manual Firebase step leaves users on the old frontend.
-- The Playwright suite passes on all five projects locally (Chromium, WebKit, Firefox, Mobile Chrome, Mobile Safari: 490 tests, 0 failed). Run it against production only if you enable the GitHub workflow.
+- Pushing to `main` starts the server and microservice Cloud Build triggers and the Firebase client GitHub Actions workflow. These run independently; the client may deploy before the server build finishes.
+- The Firebase workflow runs Playwright against the live site after deployment. A test failure does not undo the deployment.
+- The Playwright suite passes on all five projects locally (Chromium, WebKit, Firefox, Mobile Chrome, Mobile Safari: 490 tests, 0 failed).
 - Node 24 everywhere (Dockerfiles, workflows, `engines`).
 - Old grocery items saved before recipe tracking have no source tag. Deselecting an old recipe subtracts its amounts from untagged lines of the same name; this can be undone from the toast.
 - Run `scripts/sync-shared-logic.ps1` after editing `groceryMerge.ts` or `recipeMath/*`, or the server drift test fails.
