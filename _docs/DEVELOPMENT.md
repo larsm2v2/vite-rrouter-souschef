@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: superseded.** This file describes an earlier state of the project. The current document is [build-and-release.md](build-and-release.md). See the [documentation index](README.md).
+
 # Development Guide
 
 This short guide explains the development workflow, how to add features, testing strategy, and coding conventions for the server codebase.

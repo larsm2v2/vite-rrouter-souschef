@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: historical.** A plan or report for work that is done or dropped. It may not match the current code. For the current system see [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Test Migration Plan
 
 **Date:** November 10, 2025  

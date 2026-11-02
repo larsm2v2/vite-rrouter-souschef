@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: historical.** A plan or report for work that is done or dropped. It may not match the current code. For the current system see [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Routes Debug Guide — PKCE & OAuth, Cloud Run, and Local Test Strategy
 
 This doc summarizes the routes issue we've been working on, outlines the server + client architecture, current issues and redundancies, and includes a short checklist and actionable steps ChatGPT (or any search tooling) can use to help find and fix routing-related problems.
@@ -85,7 +88,7 @@ This doc summarizes the routes issue we've been working on, outlines the server 
 
 ## Quick readouts for manual triage
 
-- Local route check: curl http://localhost:8000/debug/routes | jq
+- Local route check: curl http://<DB_HOST>:8000/debug/routes | jq
 - Unit tests: `cd server && npm run test` (or use `npm run test:watch` for dev)
 - Rebuild and redeploy: `gcloud builds submit --no-cache --config=cloudbuild.yaml` (to avoid caching) then `gcloud run deploy` or follow `cloudbuild.yaml` steps.
 
@@ -98,7 +101,7 @@ cd server
 npm install
 npm run dev
 # Confirm debug route exists
-curl -s http://localhost:8000/debug/routes | jq .
+curl -s http://<DB_HOST>:8000/debug/routes | jq .
 ```
 
 - Run full test suite:

@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: superseded.** This file describes an earlier state of the project. The current document is [architecture.md](architecture.md). See the [documentation index](README.md).
+
 # System Architecture Overview
 
 ## Overview

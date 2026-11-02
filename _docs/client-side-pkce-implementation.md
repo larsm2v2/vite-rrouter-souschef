@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: reference.** Describes a feature that still exists, but was written before the current docs and may contain project-specific identifiers and outdated details. Check the code first; start from [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Client-Side PKCE Implementation Summary
 
 ## What Was Implemented
@@ -89,7 +92,7 @@
 
 ```bash
 VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-VITE_API_URL=https://souschef-api-pxtqq24yta-uc.a.run.app
+VITE_API_URL=<API_URL>
 # Optional; when set, must be the same origin as the deployed client.
 VITE_GOOGLE_PKCE_REDIRECT_URI=https://your-frontend-domain.com/auth/callback
 ```
@@ -103,7 +106,7 @@ CLIENT_URL=https://your-frontend-url.com
 # Optional explicit PKCE callback. If omitted, uses CLIENT_URL + /auth/callback.
 GOOGLE_PKCE_REDIRECT_URI=https://your-frontend-url.com/auth/callback
 # Keep this for the legacy server-side /auth/google/callback flow.
-GOOGLE_CALLBACK_URL=https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback
+GOOGLE_CALLBACK_URL=<API_URL>/auth/google/callback
 ```
 
 ### Google Cloud Console Updates
@@ -119,10 +122,10 @@ https://your-frontend-domain.com/auth/callback
 Add the legacy API callback too if the server-side flow is still enabled:
 
 ```
-https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback
+<API_URL>/auth/google/callback
 ```
 
-For local development, authorize the exact origin you open in the browser, for example `http://localhost:5173/auth/callback` or `http://127.0.0.1:5173/auth/callback`. Google treats these as different redirect URIs. Do not include a trailing slash unless it is also present in the URI sent by the app.
+For local development, authorize the exact origin you open in the browser, for example `http://<DB_HOST>:5173/auth/callback` or `http://127.0.0.1:5173/auth/callback`. Google treats these as different redirect URIs. Do not include a trailing slash unless it is also present in the URI sent by the app.
 
 ## Next Steps
 

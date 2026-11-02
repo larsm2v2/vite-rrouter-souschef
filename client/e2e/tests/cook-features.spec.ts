@@ -19,6 +19,14 @@ test.describe("serving scaler and check-off", () => {
     await expect(list.getByText("2 ¼ cups flour")).toBeVisible();
     await expect(list.getByText("3 leeks, sliced")).toBeVisible();
     await expect(list.getByText("salt, to taste")).toBeVisible(); // unquantified stays
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const stored = localStorage.getItem("souschef:v1:cook-test:cook:7");
+          return stored ? JSON.parse(stored).data.scale : null;
+        }),
+      )
+      .toBe(1.5);
 
     await page.reload();
     await expect(list.getByText("2 ¼ cups flour")).toBeVisible();

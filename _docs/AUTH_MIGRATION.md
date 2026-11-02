@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: historical.** A plan or report for work that is done or dropped. It may not match the current code. For the current system see [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Authentication Migration: From Session Cookies to JWT Tokens
 
 ## Executive Summary
@@ -342,7 +345,7 @@ router.get(
     );
 
     // Redirect to client with tokens in URL fragment (not query params for security)
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const clientUrl = process.env.CLIENT_URL || "http://<DB_HOST>:5173";
     res.redirect(
       `${clientUrl}/auth/callback#access_token=${accessToken}&refresh_token=${refreshToken}`
     );
@@ -505,8 +508,8 @@ app.use(
     origin: (origin, callback) => {
       const allowedOrigins = [
         process.env.CLIENT_URL,
-        "http://localhost:5173",
-        "http://localhost:5174",
+        "http://<DB_HOST>:5173",
+        "http://<DB_HOST>:5174",
       ].filter(Boolean);
 
       if (!origin || allowedOrigins.includes(origin)) {
@@ -663,7 +666,7 @@ Modify `client/src/components/pages/Client.tsx`:
 ```typescript
 import axios, { AxiosResponse, AxiosInstance, AxiosError } from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://<DB_HOST>:8000";
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -1229,34 +1232,34 @@ Example PowerShell test with `curl.exe` or `Invoke-RestMethod`:
 
 ```powershell
 # Test login (using Invoke-RestMethod)
-$loginResponse = Invoke-RestMethod -Uri "http://localhost:8000/auth/login" `
+$loginResponse = Invoke-RestMethod -Uri "http://<DB_HOST>:8000/auth/login" `
   -Method Post `
   -ContentType "application/json" `
   -Body '{"email":"test@example.com","password":"password123"}'
 
 # Or using curl.exe
-curl.exe -X POST http://localhost:8000/auth/login `
+curl.exe -X POST http://<DB_HOST>:8000/auth/login `
   -H "Content-Type: application/json" `
   -d '{\"email\":\"test@example.com\",\"password\":\"password123\"}'
 
 # Test protected route with token (using Invoke-RestMethod)
 $token = "<your-access-token>"
-Invoke-RestMethod -Uri "http://localhost:8000/api/recipes" `
+Invoke-RestMethod -Uri "http://<DB_HOST>:8000/api/recipes" `
   -Method Get `
   -Headers @{ Authorization = "Bearer $token" }
 
 # Or using curl.exe
-curl.exe -X GET http://localhost:8000/api/recipes `
+curl.exe -X GET http://<DB_HOST>:8000/api/recipes `
   -H "Authorization: Bearer <your-access-token>"
 
 # Test token refresh (using Invoke-RestMethod)
-$refreshResponse = Invoke-RestMethod -Uri "http://localhost:8000/auth/refresh" `
+$refreshResponse = Invoke-RestMethod -Uri "http://<DB_HOST>:8000/auth/refresh" `
   -Method Post `
   -ContentType "application/json" `
   -Body '{"refreshToken":"<your-refresh-token>"}'
 
 # Or using curl.exe
-curl.exe -X POST http://localhost:8000/auth/refresh `
+curl.exe -X POST http://<DB_HOST>:8000/auth/refresh `
   -H "Content-Type: application/json" `
   -d '{\"refreshToken\":\"<your-refresh-token>\"}'
 ```

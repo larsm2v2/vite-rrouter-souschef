@@ -1,10 +1,13 @@
+<!-- docs-status -->
+> **Status: reference.** Describes a feature that still exists, but was written before the current docs and may contain project-specific identifiers and outdated details. Check the code first; start from [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Phase 2 Deployment Guide: Async OCR with Pub/Sub
 
 This guide walks through deploying the async OCR processing infrastructure to Google Cloud Platform.
 
 ## Prerequisites
 
-- GCP project: `souschef4me`
+- GCP project: `<PROJECT_ID>`
 - `gcloud` CLI authenticated and configured
 - Database migration applied (003_create_ocr_jobs_table.sql)
 - Server code built: `npm run build`
@@ -13,21 +16,21 @@ This guide walks through deploying the async OCR processing infrastructure to Go
 
 ```powershell
 # Set project
-gcloud config set project souschef4me
+gcloud config set project <PROJECT_ID>
 
 # Create topic for OCR jobs
-gcloud pubsub topics create ocr-jobs --project souschef4me
+gcloud pubsub topics create ocr-jobs --project <PROJECT_ID>
 
 # Create subscription for worker
 gcloud pubsub subscriptions create ocr-worker-sub `
   --topic=ocr-jobs `
   --ack-deadline=600 `
   --message-retention-duration=7d `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Verify creation
-gcloud pubsub topics list --project souschef4me
-gcloud pubsub subscriptions list --project souschef4me
+gcloud pubsub topics list --project <PROJECT_ID>
+gcloud pubsub subscriptions list --project <PROJECT_ID>
 ```
 
 ## Step 2: Run Database Migration
@@ -54,24 +57,24 @@ npm run migrate  # If integrated into db-migration.ts
 
 ```powershell
 # Get service account emails
-$ApiServiceAccount = "souschef-api@souschef4me.iam.gserviceaccount.com"
-$WorkerServiceAccount = "souschef-api@souschef4me.iam.gserviceaccount.com"  # Same or different
+$ApiServiceAccount = "souschef-api@<PROJECT_ID>.iam.gserviceaccount.com"
+$WorkerServiceAccount = "souschef-api@<PROJECT_ID>.iam.gserviceaccount.com"  # Same or different
 
 # Grant publisher role to API server
 gcloud pubsub topics add-iam-policy-binding ocr-jobs `
   --member="serviceAccount:$ApiServiceAccount" `
   --role="roles/pubsub.publisher" `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Grant subscriber role to worker
 gcloud pubsub subscriptions add-iam-policy-binding ocr-worker-sub `
   --member="serviceAccount:$WorkerServiceAccount" `
   --role="roles/pubsub.subscriber" `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Verify permissions
-gcloud pubsub topics get-iam-policy ocr-jobs --project souschef4me
-gcloud pubsub subscriptions get-iam-policy ocr-worker-sub --project souschef4me
+gcloud pubsub topics get-iam-policy ocr-jobs --project <PROJECT_ID>
+gcloud pubsub subscriptions get-iam-policy ocr-worker-sub --project <PROJECT_ID>
 ```
 
 ## Step 4: Deploy Updated API Server
@@ -88,11 +91,11 @@ gcloud run deploy souschef-api `
   --region us-central1 `
   --platform managed `
   --allow-unauthenticated `
-  --set-env-vars GCP_PROJECT_ID=souschef4me,OCR_JOBS_TOPIC=ocr-jobs `
-  --project souschef4me
+  --set-env-vars GCP_PROJECT_ID=<PROJECT_ID>,OCR_JOBS_TOPIC=ocr-jobs `
+  --project <PROJECT_ID>
 
 # Verify deployment
-$ApiUrl = (gcloud run services describe souschef-api --region us-central1 --format 'value(status.url)' --project souschef4me)
+$ApiUrl = (gcloud run services describe souschef-api --region us-central1 --format 'value(status.url)' --project <PROJECT_ID>)
 Write-Host "API deployed to: $ApiUrl"
 ```
 
@@ -112,9 +115,9 @@ gcloud run deploy ocr-worker `
   --cpu 1 `
   --memory 1Gi `
   --timeout 600 `
-  --set-env-vars GCP_PROJECT_ID=souschef4me,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub,NODE_ENV=production `
+  --set-env-vars GCP_PROJECT_ID=<PROJECT_ID>,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub,NODE_ENV=production `
   --command "node,dist/workers/ocr-worker.js" `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Note: Add secrets for PG_URL, CLEAN_RECIPE_SERVICE_URL, etc.
 # Use --set-secrets flag or Secret Manager
@@ -131,12 +134,12 @@ gcloud run jobs create ocr-worker-job `
   --cpu 1 `
   --memory 1Gi `
   --timeout 600 `
-  --set-env-vars GCP_PROJECT_ID=souschef4me,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub `
+  --set-env-vars GCP_PROJECT_ID=<PROJECT_ID>,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub `
   --command "node,dist/workers/ocr-worker.js" `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Execute manually or via Cloud Scheduler
-gcloud run jobs execute ocr-worker-job --region us-central1 --project souschef4me
+gcloud run jobs execute ocr-worker-job --region us-central1 --project <PROJECT_ID>
 ```
 
 ### Option C: Separate Dockerfile for Worker
@@ -167,18 +170,18 @@ Build and deploy:
 cd c:\Users\Lawrence\Documents\GitHub\vite-rrouter-souschef\server
 
 # Build worker image
-gcloud builds submit --tag gcr.io/souschef4me/ocr-worker --project souschef4me
+gcloud builds submit --tag gcr.io/<PROJECT_ID>/ocr-worker --project <PROJECT_ID>
 
 # Deploy to Cloud Run
 gcloud run deploy ocr-worker `
-  --image gcr.io/souschef4me/ocr-worker `
+  --image gcr.io/<PROJECT_ID>/ocr-worker `
   --region us-central1 `
   --platform managed `
   --no-allow-unauthenticated `
   --min-instances 0 `
   --max-instances 10 `
-  --set-env-vars GCP_PROJECT_ID=souschef4me,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub `
-  --project souschef4me
+  --set-env-vars GCP_PROJECT_ID=<PROJECT_ID>,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub `
+  --project <PROJECT_ID>
 ```
 
 ## Step 6: Verify Deployment
@@ -189,13 +192,13 @@ gcloud run deploy ocr-worker `
 # Publish test message
 gcloud pubsub topics publish ocr-jobs `
   --message='{"jobId":"test-123","filePaths":["/tmp/test.jpg"],"userId":1}' `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Check worker logs
-gcloud run services logs tail ocr-worker --region us-central1 --project souschef4me
+gcloud run services logs tail ocr-worker --region us-central1 --project <PROJECT_ID>
 
 # Or for Cloud Run Jobs
-gcloud run jobs logs tail ocr-worker-job --region us-central1 --project souschef4me
+gcloud run jobs logs tail ocr-worker-job --region us-central1 --project <PROJECT_ID>
 ```
 
 ### Test API Endpoint
@@ -266,7 +269,7 @@ gcloud alpha monitoring policies create `
   --condition-display-name="Backlog > 100" `
   --condition-threshold-value=100 `
   --condition-threshold-duration=300s `
-  --project souschef4me
+  --project <PROJECT_ID>
 ```
 
 ## Step 8: Cleanup Old Jobs (Optional)
@@ -277,7 +280,7 @@ Create Cloud Scheduler job to run cleanup:
 # Create service account for cleanup
 gcloud iam service-accounts create ocr-cleanup `
   --display-name="OCR Jobs Cleanup" `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Grant database access (configure Cloud SQL Auth Proxy or IP)
 
@@ -286,8 +289,8 @@ gcloud scheduler jobs create http ocr-cleanup-job `
   --schedule="0 2 * * *" `
   --uri="$ApiUrl/api/admin/cleanup-ocr-jobs" `
   --http-method=POST `
-  --oidc-service-account-email="ocr-cleanup@souschef4me.iam.gserviceaccount.com" `
-  --project souschef4me
+  --oidc-service-account-email="ocr-cleanup@<PROJECT_ID>.iam.gserviceaccount.com" `
+  --project <PROJECT_ID>
 ```
 
 Or run as cron job in worker:
@@ -312,7 +315,7 @@ If issues occur:
 # Redeploy API without GCP_PROJECT_ID env var
 gcloud run deploy souschef-api `
   --update-env-vars OCR_JOBS_TOPIC="" `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Server will fall back to synchronous processing
 ```
@@ -325,20 +328,20 @@ gcloud run services update ocr-worker `
   --min-instances 0 `
   --max-instances 0 `
   --region us-central1 `
-  --project souschef4me
+  --project <PROJECT_ID>
 ```
 
 ### Delete Infrastructure
 
 ```powershell
 # Delete worker service
-gcloud run services delete ocr-worker --region us-central1 --project souschef4me
+gcloud run services delete ocr-worker --region us-central1 --project <PROJECT_ID>
 
 # Delete subscription
-gcloud pubsub subscriptions delete ocr-worker-sub --project souschef4me
+gcloud pubsub subscriptions delete ocr-worker-sub --project <PROJECT_ID>
 
 # Delete topic
-gcloud pubsub topics delete ocr-jobs --project souschef4me
+gcloud pubsub topics delete ocr-jobs --project <PROJECT_ID>
 
 # Drop table (careful!)
 psql $env:PG_URL -c "DROP TABLE IF EXISTS ocr_jobs;"
@@ -368,21 +371,21 @@ psql $env:PG_URL -c "DROP TABLE IF EXISTS ocr_jobs;"
 
 ```powershell
 # Check worker is running
-gcloud run services describe ocr-worker --region us-central1 --project souschef4me
+gcloud run services describe ocr-worker --region us-central1 --project <PROJECT_ID>
 
 # Check subscription backlog
-gcloud pubsub subscriptions describe ocr-worker-sub --project souschef4me
+gcloud pubsub subscriptions describe ocr-worker-sub --project <PROJECT_ID>
 
 # Check worker logs
-gcloud run services logs tail ocr-worker --region us-central1 --project souschef4me
+gcloud run services logs tail ocr-worker --region us-central1 --project <PROJECT_ID>
 ```
 
 **Pub/Sub permission errors**:
 
 ```powershell
 # Verify IAM bindings
-gcloud pubsub topics get-iam-policy ocr-jobs --project souschef4me
-gcloud pubsub subscriptions get-iam-policy ocr-worker-sub --project souschef4me
+gcloud pubsub topics get-iam-policy ocr-jobs --project <PROJECT_ID>
+gcloud pubsub subscriptions get-iam-policy ocr-worker-sub --project <PROJECT_ID>
 ```
 
 **Database connection errors**:
@@ -392,7 +395,7 @@ gcloud pubsub subscriptions get-iam-policy ocr-worker-sub --project souschef4me
 gcloud run services update ocr-worker `
   --set-env-vars TEST_MODE=true `
   --region us-central1 `
-  --project souschef4me
+  --project <PROJECT_ID>
 
 # Check logs for connection errors
 ```

@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: historical.** A plan or report for work that is done or dropped. It may not match the current code. For the current system see [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Server Cleanup Plan
 
 **Date:** November 10, 2025  
@@ -435,7 +438,7 @@ Quick steps to run the microservice locally and point the server at it for testi
 3. Point the server at the microservice (PowerShell example):
 
    ```powershell
-   $env:CLEAN_RECIPE_SERVICE_URL = 'http://localhost:6000'
+   $env:CLEAN_RECIPE_SERVICE_URL = 'http://<DB_HOST>:6000'
    # then start the server in a separate shell
    npm run dev
    ```

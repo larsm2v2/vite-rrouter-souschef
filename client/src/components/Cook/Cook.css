@@ -2,7 +2,7 @@
 .serving-scaler {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 8px 0 12px;
   text-align: left;
 }
@@ -11,14 +11,14 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .serving-scaler button {
   min-height: 44px;
   min-width: 44px;
   padding: 0 14px;
   border: 1px solid var(--primary-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--primary-color);
   font: inherit;
@@ -36,7 +36,7 @@
 .scale-caveat {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--text-light, #6b7280);
+  color: var(--text-light, var(--color-text-muted));
 }
 
 .timer-chip {
@@ -47,7 +47,7 @@
   margin: 0 2px;
   padding: 2px 10px;
   border: 1px solid var(--primary-color);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--tertiary-color);
   color: var(--primary-color);
   font: inherit;
@@ -69,18 +69,18 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .timer-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .timer-row.finished {
-  background: #fff3cd;
-  border-radius: 8px;
+  background: var(--color-warning-background);
+  border-radius: var(--radius-lg);
   padding: 6px;
 }
 .timer-info {
@@ -90,7 +90,7 @@
 }
 .timer-label {
   font-size: 0.85rem;
-  color: var(--text-light, #6b7280);
+  color: var(--text-light, var(--color-text-muted));
   overflow-wrap: anywhere;
 }
 .timer-time {
@@ -100,7 +100,7 @@
   color: var(--primary-color);
 }
 .timer-done {
-  color: #8a5318;
+  color: var(--color-warning-text);
   font-size: 1.1rem;
 }
 .timer-actions {
@@ -112,7 +112,7 @@
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--primary-color);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--primary-color);
   font: inherit;
@@ -121,7 +121,7 @@
 .timer-note {
   margin: 6px 0 0;
   font-size: 0.75rem;
-  color: var(--text-light, #6b7280);
+  color: var(--text-light, var(--color-text-muted));
 }
 
 .ingredient-check {
@@ -147,7 +147,7 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--primary-color);
   color: #fff;
   font-weight: 700;
@@ -160,21 +160,21 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #fffdf5;
-  color: #0b2530;
+  background: var(--color-cook-background);
+  color: var(--color-cook-text);
   text-align: left;
 }
 .cook-message {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 24px;
 }
 .cook-top {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
   background: var(--primary-color);
   color: #fff;
@@ -209,7 +209,7 @@
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: #fff;
   font: inherit;
@@ -226,14 +226,14 @@
 .cook-progress > div {
   height: 100%;
   background: var(--secondary-color);
-  transition: width 200ms ease;
+  transition: width var(--motion-standard) var(--ease-standard);
 }
 .cook-step {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 16px;
   overflow-y: auto;
 }
@@ -253,14 +253,14 @@
 }
 .cook-font {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: flex-end;
 }
 .cook-font button {
   min-width: 44px;
   min-height: 44px;
   border: 1px solid var(--primary-color);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--primary-color);
   font: inherit;
@@ -271,7 +271,7 @@
 }
 .cook-controls {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px));
   background: #fff;
   border-top: 1px solid rgba(0, 0, 0, 0.12);
@@ -280,7 +280,7 @@
   flex: 1 1 0;
   min-height: 56px;
   border: 2px solid var(--primary-color);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   background: transparent;
   color: var(--primary-color);
   font: inherit;
@@ -306,7 +306,7 @@
 .cook-sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-cook-sheet);
   display: flex;
   align-items: flex-end;
   background: rgba(0, 0, 0, 0.45);
@@ -365,7 +365,7 @@
   margin-top: 8px;
   padding: 0 14px;
   border: 1px solid var(--primary-color);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--primary-color);
   font: inherit;

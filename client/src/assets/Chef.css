@@ -11,8 +11,8 @@
 }
 
 .chefhat path {
-  stroke: #072733; /* Your fill color */
-  /* stroke: #fabf2c; */
+  stroke: var(--color-text); /* Your fill color */
+  /* stroke: var(--color-accent); */
   stroke-width: 20; /* Adjust to control the fill line thickness */
   fill: none;
   stroke-dasharray: 1000; /* Roughly the path length */
@@ -22,7 +22,7 @@
 
 .chefhat path.filling {
   /* Apply animation only when this class is present */
-  stroke: #fabf2c;
+  stroke: var(--color-accent);
   animation: fillPath 6s ease-in-out forwards infinite; /* Adjust duration and timing */
   stroke-dasharray: 30; /* Roughly the path length */
   stroke-dashoffset: 6000;

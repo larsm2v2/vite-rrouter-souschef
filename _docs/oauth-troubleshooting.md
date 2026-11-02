@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: reference.** Describes a feature that still exists, but was written before the current docs and may contain project-specific identifiers and outdated details. Check the code first; start from [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Google OAuth Troubleshooting - Access Blocked Issue
 
 ## Date
@@ -16,7 +19,7 @@ https://accounts.google.com/signin/oauth/error?authError=...
 
 **Decoded Error:** The app doesn't comply with Google's validation rules for secure response handling.
 
-**Redirect URI Being Used:** `https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
+**Redirect URI Being Used:** `<API_URL>/auth/google/callback`
 
 ---
 
@@ -31,17 +34,17 @@ https://accounts.google.com/signin/oauth/error?authError=...
 
 ### 2. **Environment Configuration**
 
-- **Production legacy server flow:** `GOOGLE_CALLBACK_URL=https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
+- **Production legacy server flow:** `GOOGLE_CALLBACK_URL=<API_URL>/auth/google/callback`
 - **Production PKCE flow:** `GOOGLE_PKCE_REDIRECT_URI=https://<frontend-origin>/auth/callback` (optional; defaults to `CLIENT_URL/auth/callback`)
-- **Local legacy server flow:** `GOOGLE_CALLBACK_URL=http://localhost:8080/auth/google/callback`
-- **Local PKCE flow:** `GOOGLE_PKCE_REDIRECT_URI=http://localhost:5173/auth/callback` (or `http://127.0.0.1:5173/auth/callback` if that is the browser origin)
+- **Local legacy server flow:** `GOOGLE_CALLBACK_URL=<GOOGLE_CALLBACK_URL>`
+- **Local PKCE flow:** `GOOGLE_PKCE_REDIRECT_URI=http://<DB_HOST>:5173/auth/callback` (or `http://127.0.0.1:5173/auth/callback` if that is the browser origin)
 - **Status:** ✅ Correct
 
 ### 3. **Google Secret Manager**
 
 - Updated `GOOGLE_CALLBACK_URL` secret from comma-separated values to single production URL
-- Before: `https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback,http://localhost:8080/auth/google/callback`
-- After: `https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
+- Before: `<API_URL>/auth/google/callback,<GOOGLE_CALLBACK_URL>`
+- After: `<API_URL>/auth/google/callback`
 - Cloud Run service updated to use latest secret version
 - **Status:** ✅ Fixed
 
@@ -49,14 +52,14 @@ https://accounts.google.com/signin/oauth/error?authError=...
 
 - Register the exact frontend callback URI for the client-side PKCE flow, and the API callback only if the legacy server-side flow is still enabled:
   - `https://<frontend-origin>/auth/callback`
-  - ✅ `https://souschef-api-pxtqq24yta-uc.a.run.app/auth/google/callback`
-  - `http://localhost:5173/auth/callback` (local PKCE)
-  - `http://localhost:8080/auth/google/callback` (legacy local flow)
+  - ✅ `<API_URL>/auth/google/callback`
+  - `http://<DB_HOST>:5173/auth/callback` (local PKCE)
+  - `<GOOGLE_CALLBACK_URL>` (legacy local flow)
 - **Status:** Verify the frontend callback URI against the exact URI shown in Google's `redirect_uri_mismatch` error.
 
 ### Redirect URI Mismatch
 
-Google checks the complete `redirect_uri` value, including scheme, hostname, port, and path. The current PKCE client requests `${window.location.origin}/auth/callback`; add that exact URI under the OAuth client’s **Authorized redirect URIs**. For example, `http://localhost:5173/auth/callback` and `http://127.0.0.1:5173/auth/callback` are distinct values. The client’s optional `VITE_GOOGLE_PKCE_REDIRECT_URI` and server’s optional `GOOGLE_PKCE_REDIRECT_URI` must match this same URI. `GOOGLE_CALLBACK_URL` remains reserved for the legacy API callback.
+Google checks the complete `redirect_uri` value, including scheme, hostname, port, and path. The current PKCE client requests `${window.location.origin}/auth/callback`; add that exact URI under the OAuth client’s **Authorized redirect URIs**. For example, `http://<DB_HOST>:5173/auth/callback` and `http://127.0.0.1:5173/auth/callback` are distinct values. The client’s optional `VITE_GOOGLE_PKCE_REDIRECT_URI` and server’s optional `GOOGLE_PKCE_REDIRECT_URI` must match this same URI. `GOOGLE_CALLBACK_URL` remains reserved for the legacy API callback.
 
 ### 5. **Entry Point Configuration**
 
@@ -66,7 +69,7 @@ Google checks the complete `redirect_uri` value, including scheme, hostname, por
 
 ### 6. **Cloud Run Deployment**
 
-- Service URL: `https://souschef-api-pxtqq24yta-uc.a.run.app`
+- Service URL: `<API_URL>`
 - Environment variables loaded from Secret Manager
 - Latest deployment includes all fixes
 - **Status:** ✅ Deployed

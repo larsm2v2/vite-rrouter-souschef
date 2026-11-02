@@ -43,7 +43,7 @@ export class RecipeController {
     if (!updatedRecipe) {
       res.status(404).json({ error: "Recipe not found" });
     } else {
-      res.status(200).json(updatedRecipe);
+      res.status(200).json({ success: true });
     }
   }
   async delete(req: Request, res: Response): Promise<void> {

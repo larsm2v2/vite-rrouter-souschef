@@ -18,6 +18,8 @@ import {
 import InstructionText from "../../Cook/InstructionText";
 import ServingScaler from "../../Cook/ServingScaler";
 import TimerTray from "../../Cook/TimerTray";
+import RecipeEditModal from "../../common/RecipeEditModal";
+import type { ParsedRecipe } from "../../common/ParsedRecipeEditor";
 
 interface RecipeDetailsProps {
   isSelected: boolean;
@@ -25,6 +27,8 @@ interface RecipeDetailsProps {
   onSelectedRecipesChange: (recipe: RecipeModel | null) => void;
   showAddToSelectedRecipes: boolean | null;
   onFavoriteChange?: (recipeId: string, isFavorite: boolean) => void;
+  canEdit?: boolean;
+  onRecipeUpdate?: (recipe: RecipeModel) => void;
 }
 
 const RecipeDetails: React.FC<RecipeDetailsProps> = ({
@@ -33,24 +37,30 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
   isSelected,
   showAddToSelectedRecipes,
   onFavoriteChange,
+  canEdit = false,
+  onRecipeUpdate,
 }) => {
   const { showToast } = useToast();
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isAddingToList, setIsAddingToList] = useState<boolean>(false);
   const [isSharing, setIsSharing] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedRecipe, setEditedRecipe] = useState<RecipeModel | null>(null);
 
   // Router-aware: allow canonical /recipes/:id usage and support fast-path via Link state
   const params = useParams<{ id?: string }>();
   const location = useLocation();
   const routeStateRecipe = (location.state as { recipe?: RecipeModel })?.recipe;
 
-  const { recipe: fetchedRecipe, loading: fetchingRecipe } = useRecipe(
-    params?.id,
-    routeStateRecipe,
-  );
+  const {
+    recipe: fetchedRecipe,
+    setRecipe: setFetchedRecipe,
+    loading: fetchingRecipe,
+  } = useRecipe(params?.id, routeStateRecipe);
 
+  const sourceRecipe = showRecipe ?? routeStateRecipe ?? fetchedRecipe ?? null;
   const activeShowRecipe =
-    showRecipe ?? routeStateRecipe ?? fetchedRecipe ?? null;
+    editedRecipe?.id === sourceRecipe?.id ? editedRecipe : sourceRecipe;
 
   const { state: cook, patch: patchCook } = useCookState(activeShowRecipe?.id);
   const timers = useTimers(activeShowRecipe?.id);
@@ -200,6 +210,29 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
     }
   };
 
+  const handleRecipeUpdated = (draft: ParsedRecipe) => {
+    if (!activeShowRecipe) return;
+    const updated: RecipeModel = {
+      ...activeShowRecipe,
+      name: draft.name?.trim() ?? activeShowRecipe.name,
+      cuisine: draft.cuisine ?? "",
+      meal_type: draft.mealType ?? "",
+      dietary_restrictions: draft.dietaryRestrictions ?? [],
+      serving_info: {
+        prep_time: draft.servingInfo?.prepTime ?? "",
+        cook_time: draft.servingInfo?.cookTime ?? "",
+        total_time: draft.servingInfo?.totalTime ?? "",
+        servings: draft.servingInfo?.servings ?? 0,
+      },
+      ingredients: draft.ingredients as RecipeModel["ingredients"],
+      instructions: draft.instructions,
+      notes: draft.notes,
+    };
+    setEditedRecipe(updated);
+    setFetchedRecipe(updated);
+    onRecipeUpdate?.(updated);
+  };
+
   // 1. Ingredients are normalized in toIngredientGroups so no line is ever dropped
 
   if (fetchingRecipe && !activeShowRecipe) {
@@ -277,6 +310,17 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
               </svg>
               {isSharing ? "Sharing..." : "Share"}
             </button>
+
+            {canEdit && (
+              <button
+                type="button"
+                className="recipe-action-btn edit-recipe-btn"
+                onClick={() => setIsEditing(true)}
+                aria-label={`Edit ${activeShowRecipe?.name ?? "recipe"}`}
+              >
+                Edit recipe
+              </button>
+            )}
 
             {/* Add to Selected Recipes toggle */}
             {showAddToSelectedRecipes && (
@@ -411,6 +455,13 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
             </section>
           )}
         </div>
+      )}
+      {isEditing && canEdit && activeShowRecipe && (
+        <RecipeEditModal
+          recipe={activeShowRecipe}
+          onClose={() => setIsEditing(false)}
+          onSaved={handleRecipeUpdated}
+        />
       )}
     </div>
   );

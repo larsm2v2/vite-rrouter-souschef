@@ -148,6 +148,14 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({
     );
   };
 
+  const handleRecipeUpdate = (updated: RecipeModel) => {
+    setRecipes((current) =>
+      current.map((recipe) => (recipe.id === updated.id ? updated : recipe)),
+    );
+    setRecipeToDisplay(updated);
+    setSelectedRecipe(updated);
+  };
+
   useEffect(() => {
     if (selectedRecipeId) {
       const recipe = recipes.find(
@@ -181,6 +189,8 @@ const RecipeDisplay: React.FC<RecipeDisplayProps> = ({
             isSelected={selectedRecipeIds.includes(selectedRecipeId || "")}
             showAddToSelectedRecipes={activeContent === "recipes"}
             onFavoriteChange={handleFavoriteChange}
+            canEdit={activeContent === "recipes"}
+            onRecipeUpdate={handleRecipeUpdate}
           />
 
           {activeContent === "sousChef" && (

@@ -110,22 +110,114 @@ export class RecipeRepository {
   async update(
     recipeId: number,
     recipeData: Partial<Recipe>,
-    userId?: number,
+    userId: number,
   ): Promise<Recipe | null> {
-    const result = await pool.query(
-      `UPDATE recipes SET name = $2, slug = $3, cuisine = $4, meal_type = $5, dietary_restrictions = $6
-       WHERE id = $1 AND user_id = $7 RETURNING *`,
-      [
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const current = await client.query(
+        "SELECT id, name, slug FROM recipes WHERE id = $1 AND user_id = $2 FOR UPDATE",
+        [recipeId, userId],
+      );
+      if (current.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+
+      const nameSlug =
+        String(recipeData.name ?? "recipe")
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || "recipe";
+      const slug =
+        recipeData.name === undefined ||
+        recipeData.name === current.rows[0].name
+          ? current.rows[0].slug
+          : `${nameSlug}-${recipeId}-${crypto.randomBytes(3).toString("hex")}`;
+
+      const result = await client.query(
+        `UPDATE recipes SET name = $1, slug = $2, cuisine = $3, meal_type = $4,
+           dietary_restrictions = $5, updated_at = NOW()
+         WHERE id = $6 AND user_id = $7 RETURNING *`,
+        [
+          recipeData.name,
+          slug,
+          recipeData.cuisine ?? "",
+          recipeData.mealType ?? "",
+          recipeData.dietaryRestrictions ?? [],
+          recipeId,
+          userId,
+        ],
+      );
+
+      const servingInfo = recipeData.servingInfo;
+      if (servingInfo) {
+        await client.query(
+          `INSERT INTO recipe_serving_info (recipe_id, prep_time, cook_time, total_time, servings)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (recipe_id) DO UPDATE SET
+             prep_time = EXCLUDED.prep_time, cook_time = EXCLUDED.cook_time,
+             total_time = EXCLUDED.total_time, servings = EXCLUDED.servings`,
+          [
+            recipeId,
+            servingInfo.prepTime ?? "",
+            servingInfo.cookTime ?? "",
+            servingInfo.totalTime ?? "",
+            servingInfo.servings ?? 0,
+          ],
+        );
+      }
+
+      await client.query(
+        "DELETE FROM recipe_ingredients WHERE recipe_id = $1",
+        [recipeId],
+      );
+      for (const [category, items] of Object.entries(
+        recipeData.ingredients ?? {},
+      )) {
+        if (items.length === 0) continue;
+        await client.query(
+          "INSERT INTO recipe_ingredients (recipe_id, category, ingredients) VALUES ($1, $2, $3)",
+          [recipeId, category, JSON.stringify(items)],
+        );
+      }
+
+      await client.query(
+        "DELETE FROM recipe_instructions WHERE recipe_id = $1",
+        [recipeId],
+      );
+      for (const [index, instruction] of (
+        recipeData.instructions ?? []
+      ).entries()) {
+        await client.query(
+          "INSERT INTO recipe_instructions (recipe_id, step_number, instruction) VALUES ($1, $2, $3)",
+          [
+            recipeId,
+            index + 1,
+            instruction.instruction ?? instruction.text ?? "",
+          ],
+        );
+      }
+
+      await client.query("DELETE FROM recipe_notes WHERE recipe_id = $1", [
         recipeId,
-        recipeData.name,
-        recipeData.slug,
-        recipeData.cuisine,
-        recipeData.mealType,
-        recipeData.dietaryRestrictions,
-        userId,
-      ],
-    );
-    return result.rows[0] || null;
+      ]);
+      for (const note of recipeData.notes ?? []) {
+        await client.query(
+          "INSERT INTO recipe_notes (recipe_id, note) VALUES ($1, $2)",
+          [recipeId, note],
+        );
+      }
+
+      await client.query("COMMIT");
+      return result.rows[0] as Recipe;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async delete(recipeId: number, userId?: number): Promise<boolean> {

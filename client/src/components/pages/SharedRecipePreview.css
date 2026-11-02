@@ -3,7 +3,7 @@
   display: inline-block;
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: #f3e5f5;
   color: #7b1fa2;
   font-size: 14px;
@@ -27,6 +27,6 @@
 }
 
 .shared-recipe-error {
-  color: #c62828;
+  color: var(--color-error);
   margin-bottom: 1rem;
 }

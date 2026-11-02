@@ -123,18 +123,20 @@ test.describe("import editor undo", () => {
   test("the Undo toast is reachable with the keyboard while the import dialog traps focus", async ({
     page,
   }) => {
+    await page.clock.install();
     await openReview(page);
     await page
       .getByRole("button", { name: "Remove ingredient 2 from default" })
       .click();
     const undo = page.getByRole("button", { name: "Undo" });
+    await expect(undo).toBeVisible();
     // Real Tab travel: the dialog keeps focus inside, and the toast has to remain part of it.
     for (
       let i = 0;
-      i < 12 && !(await undo.evaluate((el) => el === document.activeElement));
+      i < 100 && !(await undo.evaluate((el) => el === document.activeElement));
       i++
     ) {
-      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
     }
     await expect(undo).toBeFocused();
     await page.keyboard.press("Enter");

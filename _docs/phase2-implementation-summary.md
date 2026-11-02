@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: reference.** Describes a feature that still exists, but was written before the current docs and may contain project-specific identifiers and outdated details. Check the code first; start from [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Phase 2 Implementation Summary
 
 **Status**: ✅ **COMPLETE**
@@ -151,11 +154,11 @@
 ### Local Testing (Pub/Sub Emulator)
 ```powershell
 # Start emulator
-gcloud beta emulators pubsub start --project=souschef4me
+gcloud beta emulators pubsub start --project=<PROJECT_ID>
 
 # In another terminal
-$env:PUBSUB_EMULATOR_HOST = "localhost:8085"
-$env:GCP_PROJECT_ID = "souschef4me"
+$env:PUBSUB_EMULATOR_HOST = "<DB_HOST>:8085"
+$env:GCP_PROJECT_ID = "<PROJECT_ID>"
 
 # Run worker
 npm run worker:dev
@@ -164,7 +167,7 @@ npm run worker:dev
 npm run dev
 
 # Test upload
-curl.exe -X POST http://localhost:8080/api/ocr/upload -F "image=@test.jpg"
+curl.exe -X POST <API_URL>/api/ocr/upload -F "image=@test.jpg"
 ```
 
 ### Production Testing
@@ -184,13 +187,13 @@ curl.exe "https://souschef-api-238603140451.us-central1.run.app/api/ocr/status/$
 
 ### Environment Variables (API Server)
 ```
-GCP_PROJECT_ID=souschef4me
+GCP_PROJECT_ID=<PROJECT_ID>
 OCR_JOBS_TOPIC=ocr-jobs  # Optional, defaults to "ocr-jobs"
 ```
 
 ### Environment Variables (Worker)
 ```
-GCP_PROJECT_ID=souschef4me
+GCP_PROJECT_ID=<PROJECT_ID>
 OCR_JOBS_SUBSCRIPTION=ocr-worker-sub  # Optional, defaults to "ocr-worker-sub"
 PG_URL=postgresql://...
 CLEAN_RECIPE_SERVICE_URL=https://...

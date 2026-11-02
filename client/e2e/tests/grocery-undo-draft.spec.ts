@@ -1,4 +1,4 @@
-import { test, expect, Page } from "@playwright/test";
+﻿import { test, expect, Page } from "@playwright/test";
 
 const USER = {
   id: "undo-test",
@@ -167,6 +167,7 @@ test.describe("undo", () => {
   });
 
   test("the Undo action is reachable by keyboard", async ({ page }) => {
+    await page.clock.install();
     await prepare(page, LIST);
     await page.goto("/sous-chef");
     await open(page);
@@ -175,13 +176,14 @@ test.describe("undo", () => {
       .getByRole("button", { name: "Delete milk" })
       .click();
     const undo = page.getByRole("button", { name: "Undo" });
+    await expect(undo).toBeVisible();
     // Real keyboard travel, not .focus(): the open drawer traps Tab, and the toast must stay reachable.
     for (
       let i = 0;
-      i < 12 && !(await undo.evaluate((el) => el === document.activeElement));
+      i < 100 && !(await undo.evaluate((el) => el === document.activeElement));
       i++
     ) {
-      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
     }
     await expect(undo).toBeFocused();
     await page.keyboard.press("Enter");

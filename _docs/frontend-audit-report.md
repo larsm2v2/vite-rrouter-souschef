@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-31  
 **Scope:** React/Vite client, auth and recipe flows, grocery sidebar, URL import, lint/build, Playwright desktop and mobile Chromium, Node runtime migration.  
-**Disposition:** All actionable findings discovered in this pass were fixed. Three non-blocking lint warnings, untested Firefox/WebKit browsers, and one incomplete full Docker image build remain.
+**Disposition:** All actionable findings discovered in this pass were fixed. Three non-blocking lint warnings and one incomplete full Docker image build remain. Firefox and WebKit were run in the later verification pass (see the update below).
 
 ## Findings
 
@@ -29,11 +29,11 @@
 ## Remaining Items
 
 - `npm run lint` reports three non-blocking Fast Refresh warnings in `Models.tsx`, `Toast.tsx`, and `AuthContext.tsx`.
-- Playwright was run on desktop Chromium and Mobile Chrome. Firefox and WebKit were not run because their pinned browser binaries are not installed. The initial all-project run failed at browser launch, before application assertions; Chromium was installed in the user cache only.
+- Playwright was first run on desktop Chromium and Mobile Chrome; Firefox and WebKit were not installed then. They were installed later and the whole suite now passes on all five projects (see Verification). That pass found one real bug (toast Undo buttons were unreachable by keyboard inside focus traps), now fixed.
 - The new sharing tests stub backend responses; server-side sharing behavior is separately covered by the server build/test run from the backend phase. A live client-to-server browser integration was not run in this pass.
 - The clean-recipe-service Dockerfile now uses deterministic `npm ci`, a strict TypeScript build, and runtime-only OS libraries. Its Node 24 image builds and a container smoke test confirms Sharp 0.32.6 loads. The server Node 24 Docker image also builds and runs.
 - Docker image diagnostics report 15 high findings on the Node server base and 14 on the clean-recipe base; scan/patch work is separate from the Node runtime migration.
-- Firefox/WebKit and a dedicated live client-to-server URL-import browser test remain follow-up coverage.
+- A dedicated live client-to-server URL-import browser test remains follow-up coverage.
 - Mobile verification used Chromium device emulation (Pixel 5) with real CDP touch drags; no physical iOS Safari or Android device was used. iOS-specific behavior (`100dvh`, safe-area insets, `inert`) is untested.
 - Uploaded OCR images are stored on ephemeral container disk (`data/ocr`); they vanish on Cloud Run instance recycle, so saved recipes can end up with dead image URLs. Move to Cloud Storage.
 - Server `dist/` is tracked in git and churns on every build; consider ignoring it.
@@ -49,9 +49,9 @@
 
 - Client `npm run lint`: zero errors, three warnings.
 - Client `npm run build`: passed.
-- Playwright projects `chromium` and `Mobile Chrome`: **175 passed, 13 skipped (viewport-specific by design), 0 failed**. Run it alone: running Jest at the same time caused 30 s timeouts.
+- Playwright, all five projects (`chromium`, `webkit`, `firefox`, `Mobile Chrome`, `Mobile Safari`): **475 tests, 436 passed, 39 skipped (viewport- or engine-specific by design), 0 failed**. Run it alone: running Jest at the same time caused 30 s timeouts.
 - Server: build passed; **23/23 suites, 136/136 tests passed** under Node 24.
-- Client unit tests (Vitest): **105/105**. Build passed. Lint: 0 errors, 3 existing warnings.
+- Client unit tests (Vitest): **117/117**. Build passed. Lint: 0 errors, 3 existing warnings.
 - Follow-on work (cook mode, scaler, timers, grocery merge/aisles, undo, import drafts) is recorded in [mobile-recipe-ux-roadmap.md](mobile-recipe-ux-roadmap.md#implementation-status).
 - Clean-recipe-service: TypeScript build and **12/12 tests passed** under Node 24; Sharp 0.32.6 loaded successfully.
 - Docker: server image built and reports Node 24.22.2; optimized clean-recipe image built and reports Node 24.22.2 with Sharp 0.32.6.

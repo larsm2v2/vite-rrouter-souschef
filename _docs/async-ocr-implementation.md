@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: reference.** Describes a feature that still exists, but was written before the current docs and may contain project-specific identifiers and outdated details. Check the code first; start from [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # Async OCR Processing with Pub/Sub
 
 This document describes the asynchronous OCR processing implementation using Google Cloud Pub/Sub.
@@ -106,7 +109,7 @@ Or integrate with your existing migration runner.
 
 ```bash
 # Set project
-gcloud config set project souschef4me
+gcloud config set project <PROJECT_ID>
 
 # Create topic
 gcloud pubsub topics create ocr-jobs
@@ -120,12 +123,12 @@ gcloud pubsub subscriptions create ocr-worker-sub \
 # Grant permissions (if using service accounts)
 # For API server (publisher)
 gcloud pubsub topics add-iam-policy-binding ocr-jobs \
-  --member="serviceAccount:YOUR_API_SA@souschef4me.iam.gserviceaccount.com" \
+  --member="serviceAccount:YOUR_API_SA@<PROJECT_ID>.iam.gserviceaccount.com" \
   --role="roles/pubsub.publisher"
 
 # For worker (subscriber)
 gcloud pubsub subscriptions add-iam-policy-binding ocr-worker-sub \
-  --member="serviceAccount:YOUR_WORKER_SA@souschef4me.iam.gserviceaccount.com" \
+  --member="serviceAccount:YOUR_WORKER_SA@<PROJECT_ID>.iam.gserviceaccount.com" \
   --role="roles/pubsub.subscriber"
 ```
 
@@ -133,13 +136,13 @@ gcloud pubsub subscriptions add-iam-policy-binding ocr-worker-sub \
 
 **API Server** (`server/env/`):
 ```
-GCP_PROJECT_ID=souschef4me
+GCP_PROJECT_ID=<PROJECT_ID>
 OCR_JOBS_TOPIC=ocr-jobs  # Optional, defaults to "ocr-jobs"
 ```
 
 **Worker** (same or separate deployment):
 ```
-GCP_PROJECT_ID=souschef4me
+GCP_PROJECT_ID=<PROJECT_ID>
 OCR_JOBS_SUBSCRIPTION=ocr-worker-sub  # Optional, defaults to "ocr-worker-sub"
 PG_URL=postgresql://...  # Database connection
 CLEAN_RECIPE_SERVICE_URL=https://...  # Microservice URL
@@ -162,7 +165,7 @@ gcloud run deploy ocr-worker \
   --region us-central1 \
   --platform managed \
   --no-allow-unauthenticated \
-  --set-env-vars GCP_PROJECT_ID=souschef4me,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub \
+  --set-env-vars GCP_PROJECT_ID=<PROJECT_ID>,OCR_JOBS_SUBSCRIPTION=ocr-worker-sub \
   --set-secrets PG_URL=PG_URL:latest \
   --command="node,dist/workers/ocr-worker.js"
 ```
@@ -313,11 +316,11 @@ If Pub/Sub is **not available** (local dev, Pub/Sub outage):
 gcloud components install pubsub-emulator
 
 # Start emulator
-gcloud beta emulators pubsub start --project=souschef4me
+gcloud beta emulators pubsub start --project=<PROJECT_ID>
 
 # In another terminal, set env
-export PUBSUB_EMULATOR_HOST=localhost:8085
-export GCP_PROJECT_ID=souschef4me
+export PUBSUB_EMULATOR_HOST=<DB_HOST>:8085
+export GCP_PROJECT_ID=<PROJECT_ID>
 
 # Run worker
 node dist/workers/ocr-worker.js
@@ -340,7 +343,7 @@ curl -X POST https://your-api.run.app/api/ocr/upload \
 curl https://your-api.run.app/api/ocr/status/UUID
 
 # Watch worker logs
-gcloud run logs tail ocr-worker --project souschef4me
+gcloud run logs tail ocr-worker --project <PROJECT_ID>
 ```
 
 ## Future Enhancements

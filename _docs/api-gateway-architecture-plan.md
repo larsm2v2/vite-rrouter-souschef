@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: historical.** A plan or report for work that is done or dropped. It may not match the current code. For the current system see [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # API Gateway & Async Communication Architecture Plan
 
 **Date:** November 22, 2025  
@@ -294,10 +297,10 @@ Client retrieves result when status = "completed"
 
 ```powershell
 # Create topic for OCR jobs
-gcloud pubsub topics create ocr-jobs --project souschef4me
+gcloud pubsub topics create ocr-jobs --project <PROJECT_ID>
 
 # Create subscription for worker
-gcloud pubsub subscriptions create ocr-worker-sub --topic ocr-jobs --project souschef4me
+gcloud pubsub subscriptions create ocr-worker-sub --topic ocr-jobs --project <PROJECT_ID>
 ```
 
 **2. Modify server to publish messages instead of blocking**

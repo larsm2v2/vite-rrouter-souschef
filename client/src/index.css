@@ -16,7 +16,7 @@ body {
   flex-direction: column;
   width: 100%;
   min-height: 100vh; /* allow the page to grow while providing a minimum viewport height */
-  background-color: #ffe298;
+  background-color: var(--color-page);
   margin: 0;
 }
 
@@ -30,49 +30,115 @@ body {
   padding: 0 0 0 0;
   justify-content: center;
   text-align: center;
-  background-color: #ffe298;
-  color: #072733;
-  font-family: Biko, sans-serif;
+  background-color: var(--color-page);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 :root {
-  /* Color system (primary project vars) */
-  --primary-color: #154153;
-  --secondary-color: #fabf2c;
-  --tertiary-color: #f8e1a7;
-  --quaternary-color: #2266ff;
-  --primary-hover-color: #317a97;
+  /* Primitive palette */
+  --color-primary: #154153;
+  --color-primary-hover: #317a97;
+  --color-accent: #fabf2c;
+  --color-accent-soft: #f8e1a7;
+  --color-link: #2266ff;
+  --color-text: #072733;
+  --color-text-muted: #6b7280;
+  --color-page: #ffe298;
+  --color-background-muted: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-success: #2e7d32;
+  --color-error: #c62828;
+  --color-warning-background: #fff3cd;
+  --color-warning-text: #8a5318;
+  --color-cook-background: #fffdf5;
+  --color-cook-text: #0b2530;
+  --color-terra-light: #ffefdf;
+  --color-terra-mid: #b88f6c;
+  --color-terra-dark: #705c4a;
+  --color-background-rose: #fcc8bb;
+  --color-black: #000000;
 
-  --primary-text-color: #154153;
-  --secondary-text-color: #072733;
-  --tertiary-text-color: #000000;
+  /* Semantic aliases retained while component styles migrate. */
+  --primary-color: var(--color-primary);
+  --secondary-color: var(--color-accent);
+  --tertiary-color: var(--color-accent-soft);
+  --quaternary-color: var(--color-link);
+  --primary-hover-color: var(--color-primary-hover);
+  --primary-text-color: var(--color-primary);
+  --secondary-text-color: var(--color-text);
+  --tertiary-text-color: var(--color-black);
+  --primary-background-color: var(--color-background-muted);
+  --secondary-background-color: var(--color-background-rose);
+  --tertiary-background-color: var(--color-page);
+  --primary-terra-color: var(--color-terra-light);
+  --secondary-terra-color: var(--color-terra-mid);
+  --tertiary-terra-color: var(--color-terra-dark);
+  --primary-border-color: var(--color-background-muted);
+  --secondary-border-color: var(--color-background-muted);
+  --tertiary-border-color: var(--color-background-muted);
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --text: var(--color-text);
+  --text-light: var(--color-text-muted);
+  --border: var(--color-border);
+  --surface: var(--color-surface);
 
-  --primary-background-color: #f5f5f5;
-  --secondary-background-color: #fcc8bb;
-  --tertiary-background-color: #ffe298;
+  /* Typography */
+  --font-body: Biko, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New",
+    monospace;
+  --font-size-base: 1rem;
+  --font-size-small: 0.875rem;
+  --font-size-large: 1.125rem;
 
-  --primary-terra-color: #ffefdf;
-  --secondary-terra-color: #b88f6c;
-  --tertiary-terra-color: #705c4a;
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
 
-  --primary-border-color: #f5f5f5;
-  --secondary-border-color: #f5f5f5;
-  --tertiary-border-color: #f5f5f5;
-
-  /* Aliases used by some components (keeps backwards compatibility) */
-  --primary: #154153;
-  --primary-hover: #317a97;
-  --text: #072733;
-  --text-light: #6b7280;
-  --border: #e5e7eb;
+  /* Shape and elevation */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 8px rgb(0 0 0 / 0.1);
 
-  /* Layout tokens (previously in MainLayout.css) */
+  /* Layer and motion scales */
+  --z-drawer-header: 1;
+  --z-sticky: 25;
+  --z-cook-sheet: 50;
+  --z-floating-mobile: 140;
+  --z-mobile-dock: 150;
+  --z-scrim: 160;
+  --z-drawer: 200;
+  --z-drawer-tab: 201;
+  --z-floating-desktop: 1000;
+  --z-modal: 1100;
+  --z-toast: 1200;
+  --motion-fast: 150ms;
+  --motion-standard: 200ms;
+  --motion-drawer: 220ms;
+  --ease-standard: ease;
+  --ease-emphasized: ease-out;
+
+  /* Layout tokens */
   --sidebar-width: 320px;
   --header-height: 64px;
-  --gap: 8px;
+  --dock-height: 60px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --gap: var(--space-2);
   --wh-ratio: calc(100vw / 100vh);
 }
 /* Avoid global `div` rules — target specific containers instead. */

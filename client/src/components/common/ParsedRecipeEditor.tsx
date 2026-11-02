@@ -21,6 +21,7 @@ export interface ParsedRecipe {
     servings?: number;
   };
   mealType?: string;
+  dietaryRestrictions?: string[];
   images?: { imageUrl: string; isPrimary: boolean }[];
 }
 
@@ -142,6 +143,98 @@ const ParsedRecipeEditor: React.FC<ParsedRecipeEditorProps> = ({
           }
           placeholder="Cuisine"
         />
+      </div>
+
+      <div className="preview-field">
+        <label className="preview-label" htmlFor="parsed-recipe-meal-type">
+          Meal type
+        </label>
+        <input
+          id="parsed-recipe-meal-type"
+          className="preview-input"
+          value={recipe.mealType ?? ""}
+          onChange={(event) =>
+            onChange({ ...recipe, mealType: event.target.value })
+          }
+        />
+      </div>
+
+      <div className="preview-field">
+        <label className="preview-label" htmlFor="parsed-recipe-dietary">
+          Dietary restrictions (comma separated)
+        </label>
+        <input
+          id="parsed-recipe-dietary"
+          className="preview-input"
+          value={(recipe.dietaryRestrictions ?? []).join(", ")}
+          onChange={(event) =>
+            onChange({
+              ...recipe,
+              dietaryRestrictions: event.target.value
+                .split(",")
+                .map((item) => item.trim())
+                .filter(Boolean),
+            })
+          }
+        />
+      </div>
+
+      <div className="preview-section">
+        <strong>Serving information</strong>
+        <div className="recipe-serving-fields">
+          {(
+            [
+              ["prepTime", "Prep time"],
+              ["cookTime", "Cook time"],
+              ["totalTime", "Total time"],
+            ] as const
+          ).map(([field, label]) => (
+            <div className="preview-field" key={field}>
+              <label
+                className="preview-label"
+                htmlFor={`parsed-recipe-${field}`}
+              >
+                {label}
+              </label>
+              <input
+                id={`parsed-recipe-${field}`}
+                className="preview-input"
+                value={recipe.servingInfo?.[field] ?? ""}
+                onChange={(event) =>
+                  onChange({
+                    ...recipe,
+                    servingInfo: {
+                      ...recipe.servingInfo,
+                      [field]: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ))}
+          <div className="preview-field">
+            <label className="preview-label" htmlFor="parsed-recipe-servings">
+              Servings
+            </label>
+            <input
+              id="parsed-recipe-servings"
+              className="preview-input"
+              type="number"
+              min="0"
+              max="999"
+              value={recipe.servingInfo?.servings ?? 0}
+              onChange={(event) =>
+                onChange({
+                  ...recipe,
+                  servingInfo: {
+                    ...recipe.servingInfo,
+                    servings: Number(event.target.value),
+                  },
+                })
+              }
+            />
+          </div>
+        </div>
       </div>
 
       <div className="preview-section">

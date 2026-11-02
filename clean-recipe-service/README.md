@@ -193,7 +193,7 @@ The main SousChef server can call this service for recipe cleaning:
 ```typescript
 // In server environment
 const CLEAN_RECIPE_SERVICE_URL =
-  process.env.CLEAN_RECIPE_SERVICE_URL || "http://localhost:6000";
+  process.env.CLEAN_RECIPE_SERVICE_URL || "http://<DB_HOST>:6000";
 
 async function cleanRecipe(recipe: any) {
   const response = await fetch(`${CLEAN_RECIPE_SERVICE_URL}/clean-recipe`, {

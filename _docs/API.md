@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: superseded.** This file describes an earlier state of the project. The current document is [architecture.md](architecture.md) (section 2.5). See the [documentation index](README.md).
+
 # Server API Documentation (summary)
 
 This document provides a brief, high-level reference for the server and the clean-recipe microservice endpoints used by the application. It is intended as an index and quick examples — expand with full request/response schemas if you need formal API docs (OpenAPI/Swagger).

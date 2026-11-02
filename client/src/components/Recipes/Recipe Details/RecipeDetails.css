@@ -13,7 +13,7 @@
 /* Recipe actions row - horizontal layout below title */
 .recipe-actions-row {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
 }
@@ -22,10 +22,10 @@
 .recipe-action-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   padding: 0.6rem 1rem;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: white;
   color: #333;
   font-size: 14px;
@@ -106,6 +106,15 @@
 .share-btn:disabled {
   border-color: #ccc;
   color: #999;
+}
+
+.edit-recipe-btn {
+  border-color: var(--primary-color, var(--color-primary));
+  color: var(--primary-color, var(--color-primary));
+}
+
+.edit-recipe-btn:hover {
+  background: #edf4f5;
 }
 
 /* Selected recipe button specific styles */

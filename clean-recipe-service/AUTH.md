@@ -62,7 +62,7 @@ Local testing
 
 ```powershell
 $TOKEN = gcloud auth print-identity-token
-curl -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"name":"test","ingredients":{},"instructions":[{"number":1,"text":"hello"}]}' https://clean-recipe-service-XXXXX.run.app/clean-recipe
+curl -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"name":"test","ingredients":{},"instructions":[{"number":1,"text":"hello"}]}' <API_URL>/clean-recipe
 ```
 
 Rollout consideration

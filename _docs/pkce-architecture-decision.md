@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: reference.** Describes a feature that still exists, but was written before the current docs and may contain project-specific identifiers and outdated details. Check the code first; start from [architecture.md](architecture.md) and the [documentation index](README.md).
+
 # PKCE Architecture Decision: Client-Side vs Server-Side
 
 ## Current Implementation Issue
@@ -116,7 +119,7 @@ router.post("/api/oauth/google/token", async (req, res) => {
   }
 
   // Exchange with Google (NO server-side storage needed!)
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenResponse = await fetch("<GOOGLE_ACCESS_TOKEN_URL>", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({

@@ -35,7 +35,7 @@ node examples.js
 Canonicalize a single ingredient:
 
 ```powershell
-curl -X POST http://localhost:6000/canonicalize `
+curl -X POST http://<DB_HOST>:6000/canonicalize `
   -H "Content-Type: application/json" `
   -d '{"ingredient":"black pepper"}'
 ```
@@ -43,7 +43,7 @@ curl -X POST http://localhost:6000/canonicalize `
 Clean a recipe (automatic canonicalization):
 
 ```powershell
-curl -X POST http://localhost:6000/clean-recipe `
+curl -X POST http://<DB_HOST>:6000/clean-recipe `
   -H "Content-Type: application/json" `
   -d '{
     "name": "Test Recipe",
@@ -59,7 +59,7 @@ curl -X POST http://localhost:6000/clean-recipe `
 Get statistics:
 
 ```powershell
-curl http://localhost:6000/synonym-stats
+curl http://<DB_HOST>:6000/synonym-stats
 ```
 
 ## 🧪 Run Tests
@@ -103,7 +103,7 @@ The main SousChef server already integrates via:
 Set environment variable to use the service:
 
 ```powershell
-$env:CLEAN_RECIPE_SERVICE_URL = "http://localhost:6000"
+$env:CLEAN_RECIPE_SERVICE_URL = "http://<DB_HOST>:6000"
 ```
 
 ## ✅ What You Get
@@ -125,7 +125,7 @@ $env:CLEAN_RECIPE_SERVICE_URL = "http://localhost:6000"
 const recipes = await fetchRecipesFromDB();
 const cleaned = await Promise.all(
   recipes.map((r) =>
-    fetch("http://localhost:6000/clean-recipe", {
+    fetch("http://<DB_HOST>:6000/clean-recipe", {
       method: "POST",
       body: JSON.stringify(r),
     }).then((res) => res.json())
@@ -137,7 +137,7 @@ const cleaned = await Promise.all(
 
 ```javascript
 const ingredients = ["black pepper", "evoo", "kosher salt"];
-const result = await fetch("http://localhost:6000/canonicalize-batch", {
+const result = await fetch("http://<DB_HOST>:6000/canonicalize-batch", {
   method: "POST",
   body: JSON.stringify({ ingredients }),
 }).then((res) => res.json());
@@ -146,7 +146,7 @@ const result = await fetch("http://localhost:6000/canonicalize-batch", {
 **Use Case 3: Check if ingredient has synonyms**
 
 ```javascript
-const result = await fetch("http://localhost:6000/canonicalize", {
+const result = await fetch("http://<DB_HOST>:6000/canonicalize", {
   method: "POST",
   body: JSON.stringify({ ingredient: "black pepper" }),
 }).then((res) => res.json());
@@ -168,7 +168,7 @@ npm run dev
 Check the service is running:
 
 ```powershell
-curl http://localhost:6000/synonym-stats
+curl http://<DB_HOST>:6000/synonym-stats
 ```
 
 **Need to rebuild?**

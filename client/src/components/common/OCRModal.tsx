@@ -64,6 +64,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
   const [modalEl, setModalEl] = useState<HTMLElement | null>(null);
   const [ocrText, setOcrText] = useState("");
   const [recipeUrl, setRecipeUrl] = useState("");
+  const [urlImportError, setUrlImportError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [parsedResult, setParsedResult] = useState<ParsedRecipe | null>(null);
   const [previewMode, setPreviewMode] = useState<"json" | "pretty">("pretty");
@@ -167,6 +168,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
     setUploadedImages([]);
     setOcrText("");
     setRecipeUrl("");
+    setUrlImportError(null);
     setPreviewMode("pretty");
     setTab("upload");
   };
@@ -357,6 +359,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
       const parsed = (resp.data as OCRResponse)?.parsed;
       if (parsed) {
         // Show preview so user can confirm before importing
+        setUrlImportError(null);
         setSource({ kind: "text", text: ocrText });
         setParsedResult(parsed);
         setTab("preview");
@@ -392,6 +395,7 @@ export default function OCRModal({ isOpen, onClose }: Props) {
 
   const onImportUrl = async (event: React.FormEvent) => {
     event.preventDefault();
+    setUrlImportError(null);
     let url: URL;
     try {
       url = new URL(recipeUrl.trim());
@@ -428,12 +432,16 @@ export default function OCRModal({ isOpen, onClose }: Props) {
         response?: { data?: { error?: string; message?: string } };
         message?: string;
       };
-      showToast(
+      const reason =
         responseError.response?.data?.error ??
-          responseError.response?.data?.message ??
-          responseError.message ??
-          "Could not import that recipe URL",
-        "error",
+        responseError.response?.data?.message ??
+        responseError.message ??
+        "The page could not be read";
+      setUrlImportError(reason.slice(0, 240));
+      setTab("text");
+      showToast(
+        "Could not read that page directly. Paste its recipe text to continue.",
+        "info",
       );
     } finally {
       setLoading(false);
@@ -615,6 +623,19 @@ export default function OCRModal({ isOpen, onClose }: Props) {
 
           {tab === "text" && (
             <div className="ocr-text-editor">
+              {urlImportError && (
+                <div className="ocr-url-fallback" role="alert">
+                  <strong>Could not import this page directly.</strong>
+                  <p>{urlImportError}</p>
+                  <p>
+                    Some sites block automated requests. Paste the recipe or
+                    page text below, then parse it to continue.
+                  </p>
+                  <button type="button" onClick={() => setTab("url")}>
+                    Try the URL again
+                  </button>
+                </div>
+              )}
               <textarea
                 value={ocrText}
                 onChange={(e) => setOcrText(e.target.value)}

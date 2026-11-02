@@ -46,7 +46,7 @@
 Dev cookie & auth tips
 
 - When running the client and server locally on different ports, cookie-based refresh may fail because browsers block cross-site cookies when used in XHR/Fetch POST requests due to SameSite rules. To avoid this in local development, use the Vite dev proxy (already added to `client/vite.config.ts`) so `/auth` and `/api` calls appear same-origin. This prevents the browser from rejecting `refreshToken` HttpOnly cookie when calling `POST /auth/refresh`.
-- If you're still seeing refresh failures, confirm the request carries the Cookie header using the `/auth/debug/cookies` endpoint and ensure your origin is allowed by `server/src/05_frameworks/myexpress/gateway/cors.ts` (we include `http://localhost:5173` and `http://127.0.0.1:5173` by default).
+- If you're still seeing refresh failures, confirm the request carries the Cookie header using the `/auth/debug/cookies` endpoint and ensure your origin is allowed by `server/src/05_frameworks/myexpress/gateway/cors.ts` (we include `http://<DB_HOST>:5173` and `http://127.0.0.1:5173` by default).
 
 ## Conventions and patterns to follow
 
@@ -83,10 +83,10 @@ Advanced debug commands:
 
 ```powershell
 # Show debug cookies from server endpoint
-curl -i http://localhost:8000/auth/debug/cookies
+curl -i http://<DB_HOST>:8000/auth/debug/cookies
 
 # Quick check for cookie being set in response headers after login (via curl)
-curl -i -X POST -H "Content-Type: application/json" -d '{"email":"x@x.com","password":"P@ssw0rd"}' http://localhost:8000/auth/login
+curl -i -X POST -H "Content-Type: application/json" -d '{"email":"x@x.com","password":"P@ssw0rd"}' http://<DB_HOST>:8000/auth/login
 ```
 
 If you still see refresh issues after following the above, check logs and the `isRefreshTokenValid()` diagnostic warnings printed by the server. They will include `No refresh token record found` or `revoked` status and are the next place to investigate.
@@ -94,7 +94,7 @@ If you still see refresh issues after following the above, check logs and the `i
 ## Safety checks & gotchas
 
 - Do NOT set `VITE_DEV_BYPASS` in production or CI; it is a local dev helper only.
-- When building the client for deploy, ensure `VITE_API_URL` points to a publicly reachable API (not `localhost`).
+- When building the client for deploy, ensure `VITE_API_URL` points to a publicly reachable API (not `<DB_HOST>`).
 - Production server entrypoint `06_app/main.ts` does not enable legacy session middleware — if you need session-based flows for local debugging, create a dev-only shim that mounts the legacy session middleware only in `NODE_ENV=development`.
 - Avoid importing `src/app.ts` (deprecated) into production code; it can create duplicate Express apps.
 

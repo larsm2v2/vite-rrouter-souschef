@@ -6,11 +6,12 @@ This repository contains two main pieces:
 - `clean-recipe-service/` — optional microservice that normalizes/cleans recipe payloads
 - `client/` — frontend app (Vite + React/TypeScript)
 
-See `server/docs/` for more details:
+Documentation lives in `_docs/` (start at [_docs/README.md](_docs/README.md)):
 
-- `server/docs/API.md` — quick API reference and examples
-- `server/docs/DEPLOYMENT.md` — environment variables and deployment notes
-- `server/docs/DEVELOPMENT.md` — development guide and testing instructions
+- [_docs/architecture.md](_docs/architecture.md) — how the system fits together, API, data model, auth, known gaps
+- [_docs/design-system.md](_docs/design-system.md) — UI principles, tokens, components, interaction and accessibility rules
+- [_docs/build-and-release.md](_docs/build-and-release.md) — setup, quality gates, CI and the release process
+- [_docs/DEPLOY_CHEATSHEET.md](_docs/DEPLOY_CHEATSHEET.md) — deploy, verify and rollback commands
 
 Quick start (developer):
 

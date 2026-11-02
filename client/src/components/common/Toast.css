@@ -2,10 +2,10 @@
   position: fixed;
   bottom: 96px; /* clears the floating action button */
   right: 20px;
-  z-index: 1200;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: min(360px, calc(100vw - 40px));
   pointer-events: none;
 }
@@ -14,13 +14,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   color: #fff;
   box-shadow: var(--shadow, 0 1px 3px 0 rgb(0 0 0 / 0.1));
   pointer-events: auto;
-  animation: toast-in 150ms ease-out;
+  animation: toast-in var(--motion-fast) var(--ease-emphasized);
 }
 
 @keyframes toast-in {
@@ -55,7 +55,7 @@
   min-height: 44px;
   padding: 0 14px;
   border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -70,15 +70,15 @@
 }
 
 .toast-success {
-  background-color: #2e7d32;
+  background-color: var(--color-success);
 }
 
 .toast-error {
-  background-color: #c62828;
+  background-color: var(--color-error);
 }
 
 .toast-info {
-  background-color: var(--primary-color, #154153);
+  background-color: var(--primary-color, var(--color-primary));
 }
 
 /* Keep toasts clear of the bottom dock and FAB on touch layouts */
@@ -90,6 +90,6 @@
       var(--dock-height, 60px) + env(safe-area-inset-bottom, 0px) + 84px
     );
     max-width: none;
-    z-index: 1200;
+    z-index: var(--z-toast);
   }
 }

@@ -1,3 +1,6 @@
+<!-- docs-status -->
+> **Status: superseded.** This file describes an earlier state of the project. The current document is [build-and-release.md](build-and-release.md) and [DEPLOY_CHEATSHEET.md](DEPLOY_CHEATSHEET.md). See the [documentation index](README.md).
+
 # Deployment Guide (server)
 
 This document lists environment variables and basic deployment steps to run the server and the `clean-recipe-service` microservice in production-like environments.
@@ -49,7 +52,7 @@ gcloud run services add-iam-policy-binding "clean-recipe-service" `
   --project "<PROJECT_ID>"
 ```
 
-- On the server, set `CLEAN_RECIPE_SERVICE_URL` to the private service URL (for example `https://clean-recipe-service-XXXXX.run.app`) and optionally set `CLEAN_RECIPE_SERVICE_AUDIENCE` to the same URL. The server code will request an ID token and include it as `Authorization: Bearer <ID_TOKEN>` when calling the microservice.
+- On the server, set `CLEAN_RECIPE_SERVICE_URL` to the private service URL (for example `<API_URL>`) and optionally set `CLEAN_RECIPE_SERVICE_AUDIENCE` to the same URL. The server code will request an ID token and include it as `Authorization: Bearer <ID_TOKEN>` when calling the microservice.
 
 See `clean-recipe-service/AUTH.md` for a step-by-step guide and test commands.
 

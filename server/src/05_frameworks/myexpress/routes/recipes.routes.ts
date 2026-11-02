@@ -232,6 +232,14 @@ router.post(
   }),
 );
 
+router.put(
+  "/:id",
+  authenticateJWT,
+  asyncHandler(async (req: Request, res: Response) => {
+    await recipeController.update(req, res);
+  }),
+);
+
 router.post(
   "/import-url",
   authenticateJWT,

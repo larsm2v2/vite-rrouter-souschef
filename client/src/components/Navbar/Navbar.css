@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   padding: 0 0.75rem;
   position: relative;
 }
@@ -19,7 +19,7 @@
   min-height: 44px;
   min-width: 44px;
   padding: 0 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   color: var(--tertiary-color);
   text-decoration: none;
 }
@@ -41,7 +41,7 @@
   max-width: 420px;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-1);
 }
 
 .nav-search-input {
@@ -50,7 +50,7 @@
   min-height: 40px;
   padding: 0 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--primary-text-color);
   font: inherit;
@@ -88,7 +88,7 @@
   margin: 0;
   list-style: none;
   display: flex;
-  gap: 0.25rem;
+  gap: var(--space-1);
   align-items: center;
 }
 
@@ -129,7 +129,7 @@
   min-height: 44px;
   padding: 0 0.9rem;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--secondary-color);
   color: var(--primary-color);
   font: inherit;
@@ -147,7 +147,7 @@
 .sidebar-backdrop {
   position: fixed;
   inset: var(--header-height) 0 0 0;
-  z-index: 160;
+  z-index: var(--z-scrim);
   background: rgba(0, 0, 0, 0.4);
   border: none;
   margin: 0;

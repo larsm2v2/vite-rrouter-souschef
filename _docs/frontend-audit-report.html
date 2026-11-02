@@ -119,9 +119,9 @@
 
       <section class="summary" aria-label="Audit summary">
         <strong>Disposition:</strong> All actionable findings discovered in this
-        pass were fixed. Three non-blocking lint warnings, untested
-        Firefox/WebKit browsers, and one incomplete full Docker image build
-        remain.
+        pass were fixed. Three non-blocking lint warnings and one incomplete
+        full Docker image build remain. Firefox and WebKit were run in the later
+        verification pass.
       </section>
 
       <h2>Findings</h2>
@@ -379,10 +379,11 @@
           <code>AuthContext.tsx</code>.
         </li>
         <li>
-          Playwright ran on desktop Chromium and Mobile Chrome: Firefox and
-          WebKit were not run because their pinned browser binaries are absent.
-          An initial all-project run failed at browser launch before application
-          assertions.
+          Playwright was first run on desktop Chromium and Mobile Chrome;
+          Firefox and WebKit were not installed then. They were installed later
+          and the whole suite now passes on all five projects. That pass found
+          one real bug (toast Undo buttons were unreachable by keyboard inside
+          focus traps), now fixed.
         </li>
         <li>
           New share-flow tests stub backend responses; a live client-to-server
@@ -401,8 +402,8 @@
           the Node runtime migration.
         </li>
         <li>
-          Firefox/WebKit and a dedicated live client-to-server URL-import
-          browser test remain follow-up coverage.
+          A dedicated live client-to-server URL-import browser test remains
+          follow-up coverage.
         </li>
         <li>
           Mobile verification used Chromium device emulation (Pixel 5) with real
@@ -442,7 +443,10 @@
         <li>Client production build: passed.</li>
         <li>
           Playwright desktop Chromium + Mobile Chrome:
-          <strong>175 passed, 13 skipped (viewport-specific), 0 failed</strong>
+          <strong
+            >475 tests: 436 passed, 39 skipped (viewport- or engine-specific), 0
+            failed</strong
+          >
           under Node 24.
         </li>
         <li>

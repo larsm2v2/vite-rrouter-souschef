@@ -1,11 +1,5 @@
 /* Layout tokens live in `src/index.css :root`. */
 
-:root {
-  --dock-height: 60px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-top: env(safe-area-inset-top, 0px);
-}
-
 /* Root layout: header + body */
 .app-root {
   display: grid;
@@ -20,7 +14,7 @@
   background: var(--surface, var(--primary-color));
   position: sticky;
   top: 0;
-  z-index: 25;
+  z-index: var(--z-sticky);
   border-bottom: 1px solid #eee;
   height: var(--header-height);
 }
@@ -47,14 +41,14 @@
   width: var(--sidebar-width);
   height: calc(100vh - var(--header-height) - var(--gap));
   height: calc(100dvh - var(--header-height) - var(--gap));
-  z-index: 200;
+  z-index: var(--z-drawer);
   padding: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   transition:
-    transform 220ms ease,
-    visibility 0s linear 220ms;
+    transform var(--motion-drawer) var(--ease-standard),
+    visibility 0s linear var(--motion-drawer);
   visibility: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -102,11 +96,11 @@
   text-orientation: mixed;
   font-weight: 600;
   font-size: 0.9rem;
-  z-index: 201;
+  z-index: var(--z-drawer-tab);
   transition:
-    left 220ms ease,
-    right 220ms ease,
-    background-color 0.2s;
+    left var(--motion-drawer) var(--ease-standard),
+    right var(--motion-drawer) var(--ease-standard),
+    background-color var(--motion-standard);
 }
 
 .sidebar-toggle-tab .toggle-compact {
@@ -184,11 +178,11 @@
   .drawer-header {
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: var(--z-drawer-header);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: var(--space-2);
     margin: 0 -12px 12px;
     padding: calc(8px + var(--safe-top)) 12px 8px;
     background: inherit;
@@ -230,7 +224,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 150;
+    z-index: var(--z-mobile-dock);
     display: flex;
     min-height: calc(var(--dock-height) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);

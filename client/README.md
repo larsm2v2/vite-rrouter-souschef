@@ -93,7 +93,7 @@ Important: This bypass is strictly for local development. Do NOT enable `VITE_DE
 
 ### Ensure refresh tokens work in development (cookies & CORS)
 
-When running development servers for the `client` and `server` on different ports (for example `http://localhost:5173` and `http://localhost:8000`) browsers may block cross-site cookies used for refresh rotation. To avoid this issue, either:
+When running development servers for the `client` and `server` on different ports (for example `http://<DB_HOST>:5173` and `http://<DB_HOST>:8000`) browsers may block cross-site cookies used for refresh rotation. To avoid this issue, either:
 
 - Run the `client` dev server with a proxy that forwards API calls to the `server` so they appear same-origin (recommended), or
 - Use HTTPS + SameSite=None set on cookies (more complex), or
@@ -116,12 +116,12 @@ When using the proxy, the `refreshToken` cookie is set under the same origin and
 
 ```powershell
 # Verify the server sees the cookie
-curl -i -X GET --cookie "refreshToken=<cookieValue>" http://localhost:8000/auth/debug/cookies
+curl -i -X GET --cookie "refreshToken=<cookieValue>" http://<DB_HOST>:8000/auth/debug/cookies
 ```
 
 Or visit the client, open devtools, reproduce the login flow, and examine the network request to `/auth/refresh` and the `Cookie` header presence.
 
-If you use `http://127.0.0.1:5173` instead of `http://localhost:5173`, ensure the server CORS config allows that origin (we already permit `http://127.0.0.1:5173` by default).
+If you use `http://127.0.0.1:5173` instead of `http://<DB_HOST>:5173`, ensure the server CORS config allows that origin (we already permit `http://127.0.0.1:5173` by default).
 
 The E2E tests start the Vite dev server automatically and run against `http://127.0.0.1:5173`.
 
@@ -201,7 +201,7 @@ This workflow also runs the Playwright E2E suite against the deployed site after
 
 ### Backend / API URL (important)
 
-Your client build must know the correct backend API URL at build time. In local development the client defaults to `http://localhost:8000` (see `client/.env`). When you deploy the static site, the built files will contain whatever `VITE_API_URL` value was present at build time — if that value points to `http://localhost:8000`, the hosted site will try to contact your local machine and the browser will fail with `ERR_CONNECTION_REFUSED`.
+Your client build must know the correct backend API URL at build time. In local development the client defaults to `http://<DB_HOST>:8000` (see `client/.env`). When you deploy the static site, the built files will contain whatever `VITE_API_URL` value was present at build time — if that value points to `http://<DB_HOST>:8000`, the hosted site will try to contact your local machine and the browser will fail with `ERR_CONNECTION_REFUSED`.
 
 To avoid the `Failed to fetch` / `ERR_CONNECTION_REFUSED` error in production, provide the production API URL when building. Two options:
 

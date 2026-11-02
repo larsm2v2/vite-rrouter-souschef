@@ -1,0 +1,25 @@
+# Local environment and generated secret material
+**/.env
+**/.env.*
+!**/.env.example
+server/env/
+
+# Dependencies and generated build output
+**/node_modules/
+**/dist/
+**/dist-ssr/
+
+# Local Firebase Hosting cache
+**/.firebase/hosting.*.cache
+
+# Logs and local tooling output
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+test-results/
+playwright-report/

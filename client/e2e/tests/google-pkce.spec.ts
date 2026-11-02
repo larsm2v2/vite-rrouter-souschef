@@ -25,8 +25,9 @@ test("writes PKCE params before redirect", async ({ page }) => {
   // so localStorage survives the cross-origin round-trip and is readable on return.
   await page.route("https://accounts.google.com/**", async (route) => {
     await route.fulfill({
-      status: 302,
-      headers: { Location: "http://127.0.0.1:5173/login?pkce_test=1" },
+      status: 200,
+      contentType: "text/html",
+      body: '<!doctype html><script>window.location.replace("http://127.0.0.1:5173/login?pkce_test=1")</script>',
     });
   });
 
