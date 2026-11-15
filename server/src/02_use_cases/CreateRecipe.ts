@@ -1,6 +1,7 @@
 import { Recipe } from "../01_entities";
 import { RecipeRepository } from "../03_adapters/repositories/RecipeRepository";
 import { cleanRecipe as remoteClean } from "../05_frameworks/cleanRecipe/client";
+import { normalizeIngredients } from "../utils/normalizeIngredients";
 import { injectable, inject } from "tsyringe";
 
 @injectable()
@@ -23,7 +24,10 @@ export class CreateRecipe {
     // The wrapper now returns canonical camelCase fields (uniqueId, slug,
     // dietaryRestrictions, servingInfo, instructions.stepNumber); we forward
     // the cleaned payload directly to the repository.
-    const cleaned: any = await remoteClean(recipeData as any);
+    const cleaned: any = await remoteClean({
+      ...recipeData,
+      ingredients: normalizeIngredients(recipeData.ingredients),
+    } as any);
     return this.recipeRepository.create(cleaned as Recipe, userId);
   }
 }

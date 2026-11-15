@@ -12,6 +12,8 @@ import { randomUUID } from "crypto";
 import { cleanRecipe as forwardToCleanService } from "../05_frameworks/cleanRecipe/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ocrParsePrompt } from "../utils/prompts";
+import { parseRecipeText } from "../utils/parseRecipeText";
+import { normalizeIngredients } from "../utils/normalizeIngredients";
 
 const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -297,13 +299,16 @@ router.post("/ocr/parse", async (req, res) => {
     }
 
     // Use AI to parse the recipe text
+    // Deterministic parse used unless AI parsing succeeds below, so pasted
+    // text still becomes a structured recipe when Gemini is unavailable.
     let parsed: any = {
-      name: undefined,
       cuisine: undefined,
-      ingredients: { "from-ocr": [] },
-      instructions: [{ number: 1, text: ocrText }],
-      notes: ["Parsed via /ocr/parse"],
+      ...parseRecipeText(ocrText),
     };
+    parsed.notes = [...parsed.notes, "Parsed via /ocr/parse"];
+    if (parsed.instructions.length === 0) {
+      parsed.instructions = [{ number: 1, text: ocrText }];
+    }
 
     if (genAI) {
       try {
@@ -365,6 +370,7 @@ router.post("/ocr/parse", async (req, res) => {
     }
 
     // Try to forward to clean-recipe-service; wrapper handles fallback.
+    parsed = { ...parsed, ingredients: normalizeIngredients(parsed.ingredients) };
     try {
       const cleaned = await forwardToCleanService(parsed);
       return res.json({ parsed: cleaned, text: ocrText });

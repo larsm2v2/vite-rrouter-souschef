@@ -2,9 +2,7 @@ import pool from "../05_frameworks/database/connection";
 import { initializeDatabase } from "../05_frameworks/database/schema";
 
 /**
- * Ensures the database is connected and initialized.
- * First attempts to connect and verify tables exist.
- * If tables don't exist, runs schema initialization.
+ * Ensures the database is connected and its schema is up to date.
  * Throws error if database is unreachable or initialization fails.
  */
 export async function ensureDatabaseInitialized() {
@@ -19,24 +17,19 @@ export async function ensureDatabaseInitialized() {
     );
   }
 
-  // Then verify schema is initialized
+  // The schema is fully idempotent (CREATE ... IF NOT EXISTS), so apply it on
+  // every start. Checking only for `users` left databases created before newer
+  // tables (e.g. recipe_images) permanently missing them, which made saving
+  // recipes with images fail with a 500.
   try {
-    await pool.query("SELECT 1 FROM users LIMIT 1");
-    console.log("✅ Database schema already initialized");
-  } catch (error) {
-    console.warn(
-      "⚠️ Database schema not initialized. Running initializeDatabase()..."
+    await initializeDatabase();
+    console.log("✅ Database schema verified");
+  } catch (initError) {
+    console.error("❌ Database schema initialization failed:", initError);
+    throw new Error(
+      `Schema initialization failed: ${
+        (initError as Error).message || initError
+      }`
     );
-    try {
-      await initializeDatabase();
-      console.log("✅ Database schema initialization completed");
-    } catch (initError) {
-      console.error("❌ Database schema initialization failed:", initError);
-      throw new Error(
-        `Schema initialization failed: ${
-          (initError as Error).message || initError
-        }`
-      );
-    }
   }
 }

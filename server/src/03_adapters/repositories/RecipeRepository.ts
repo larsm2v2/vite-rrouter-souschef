@@ -10,6 +10,23 @@ export class RecipeRepository {
     try {
       await client.query("BEGIN");
 
+      // slug is UNIQUE; re-importing or reusing a recipe name must not 500.
+      const baseSlug =
+        (recipe.slug || "")
+          .toString()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "recipe";
+      let slug = baseSlug;
+      for (let n = 2; ; n++) {
+        const taken = await client.query(
+          "SELECT 1 FROM recipes WHERE slug = $1 LIMIT 1",
+          [slug],
+        );
+        if (taken.rows.length === 0) break;
+        slug = `${baseSlug}-${n}`;
+      }
+
       // Insert main recipe record
       const recipeResult = await client.query(
         `INSERT INTO recipes (user_id, unique_id, name, slug, cuisine, meal_type, dietary_restrictions)
@@ -19,7 +36,7 @@ export class RecipeRepository {
           userId || recipe.userId,
           recipe.uniqueId,
           recipe.name,
-          recipe.slug,
+          slug,
           recipe.cuisine,
           recipe.mealType,
           recipe.dietaryRestrictions,

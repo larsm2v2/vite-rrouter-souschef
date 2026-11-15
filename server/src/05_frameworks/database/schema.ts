@@ -108,16 +108,14 @@ async function createTables() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS grocery_list (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
         item_name TEXT NOT NULL,
-        category TEXT,
-        total_quantity DECIMAL(10,2),
+        quantity INTEGER NOT NULL,
         unit TEXT,
         is_checked BOOLEAN DEFAULT FALSE,
-        recipe_sources JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(user_id, item_name)
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
 
