@@ -49,6 +49,11 @@ export function displayIngredient(
   return formatIngredient(scaleIngredient(entry.ingredient, scale));
 }
 
+/** Just the ingredient ("flour" from "2 cups flour, sifted"), falling back to the raw line when it can't be parsed. */
+export function ingredientName(ingredient: NormalizedIngredient): string {
+  return (ingredient.name || ingredient.raw).trim();
+}
+
 /** Servings can arrive as a number, "4", "4-6 servings", or nothing. */
 export function parseServings(value: unknown): number | null {
   if (typeof value === "number")

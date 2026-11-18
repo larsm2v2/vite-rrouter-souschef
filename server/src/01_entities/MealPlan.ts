@@ -3,9 +3,15 @@ import { EntitySchema } from "typeorm";
 export interface MealPlan {
   id: number;
   userId: number;
-  recipeId: number;
+  recipeId: number | null;
+  recipeName?: string | null;
+  imageUrl?: string | null;
   plannedDate: Date | string;
   mealType?: string;
+  kind?: "meal" | "leftover";
+  sourceEntryId?: number | null;
+  multiplier?: number;
+  leftoverCount?: number;
   isCooked?: boolean;
   cookedDate?: Date;
   createdAt?: Date;

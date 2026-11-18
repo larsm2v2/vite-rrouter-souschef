@@ -136,15 +136,30 @@ async function createTables() {
     await client.query(`
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS dietary_preferences TEXT[] DEFAULT '{}',
-      ADD COLUMN IF NOT EXISTS favorite_cuisines TEXT[] DEFAULT '{}';
+      ADD COLUMN IF NOT EXISTS favorite_cuisines TEXT[] DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS week_start_day INTEGER NOT NULL DEFAULT 1,
+      ADD COLUMN IF NOT EXISTS favorite_threshold INTEGER NOT NULL DEFAULT 3,
+      ADD COLUMN IF NOT EXISTS planner_slots TEXT[] NOT NULL DEFAULT '{dinner}',
+      ADD COLUMN IF NOT EXISTS household_size INTEGER NOT NULL DEFAULT 2;
     `);
 
-    // Meal plan table for scheduling
+    // Cooking history rollups used to rank favorites. favorite_locked is set
+    // when the user manually unfavorites, so auto-favoriting never overrides it.
+    await client.query(`
+      ALTER TABLE recipes
+      ADD COLUMN IF NOT EXISTS cook_count INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS last_cooked_on DATE,
+      ADD COLUMN IF NOT EXISTS favorite_locked BOOLEAN NOT NULL DEFAULT false;
+    `);
+
+    // Meal plan table for scheduling. recipe_id is SET NULL on recipe delete and
+    // recipe_name is a snapshot, so past weeks survive deleting a recipe.
     await client.query(`
       CREATE TABLE IF NOT EXISTS meal_plan (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+        recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+        recipe_name TEXT,
         planned_date DATE NOT NULL,
         meal_type TEXT,
         is_cooked BOOLEAN DEFAULT false,
@@ -155,7 +170,59 @@ async function createTables() {
     `);
 
     await client.query(`
+      ALTER TABLE meal_plan ADD COLUMN IF NOT EXISTS recipe_name TEXT;
+    `);
+
+    // kind = 'leftover' rows point at the planned meal that produced them and
+    // are removed with it; multiplier scales the recipe for that planned meal.
+    await client.query(`
+      ALTER TABLE meal_plan
+      ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'meal',
+      ADD COLUMN IF NOT EXISTS source_entry_id INTEGER REFERENCES meal_plan(id) ON DELETE CASCADE,
+      ADD COLUMN IF NOT EXISTS multiplier NUMERIC(3,1) NOT NULL DEFAULT 1;
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_meal_plan_source ON meal_plan(source_entry_id);
+    `);
+
+    await client.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'meal_plan_recipe_id_fkey' AND confdeltype <> 'n') THEN
+          ALTER TABLE meal_plan DROP CONSTRAINT meal_plan_recipe_id_fkey;
+          ALTER TABLE meal_plan ADD CONSTRAINT meal_plan_recipe_id_fkey
+            FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `);
+
+    await client.query(`
+      UPDATE meal_plan mp SET recipe_name = r.name
+      FROM recipes r WHERE r.id = mp.recipe_id AND mp.recipe_name IS NULL;
+    `);
+
+    await client.query(`
       CREATE INDEX IF NOT EXISTS idx_meal_plan_user_date ON meal_plan(user_id, planned_date DESC);
+    `);
+
+    // One row per recipe per day cooked, written by Cook Mode and by checking
+    // off a planned meal.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS recipe_completions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+        cooked_on DATE NOT NULL,
+        source TEXT NOT NULL,
+        meal_plan_id INTEGER REFERENCES meal_plan(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (user_id, recipe_id, cooked_on)
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_recipe_completions_recipe ON recipe_completions(recipe_id);
     `);
 
     // Shopping list versions with version history

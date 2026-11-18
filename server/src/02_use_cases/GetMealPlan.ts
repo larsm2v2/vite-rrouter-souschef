@@ -8,8 +8,11 @@ export class GetMealPlan {
     @inject(MealPlanRepository) private mealPlanRepo: MealPlanRepository
   ) {}
 
-  async execute(userId: number): Promise<MealPlan[]> {
-    return this.mealPlanRepo.findByUserId(userId);
+  async execute(
+    userId: number,
+    range?: { start: string; end: string },
+  ): Promise<MealPlan[]> {
+    return this.mealPlanRepo.findByUserId(userId, range);
   }
 }
 

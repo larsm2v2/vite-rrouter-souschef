@@ -9,4 +9,5 @@ foreach ($f in "quantity.ts", "units.ts", "ingredient.ts") {
   Copy-Item (Join-Path $src "recipeMath\$f") (Join-Path $dst "recipeMath\$f") -Force
 }
 Copy-Item (Join-Path $src "groceryMerge.ts") (Join-Path $dst "groceryMerge.ts") -Force
+Copy-Item (Join-Path $src "mealPlanWeeks.ts") (Join-Path $dst "mealPlanWeeks.ts") -Force
 Write-Host "Synced shared logic to server/src/utils"

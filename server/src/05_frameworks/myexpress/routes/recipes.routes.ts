@@ -5,6 +5,8 @@ import db from "../../database/connection";
 import { authenticateJWT } from "../jwtAuth";
 import { mergeItems, type GroceryItem } from "../../../utils/groceryMerge";
 import { ShoppingListVersionRepository } from "../../../03_adapters/repositories/ShoppingListVersionRepository";
+import { AlreadyStockedRepository } from "../../../03_adapters/repositories/AlreadyStockedRepository";
+import { isInStockStaple, type StapleItem } from "../../../utils/staples";
 import {
   normalizeApiIngredient,
   scaleIngredient,
@@ -14,6 +16,7 @@ import { quantityValue } from "../../../utils/recipeMath/quantity";
 console.log("📥 Importing recipes.routes");
 const router = express.Router();
 const shoppingLists = new ShoppingListVersionRepository();
+const alreadyStocked = new AlreadyStockedRepository();
 
 // Initialize Google Generative AI
 const apiKey = process.env.API_KEY;
@@ -32,6 +35,7 @@ router.get(
         `
       SELECT
         r.*,
+        to_char(r.last_cooked_on, 'YYYY-MM-DD') AS last_cooked_on_str,
         rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
         (
           SELECT json_agg(jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients))
@@ -78,6 +82,8 @@ router.get(
           meal_type: row.meal_type || "",
           dietary_restrictions: row.dietary_restrictions || [],
           is_favorite: row.is_favorite || false,
+          cook_count: row.cook_count || 0,
+          last_cooked_on: row.last_cooked_on_str || null,
           serving_info: {
             prep_time: row.prep_time,
             cook_time: row.cook_time,
@@ -111,6 +117,7 @@ router.get(
         `
       SELECT
         r.*,
+        to_char(r.last_cooked_on, 'YYYY-MM-DD') AS last_cooked_on_str,
         rsi.prep_time, rsi.cook_time, rsi.total_time, rsi.servings,
         (
           SELECT json_agg(jsonb_build_object('category', ri.category, 'ingredients', ri.ingredients))
@@ -160,6 +167,8 @@ router.get(
         meal_type: row.meal_type || "",
         dietary_restrictions: row.dietary_restrictions || [],
         is_favorite: row.is_favorite || false,
+        cook_count: row.cook_count || 0,
+        last_cooked_on: row.last_cooked_on_str || null,
         serving_info: {
           prep_time: row.prep_time,
           cook_time: row.cook_time,
@@ -218,11 +227,21 @@ import "../../../04_factories/di";
 import { container } from "tsyringe";
 import { RecipeController } from "../../../03_adapters/controllers/RecipeController";
 import { RecipeImportController } from "../../../03_adapters/controllers/RecipeImportController";
+import { CookingHistoryController } from "../../../03_adapters/controllers/CookingHistoryController";
 import { asyncHandler } from "../utils/asyncHandler";
 import { recipeImportLimiter, shareTokenLimiter } from "../gateway";
 
 const recipeController = container.resolve(RecipeController);
 const recipeImportController = container.resolve(RecipeImportController);
+const cookingHistoryController = container.resolve(CookingHistoryController);
+
+router.post(
+  "/:id/complete",
+  authenticateJWT,
+  asyncHandler(async (req: Request, res: Response) => {
+    await cookingHistoryController.complete(req, res);
+  }),
+);
 
 router.post(
   "/",
@@ -268,12 +287,13 @@ router.patch(
         return res.status(404).json({ error: "Recipe not found" });
       }
 
-      // Toggle the favorite status
+      // Toggle the favorite status. An explicit unfavorite locks the recipe out
+      // of auto-favoriting; favoriting again clears that lock.
       const newFavoriteStatus = !currentStatus.rows[0].is_favorite;
 
       await db.query(
-        `UPDATE recipes SET is_favorite = $1 WHERE id = $2 AND user_id = $3`,
-        [newFavoriteStatus, recipeId, userId],
+        `UPDATE recipes SET is_favorite = $1, favorite_locked = $4 WHERE id = $2 AND user_id = $3`,
+        [newFavoriteStatus, recipeId, userId, !newFavoriteStatus],
       );
 
       res.json({ isFavorite: newFavoriteStatus });
@@ -332,7 +352,13 @@ router.post(
           .json({ error: "Recipe has no ingredients to add" });
       }
 
-      // Normalize every ingredient (string or structured), scale it, and merge with the shared rules
+      // Normalize every ingredient (string or structured), scale it, and merge with the shared rules.
+      // Staples the user has in stock are skipped (reported back) unless includeStaples is set.
+      const staples: StapleItem[] =
+        req.body?.includeStaples === true
+          ? []
+          : ((await alreadyStocked.getByUser(userId))?.stockedItems ?? []);
+      const skippedStaples: string[] = [];
       const newItems: GroceryItem[] = [];
       ingredients.forEach((categoryObj: any) => {
         if (!categoryObj.ingredients || !Array.isArray(categoryObj.ingredients))
@@ -341,6 +367,10 @@ router.post(
           const scaled = scaleIngredient(normalizeApiIngredient(entry), scale);
           const name = (scaled.name || scaled.raw).trim();
           if (!name) return;
+          if (isInStockStaple(name, staples)) {
+            skippedStaples.push(name);
+            return;
+          }
           newItems.push({
             name,
             quantity:
@@ -360,6 +390,7 @@ router.post(
       res.json({
         success: true,
         itemsAdded: newItems.length,
+        skippedStaples,
         totalItems: Array.isArray(saved.listData) ? saved.listData.length : 0,
         version: saved.version,
       });

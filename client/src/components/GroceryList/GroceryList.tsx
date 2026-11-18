@@ -14,6 +14,7 @@ import {
 import { normalizeApiIngredient } from "../../utils/recipeMath";
 import { quantityValue, formatNumber } from "../../utils/recipeMath/quantity";
 import { useUndoable } from "../../hooks/useUndoable";
+import { useAddStaple } from "../../hooks/useAddStaple";
 import { mergeConflict, type GroceryItem } from "../../utils/groceryMerge";
 
 interface BackendItem {
@@ -119,6 +120,7 @@ const GroceryList: React.FC<GroceryListProps> = ({
   selectedRecipeIds = [],
 }) => {
   const { showToast } = useToast();
+  const addStaple = useAddStaple();
   const undoable = useUndoable();
   const previousSelectedRecipeIds = useRef([...selectedRecipeIds]);
   const [recipes, setRecipes] = useState<RecipeModel[]>([]);
@@ -506,7 +508,11 @@ const GroceryList: React.FC<GroceryListProps> = ({
           </div>
           <div className="flex-container">
             <div className="edit-box">
-              <EditableList listItems={listItems} setListItems={setListItems} />
+              <EditableList
+                listItems={listItems}
+                setListItems={setListItems}
+                onAddStaple={(name) => void addStaple(name)}
+              />
             </div>
           </div>
         </>

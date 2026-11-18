@@ -10,6 +10,7 @@ import { mergeIntoList } from "../../../utils/groceryAdapter";
 interface Props {
   listItems: ListItem[];
   setListItems: React.Dispatch<React.SetStateAction<ListItem[]>>;
+  onAddStaple?: (name: string) => void;
 }
 
 const IN_CART = "In cart";
@@ -23,7 +24,11 @@ const emptyItem = (): ListItem => ({
   toTransfer: false,
 });
 
-const EditableList: React.FC<Props> = ({ listItems, setListItems }: Props) => {
+const EditableList: React.FC<Props> = ({
+  listItems,
+  setListItems,
+  onAddStaple,
+}: Props) => {
   const { showToast } = useToast();
   const undoable = useUndoable();
   const [newItem, setNewItem] = useState<ListItem>(emptyItem);
@@ -148,6 +153,7 @@ const EditableList: React.FC<Props> = ({ listItems, setListItems }: Props) => {
               onDelete={handleDelete}
               onEdit={handleEdit}
               onDone={handleDone}
+              onAddStaple={onAddStaple}
             />
           ))}
         </section>

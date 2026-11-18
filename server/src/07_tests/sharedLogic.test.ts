@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { mergeItems, normalizeName, GroceryItem } from "../utils/groceryMerge";
 import { parseIngredientLine } from "../utils/recipeMath/ingredient";
+import { weekStartFor } from "../utils/mealPlanWeeks";
 
 const fixturesDir = path.join(process.cwd(), "..", "shared-fixtures");
 const present = fs.existsSync(fixturesDir);
@@ -49,6 +50,16 @@ maybe("shared ingredient parse fixture (same cases the client runs)", () => {
       expect(parsed.unit).toBe(c.unit);
       expect(parsed.name).toBe(c.name);
       expect(parsed.note).toBe(c.note);
+    });
+  });
+});
+
+maybe("shared week-start fixture (same cases the client runs)", () => {
+  const cases: { date: string; weekStartDay: number; weekStart: string }[] =
+    present ? load("week-start.json") : [];
+  cases.forEach((c) => {
+    it(`${c.date} with week starting on day ${c.weekStartDay}`, () => {
+      expect(weekStartFor(c.date, c.weekStartDay)).toBe(c.weekStart);
     });
   });
 });

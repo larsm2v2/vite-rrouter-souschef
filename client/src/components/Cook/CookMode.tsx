@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import ToastSafeFocusTrap from "../common/ToastSafeFocusTrap";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import useRecipe from "../../hooks/useRecipe";
+import apiClient from "../pages/Client";
+import { useToast } from "../common/Toast";
+import { localToday } from "../../utils/mealPlanWeeks";
 import { useCookState } from "../../hooks/useCookState";
 import { useTimers } from "../../hooks/useTimers";
 import { useWakeLock } from "../../hooks/useWakeLock";
@@ -22,6 +25,7 @@ const FONT_MAX = 1.8;
 export default function CookMode() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { recipe, loading, error } = useRecipe(id);
   const { state, patch, clear } = useCookState(id);
   const timers = useTimers(id);
@@ -47,7 +51,25 @@ export default function CookMode() {
 
   const go = (next: number) =>
     patch({ stepIndex: Math.min(last, Math.max(0, next)) });
-  const finish = () => {
+  const finish = async () => {
+    // Record the cook before leaving; navigation must not depend on the network.
+    try {
+      const resp = await apiClient.post<{
+        recorded: boolean;
+        cookCount: number;
+        autoFavorited: boolean;
+      }>(`/api/recipes/${id}/complete`, { cookedOn: localToday() });
+      if (resp.data.autoFavorited) {
+        showToast(
+          `Cooked ${resp.data.cookCount} times - added to your favorites!`,
+          "success",
+        );
+      } else if (resp.data.recorded) {
+        showToast(`Logged. You have cooked this ${resp.data.cookCount}×.`, "success");
+      }
+    } catch {
+      showToast("Could not log this cook, but your progress is saved.", "info");
+    }
     clear();
     navigate(`/recipes/${id}`);
   };

@@ -11,6 +11,7 @@ import SharedRecipePreview from "./components/pages/SharedRecipePreview";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 import CookMode from "./components/Cook/CookMode";
+import PlannerPage from "./components/Planner/PlannerPage";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/sous-chef" element={<SousChefPage />} />
         <Route path="/recipes" element={<RecipesPage />} />
+        <Route path="/planner" element={<PlannerPage />} />
         <Route path="/recipes/:id" element={<RecipeDetailPage />} />
         <Route
           path="/recipes/shared/:token"

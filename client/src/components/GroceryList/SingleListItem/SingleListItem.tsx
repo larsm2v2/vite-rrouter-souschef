@@ -10,6 +10,7 @@ interface SingleListItemProps {
   onDelete: (id: number) => void;
   onEdit: (id: number, updatedItem: ListItem) => void;
   onDone: (id: number) => void;
+  onAddStaple?: (name: string) => void;
 }
 
 const SingleListItem: React.FC<SingleListItemProps> = ({
@@ -17,6 +18,7 @@ const SingleListItem: React.FC<SingleListItemProps> = ({
   onDelete,
   onEdit,
   onDone,
+  onAddStaple,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedItem, setEditedItem] = useState(listItem);
@@ -110,6 +112,29 @@ const SingleListItem: React.FC<SingleListItemProps> = ({
               .join(" ")}
           </span>
           <div className="grocery-list__item__actions">
+            {onAddStaple && (
+              <button
+                type="button"
+                className="grocery-list__item__icon icon"
+                onClick={() => onAddStaple(listItem.listItem)}
+                aria-label={`Add ${listItem.listItem} to staples`}
+                title="Add to staples (Already Stocked)"
+              >
+                <svg
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  <path d="M12 7v6M9 10h6" />
+                </svg>
+              </button>
+            )}
             <button
               type="button"
               className="grocery-list__item__icon icon"

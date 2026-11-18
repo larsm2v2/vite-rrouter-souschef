@@ -1,0 +1,533 @@
+.planner {
+  padding: 1rem;
+  color: var(--color-text);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.planner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.planner-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.planner button,
+.planner select,
+.planner input {
+  font: inherit;
+}
+
+.planner button {
+  min-height: 36px;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.planner button:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+
+.planner button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.planner-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.planner-tabs button.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.planner-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 0.5rem;
+}
+
+.planner-range {
+  font-weight: 600;
+  margin: 0 0.5rem;
+}
+
+.planner-setting {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--font-size-small);
+  margin-left: auto;
+}
+
+.planner-setting select,
+.planner-picker,
+.planner-custom input {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.planner-custom {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.planner-custom label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: var(--font-size-small);
+}
+
+.planner-error {
+  color: var(--color-error);
+}
+
+.planner-empty,
+.planner-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.planner-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.planner-main.loading {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.planner-palette {
+  position: sticky;
+  top: 0.5rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.planner-palette h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.planner-palette input[type="search"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.planner-recipe-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.planner-recipe {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-cook-background);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.planner-recipe:focus-visible {
+  outline: 2px solid var(--color-link);
+}
+
+.planner-recipe.dragging,
+.planned-meal.dragging {
+  opacity: 0.35;
+}
+
+.planner-recipe-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-badge {
+  font-size: 0.75rem;
+  padding: 0 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-text);
+}
+
+.planner-badge.muted {
+  background: var(--color-background-muted);
+  color: var(--color-text-muted);
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem;
+}
+
+.planner-day {
+  padding: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+.planner-day.today {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+}
+
+.planner-day h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+}
+
+.planner-today {
+  font-size: 0.7rem;
+  padding: 0 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}
+
+.planner-slot {
+  min-height: 52px;
+  margin-bottom: 0.35rem;
+  padding: 0.3rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background-muted);
+}
+
+.planner-slot.over {
+  border-color: var(--color-primary);
+  background: var(--color-accent-soft);
+}
+
+.planner-slot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.planner .planner-add {
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0;
+  line-height: 1;
+}
+
+.planner-picker {
+  width: 100%;
+  margin: 0.25rem 0;
+}
+
+.planner-slot-entries {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.planned-meal {
+  padding: 0.25rem 0.35rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.planned-meal.leftover {
+  background: var(--color-terra-light);
+  border-style: dashed;
+}
+
+.planned-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.planned-tag {
+  margin-right: 0.25rem;
+  color: var(--color-terra-dark);
+}
+
+.planner .planned-options {
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0;
+  line-height: 1;
+}
+
+.meal-options {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-small);
+}
+
+.meal-options-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meal-options select {
+  padding: 0.2rem 0.3rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.meal-options p {
+  margin: 0;
+}
+
+.meal-options-leftovers {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.meal-options-leftovers label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.planned-meal.cooked .planned-name {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.planned-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+}
+
+.planner .planned-handle,
+.planner .planned-remove {
+  min-height: 28px;
+  min-width: 24px;
+  padding: 0 0.2rem;
+  border: none;
+  background: transparent;
+  touch-action: none;
+}
+
+.planner .planned-handle {
+  cursor: grab;
+  color: var(--color-text-muted);
+}
+
+.planner .planned-remove {
+  color: var(--color-error);
+}
+
+.planned-meal input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.planner-drag-overlay {
+  padding: 0.45rem 0.75rem;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  cursor: grabbing;
+}
+
+.planner-history {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.history-week {
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.history-week header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.history-week h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.history-days,
+.history-days ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.6rem 0;
+}
+
+.history-days li li {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.history-days li li.cooked a {
+  color: var(--color-success);
+}
+
+.history-slot {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  min-width: 4.5rem;
+}
+
+.history-week footer {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.planner-more {
+  justify-self: center;
+}
+
+.planner-settings-panel {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 520px;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.planner-settings-panel fieldset {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.planner-settings-panel label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.planner-settings-panel input[type="number"] {
+  width: 4.5rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.planner-settings-panel small {
+  display: block;
+  color: var(--color-text-muted);
+}
+
+.planner-presets,
+.planner-slot-checks {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.planner-presets button.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+@media (max-width: 900px) {
+  .planner-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-palette {
+    position: static;
+    max-height: 220px;
+  }
+
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-setting {
+    margin-left: 0;
+  }
+}

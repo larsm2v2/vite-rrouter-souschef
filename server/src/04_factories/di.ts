@@ -9,13 +9,18 @@ import { MealPlanRepository } from "../03_adapters/repositories/MealPlanReposito
 import { ShoppingListVersionRepository } from "../03_adapters/repositories/ShoppingListVersionRepository";
 import { RecipeActivityLogRepository } from "../03_adapters/repositories/RecipeActivityLogRepository";
 import { AlreadyStockedRepository } from "../03_adapters/repositories/AlreadyStockedRepository";
-
-// Use-cases
+import { RecipeCompletionRepository } from "../03_adapters/repositories/RecipeCompletionRepository";
+import { PlannerSettingsRepository } from "../03_adapters/repositories/PlannerSettingsRepository";
 import { GetUserProfile } from "../02_use_cases/GetUserProfile";
 import { UpdateUserProfile } from "../02_use_cases/UpdateUserProfile";
 import { GetGroceryList } from "../02_use_cases/GetGroceryList";
 import { GetMealPlan } from "../02_use_cases/GetMealPlan";
 import { CreateMealPlan } from "../02_use_cases/CreateMealPlan";
+import { ManageMealPlan } from "../02_use_cases/ManageMealPlan";
+import {
+  CompleteRecipe,
+  PlannerSettingsUseCase,
+} from "../02_use_cases/CookingHistory";
 import { GetShoppingListVersion } from "../02_use_cases/GetShoppingListVersion";
 import { CreateShoppingListVersion } from "../02_use_cases/CreateShoppingListVersion";
 import { LogRecipeActivity } from "../02_use_cases/LogRecipeActivity";
@@ -37,6 +42,7 @@ import { ImportRecipeFromUrl } from "../02_use_cases/ImportRecipeFromUrl";
 import { UserController } from "../03_adapters/controllers/UserController";
 import { GroceryController } from "../03_adapters/controllers/GroceryController";
 import { MealPlanController } from "../03_adapters/controllers/MealPlanController";
+import { CookingHistoryController } from "../03_adapters/controllers/CookingHistoryController";
 import { ShoppingListController } from "../03_adapters/controllers/ShoppingListController";
 import { RecipeActivityController } from "../03_adapters/controllers/RecipeActivityController";
 import { AlreadyStockedController } from "../03_adapters/controllers/AlreadyStockedController";
@@ -56,13 +62,16 @@ container.registerSingleton(
   RecipeActivityLogRepository,
 );
 container.registerSingleton(AlreadyStockedRepository, AlreadyStockedRepository);
-
-// Register use-cases
+container.registerSingleton(RecipeCompletionRepository, RecipeCompletionRepository);
+container.registerSingleton(PlannerSettingsRepository, PlannerSettingsRepository);
 container.registerSingleton(GetUserProfile, GetUserProfile);
 container.registerSingleton(UpdateUserProfile, UpdateUserProfile);
 container.registerSingleton(GetGroceryList, GetGroceryList);
 container.registerSingleton(GetMealPlan, GetMealPlan);
 container.registerSingleton(CreateMealPlan, CreateMealPlan);
+container.registerSingleton(ManageMealPlan, ManageMealPlan);
+container.registerSingleton(CompleteRecipe, CompleteRecipe);
+container.registerSingleton(PlannerSettingsUseCase, PlannerSettingsUseCase);
 container.registerSingleton(GetShoppingListVersion, GetShoppingListVersion);
 container.registerSingleton(
   CreateShoppingListVersion,
@@ -94,6 +103,7 @@ container.registerSingleton(
 container.registerSingleton(UserController, UserController);
 container.registerSingleton(GroceryController, GroceryController);
 container.registerSingleton(MealPlanController, MealPlanController);
+container.registerSingleton(CookingHistoryController, CookingHistoryController);
 container.registerSingleton(ShoppingListController, ShoppingListController);
 container.registerSingleton(RecipeActivityController, RecipeActivityController);
 container.registerSingleton(AlreadyStockedController, AlreadyStockedController);

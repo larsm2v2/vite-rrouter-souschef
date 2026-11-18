@@ -87,6 +87,12 @@ const Navbar: React.FC<NavbarProps> = ({
             </Link>
           </li>
           <li>
+            <Link to="/planner" title="My Planner" aria-label="My Planner">
+              <span className="nav-full">myPlanner</span>
+              <span className="nav-compact">P</span>
+            </Link>
+          </li>
+          <li>
             <Link to="/sous-chef" title="My SousChef" aria-label="My SousChef">
               <span className="nav-full">mySousChef</span>
               <span className="nav-compact">SC</span>

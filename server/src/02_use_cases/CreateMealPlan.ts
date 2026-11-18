@@ -8,7 +8,7 @@ export class CreateMealPlan {
     @inject(MealPlanRepository) private mealPlanRepo: MealPlanRepository
   ) {}
 
-  async execute(entry: Partial<MealPlan>): Promise<MealPlan> {
+  async execute(entry: Partial<MealPlan>): Promise<MealPlan | null> {
     return this.mealPlanRepo.create(entry);
   }
 }

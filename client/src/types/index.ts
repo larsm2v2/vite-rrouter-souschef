@@ -6,6 +6,8 @@ export interface RecipeModel {
   meal_type: string;
   dietary_restrictions: string[];
   is_favorite?: boolean;
+  cook_count?: number;
+  last_cooked_on?: string | null;
   serving_info: {
     prep_time?: string;
     cook_time?: string;
@@ -67,6 +69,8 @@ export interface StockedItem {
   name: string;
   quantity?: number;
   unit?: string;
+  category?: string;
+  runningLow?: boolean;
 }
 
 export type id = string | never;

@@ -140,6 +140,53 @@
 }
 
 /* Responsive behavior */
+.include-staples {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #6b7280);
+  cursor: pointer;
+}
+
+.include-staples input {
+  width: 18px;
+  height: 18px;
+}
+
+.ingredient-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ingredient-row .ingredient-check {
+  flex: 1;
+  min-width: 0;
+}
+
+.ingredient-staple-btn {
+  flex: none;
+  min-height: 32px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-pill, 999px);
+  background: transparent;
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.ingredient-staple-btn:hover,
+.ingredient-staple-btn:focus-visible {
+  opacity: 1;
+  color: var(--color-primary, #154153);
+  border-color: var(--color-primary, #154153);
+}
+
+/* Responsive behavior */
 @media (max-width: 640px) {
   .recipe-actions-row {
     flex-direction: column;

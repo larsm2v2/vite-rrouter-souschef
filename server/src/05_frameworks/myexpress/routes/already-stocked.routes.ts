@@ -26,4 +26,16 @@ alreadyStockedRouter.post(
   ),
 );
 
+// Merge items into staples without replacing the list
+alreadyStockedRouter.post(
+  "/items",
+  authenticateJWT,
+  asyncHandler((req, res) => alreadyStockedController.addItems(req, res)),
+);
+
+// Starter staples to seed the list
+alreadyStockedRouter.get("/suggestions", authenticateJWT, (req, res) =>
+  alreadyStockedController.suggestions(req, res),
+);
+
 export default alreadyStockedRouter;

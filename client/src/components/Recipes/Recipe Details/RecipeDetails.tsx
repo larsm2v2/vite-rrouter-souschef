@@ -12,9 +12,12 @@ import { useCookState } from "../../../hooks/useCookState";
 import { useTimers } from "../../../hooks/useTimers";
 import {
   displayIngredient,
+  ingredientName,
   parseServings,
   toIngredientGroups,
 } from "../../../utils/recipeIngredients";
+import { groceryAddedMessage } from "../../../utils/stockedItems";
+import { useAddStaple } from "../../../hooks/useAddStaple";
 import InstructionText from "../../Cook/InstructionText";
 import ServingScaler from "../../Cook/ServingScaler";
 import TimerTray from "../../Cook/TimerTray";
@@ -41,8 +44,10 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
   onRecipeUpdate,
 }) => {
   const { showToast } = useToast();
+  const addStaple = useAddStaple();
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isAddingToList, setIsAddingToList] = useState<boolean>(false);
+  const [includeStaples, setIncludeStaples] = useState(false);
   const [isSharing, setIsSharing] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedRecipe, setEditedRecipe] = useState<RecipeModel | null>(null);
@@ -135,9 +140,11 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
       const response = await apiClient.post<{
         success: boolean;
         itemsAdded: number;
+        skippedStaples?: string[];
         totalItems: number;
       }>(`/api/recipes/${activeShowRecipe.id}/add-to-grocery-list`, {
         scale: cook.scale,
+        ...(includeStaples ? { includeStaples: true } : {}),
       });
 
       if (response.data.success) {
@@ -145,7 +152,10 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
         window.dispatchEvent(new CustomEvent("groceryListUpdated"));
 
         showToast(
-          `Added ${response.data.itemsAdded} ingredients to your grocery list! Total items: ${response.data.totalItems}`,
+          groceryAddedMessage(
+            response.data.itemsAdded,
+            response.data.skippedStaples,
+          ),
           "success",
         );
       } else {
@@ -288,6 +298,17 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
               </svg>
               {isAddingToList ? "Adding..." : "Add to Grocery List"}
             </button>
+            <label
+              className="include-staples"
+              title="Also add staples you have in stock (they're skipped by default)"
+            >
+              <input
+                type="checkbox"
+                checked={includeStaples}
+                onChange={(e) => setIncludeStaples(e.target.checked)}
+              />
+              Include staples
+            </label>
 
             <button
               className="recipe-action-btn share-btn"
@@ -390,8 +411,9 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
                 <ul style={{ listStyle: "none", paddingLeft: 0 }}>
                   {group.items.map((entry) => {
                     const checked = cook.checked.includes(entry.key);
+                    const stapleName = ingredientName(entry.ingredient);
                     return (
-                      <li key={entry.key}>
+                      <li key={entry.key} className="ingredient-row">
                         <label
                           className={`ingredient-check ${checked ? "checked" : ""}`}
                         >
@@ -402,6 +424,17 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
                           />
                           <span>{displayIngredient(entry, cook.scale)}</span>
                         </label>
+                        {stapleName && (
+                          <button
+                            type="button"
+                            className="ingredient-staple-btn"
+                            onClick={() => void addStaple(stapleName)}
+                            aria-label={`Add ${stapleName} to staples`}
+                            title="Add to staples (Already Stocked)"
+                          >
+                            +&nbsp;Staple
+                          </button>
+                        )}
                       </li>
                     );
                   })}

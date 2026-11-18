@@ -8,6 +8,8 @@ export { CheckAuthentication } from "./CheckAuthentication";
 export { LogoutUser } from "./LogoutUser";
 export { GetMealPlan } from "./GetMealPlan";
 export { CreateMealPlan } from "./CreateMealPlan";
+export { ManageMealPlan } from "./ManageMealPlan";
+export { CompleteRecipe, PlannerSettingsUseCase } from "./CookingHistory";
 export { GetShoppingListVersion } from "./GetShoppingListVersion";
 export { CreateShoppingListVersion } from "./CreateShoppingListVersion";
 export { LogRecipeActivity } from "./LogRecipeActivity";

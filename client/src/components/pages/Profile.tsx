@@ -306,6 +306,50 @@ const Profile: React.FC = () => {
                     return matchesView && matchesSearch;
                   });
 
+                  const openRecipe = (recipe: RecipeModel) => {
+                    // Set the recipe to display in the context (fast path)
+                    if (setRecipeToDisplay) setRecipeToDisplay(recipe);
+                    // Navigate to canonical recipe detail route and pass the recipe in state
+                    navigate(`/recipes/${recipe.id}`, { state: { recipe } });
+                  };
+
+                  // Favorites are ranked by how often they have been cooked.
+                  if (activeView === "favorites") {
+                    if (filteredRecipes.length === 0) {
+                      return (
+                        <div className="empty">
+                          No favorites yet. Favorite a recipe, or cook one a few
+                          times and it will appear here.
+                        </div>
+                      );
+                    }
+                    const ranked = [...filteredRecipes].sort(
+                      (a, b) =>
+                        (b.cook_count ?? 0) - (a.cook_count ?? 0) ||
+                        a.name.localeCompare(b.name),
+                    );
+                    return (
+                      <ol className="recipe-links ranked-favorites">
+                        {ranked.map((recipe) => (
+                          <li key={recipe.id}>
+                            <button
+                              className="recipe-link"
+                              onClick={() => openRecipe(recipe)}
+                            >
+                              {recipe.name}
+                              <span className="cook-count">
+                                {" "}
+                                {(recipe.cook_count ?? 0) > 0
+                                  ? `· cooked ${recipe.cook_count}×`
+                                  : ""}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ol>
+                    );
+                  }
+
                   // Group by meal type
                   const mealTypeOrder = [
                     "Breakfast",
