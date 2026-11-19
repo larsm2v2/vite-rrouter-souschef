@@ -1,6 +1,34 @@
 # Deploy cheatsheet
 
-Frontend: Firebase Hosting. Backend: Cloud Run service `souschef-api` (us-central1). Replace `<PROJECT_ID>`, `<FIREBASE_PROJECT>` and `<API_URL>` with your values.
+Frontend: Firebase Hosting. Backend: Cloud Run service `souschef-api` (us-central1).
+
+## Quick start: one script
+
+```powershell
+.\scripts\deploy.ps1 -DryRun     # rehearsal: checks, tests, client build; deploys nothing
+.\scripts\deploy.ps1             # the real thing (asks you to type "deploy" first)
+```
+
+It runs preflight checks, the tests, deploys the **server** (Cloud Build -> Cloud Run, then verifies the live routes) and only then the **client** (build, bundle checks, `firebase deploy`), and finishes with a summary, the live URLs, a smoke-test checklist and the rollback command. Any failure stops the run with a message.
+
+| Option                | Effect                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------- |
+| `-Target server`      | Only the server. `-Target client` only the client. Default is both, server first.       |
+| `-DryRun`             | Runs everything except the Cloud Build submit and `firebase deploy`.                    |
+| `-SkipTests`          | Skip server tests, client unit tests and lint (the client still builds).                |
+| `-SkipInstall`        | Skip `npm ci` for the client. Needed while `npm run dev` is running (it locks esbuild). |
+| `-AllowDirty`         | Deploy with uncommitted changes. By default the tree must be clean.                     |
+| `-IncludeCleanService`| Also deploy `clean-recipe-service` (rarely changes; its trigger normally handles it).   |
+| `-Yes`                | Do not ask for confirmation.                                                            |
+| `-ProjectId`, `-FirebaseProject` | Override the gcloud project / the `FIREBASE_PROJECT` from `client/.env`.     |
+
+Requirements: `git`, `fnm`, `gcloud` (logged in, `gcloud auth login`) and a `client/.env` with `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID` and `FIREBASE_PROJECT`. First time only, log in to Firebase: `cd client; fnm exec --using 24 npx.cmd firebase-tools login` (or set `FIREBASE_TOKEN`). `client/.env` is read into the script's own process; values are never printed.
+
+The script deploys **by hand**. Pushing to `main` also starts the Cloud Build triggers and the Firebase GitHub Action, so deploying and pushing the same commit deploys it twice; that is harmless but redundant. Deploy by script when you need the server-then-client order guaranteed.
+
+The rest of this document is the manual reference for each step.
+
+Replace `<PROJECT_ID>`, `<FIREBASE_PROJECT>` and `<API_URL>` with your values in the commands below.
 
 > **Remember**
 >
@@ -10,15 +38,15 @@ Frontend: Firebase Hosting. Backend: Cloud Run service `souschef-api` (us-centra
 
 ## What needs deploying for the current work
 
-| Part                        | Redeploy?      | How                                                           | Why                                                                                                                                         |
-| --------------------------- | -------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server` (`souschef-api`)   | **Yes, first** | Trigger on push                                               | Fixes grocery autosave and adds `baseVersion` conflict checks, saved-recipe editing, scaled add-to-grocery, URL import, OCR and OAuth fixes |
-| `client` (Firebase Hosting) | **Yes**        | GitHub Actions on push to `main`; manual fallback (section 3) | Cook mode, timers, scaler, grocery merge/undo/conflict merge, import drafts, saved-recipe editor, mobile shell, toast-safe focus traps      |
-| `clean-recipe-service`      | No             | Trigger on push                                               | No changes since `origin/main`; its trigger may rebuild it anyway, which is harmless                                                        |
-| Database schema             | No             | -                                                             | No migration or schema file changed                                                                                                         |
-| Secrets / env vars          | No             | -                                                             | No new `process.env` or `import.meta.env` names                                                                                             |
+| Part                        | Redeploy?      | How                                                           | Why                                                                                                                                                      |
+| --------------------------- | -------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server` (`souschef-api`)   | **Yes, first** | `.\scripts\deploy.ps1`, or trigger on push                    | Meal planner API (meal plan, leftovers, cooking history, auto-favorites), staples fixes, session renewal (refresh grace window, auth rate limits), URL import fixes |
+| `client` (Firebase Hosting) | **Yes**        | `.\scripts\deploy.ps1`, or GitHub Actions on push to `main`   | Meal planner page and Settings tab, edit-from-URL, staples UI, background session renewal                                                                |
+| `clean-recipe-service`      | No             | Trigger on push (or `-IncludeCleanService`)                   | No changes; its trigger may rebuild it anyway, which is harmless                                                                                         |
+| Database schema             | **Automatic**  | Applied when the server starts                               | New tables/columns (`recipe_completions`, `meal_plan` leftovers, `users` planner settings, `refresh_tokens.revoked_at`) are created idempotently on boot; no manual migration |
+| Secrets / env vars          | No             | -                                                             | No new `process.env` or `import.meta.env` names                                                                                                          |
 
-**Order matters, but the automatic workflows do not enforce it.** `baseVersion` is optional on the server, so an old client works against the new server. A new client against the old server still gets 500s on every grocery save. The client workflow can deploy before the server build finishes; monitor the server build and use the manual fallback below if you need to control the order.
+**Order matters, but the automatic workflows do not enforce it.** A new client against an old server breaks the planner and session renewal (404s on `/api/meal-plan` and `/api/planner/settings`). The client GitHub Action can deploy before the server build finishes, which is the main reason to deploy with the script: it always does the server first and verifies it before touching the client.
 
 ## 1. Before you deploy
 
@@ -123,9 +151,11 @@ The workflow builds with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`, deploys to 
 3. Open the app in two tabs, add a different item in each: the second save shows "Your change was merged with it" and both items remain.
 4. Delete a grocery item and press **Undo** in the toast.
 5. Create Recipe, paste text, parse, remove an ingredient and press **Undo**.
-6. Open an owned recipe, edit its name, ingredients and instruction, save, then reload to verify the changes persisted.
+6. Open an owned recipe, edit its name, ingredients and instruction, save, then reload to verify the changes persisted. Also try **Update from a web page** inside the editor.
 7. Try a URL import; if direct fetch is blocked, paste recipe text in the fallback editor, parse and save.
-8. On a phone: bottom dock, drawer, and nothing scrolls sideways.
+8. Open **myPlanner**: drag a recipe onto a day, add leftovers from the options (⋯) panel, check a meal off as cooked, then look at **History** and **Settings**.
+9. Stay signed in and idle for more than 15 minutes, then click around: you should not be sent to the login page.
+10. On a phone: bottom dock, drawer, and nothing scrolls sideways.
 
 If the page looks stale, hard-refresh: `index.html` is revalidated, hashed assets are not.
 
