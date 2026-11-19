@@ -9,6 +9,30 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_OPTIONS: "--max-old-space-size=4096"
+      PG_USER: postgres
+      PG_PASSWORD: ci-test-only
+      PG_HOST: 127.0.0.1
+      PG_HOST_TEST: 127.0.0.1
+      PG_PORT: "5432"
+      PG_DATABASE: souschef_ci_test
+      PG_DATABASE_TEST: souschef_ci_test
+      PUBSUB_ENABLED: "false"
+      GOOGLE_CLIENT_ID: ci-mocked-client
+      GOOGLE_CLIENT_SECRET: ci-mocked-secret
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: souschef_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d souschef_ci_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,6 +46,9 @@ jobs:
       - name: Install server dependencies
         run: npm ci
         working-directory: server
+
+      - name: Generate disposable test encryption key
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_ENV, 'ENCRYPTION_KEY=' + require('crypto').randomBytes(32).toString('hex') + '\n')"
 
       - name: Install microservice dependencies
         run: npm ci

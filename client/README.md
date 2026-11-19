@@ -68,6 +68,12 @@ Run tests:
 npm run e2e
 ```
 
+To run one configured browser, use `npm run e2e -- --project=chromium` (or
+`firefox` / `webkit`). The script selects `e2e/playwright.config.ts`; invoking
+Playwright without this config does not select the application's E2E suite.
+The browser and Firebase deployment workflows use Ubuntu 24.04 because the
+locked Playwright release does not support Ubuntu 26.04.
+
 ### Development bypass for authentication (optional)
 
 If you are seeing PKCE/sessionStorage persistence issues in development, you can enable a safe development-only bypass that simulates a logged-in user without going through Google OAuth.

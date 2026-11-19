@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -62,5 +62,5 @@ jobs:
       - name: Run Playwright E2E against deployed site
         env:
           PLAYWRIGHT_BASE_URL: "https://${{ secrets.FIREBASE_PROJECT }}.web.app"
-        run: npx playwright test --reporter=github
+        run: npm run e2e -- --reporter=github
         working-directory: client

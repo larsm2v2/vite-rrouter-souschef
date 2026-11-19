@@ -17,6 +17,16 @@ This document explains the entrypoints and how to build/deploy the `server` serv
 
 Use `newDev` if you want the DI/bootstrap behavior and the JWT-first setup used in production.
 
+## CI tests
+
+The Server CI workflow starts a disposable PostgreSQL 16 service and the
+clean-recipe service before running `npm test`. No production database secrets
+are required. Both `PG_DATABASE` (test helpers) and `PG_DATABASE_TEST` (application
+pool) point to the same isolated CI database; both host variables must also agree.
+Pub/Sub is disabled with `PUBSUB_ENABLED=false`, OAuth tests use placeholder
+credentials with mocked Google responses, and a fresh encryption key is generated
+for each job. CI does not need Google Cloud credentials or production secrets.
+
 ## Docker / Cloud Build / Cloud Run
 
 - Production container image runs the compiled entrypoint

@@ -2,52 +2,66 @@
 
 Frontend: Firebase Hosting. Backend: Cloud Run service `souschef-api` (us-central1).
 
-## Quick start: one script
+## Quick start
+
+The **backend deploys itself**: pushing to `main` starts your Cloud Build triggers. You deploy the **client** (Firebase Hosting) with one script:
 
 ```powershell
-.\scripts\deploy.ps1 -DryRun     # rehearsal: checks, tests, client build; deploys nothing
-.\scripts\deploy.ps1             # the real thing (asks you to type "deploy" first)
+.\scripts\deploy-client.ps1 -DryRun   # rehearsal: checks, tests, build; does not deploy
+.\scripts\deploy-client.ps1           # the real thing (asks you to type "deploy" first)
 ```
 
-It runs preflight checks, the tests, deploys the **server** (Cloud Build -> Cloud Run, then verifies the live routes) and only then the **client** (build, bundle checks, `firebase deploy`), and finishes with a summary, the live URLs, a smoke-test checklist and the rollback command. Any failure stops the run with a message.
+What it does, stopping on the first failure:
 
-| Option                | Effect                                                                                  |
-| --------------------- | --------------------------------------------------------------------------------------- |
-| `-Target server`      | Only the server. `-Target client` only the client. Default is both, server first.       |
-| `-DryRun`             | Runs everything except the Cloud Build submit and `firebase deploy`.                    |
-| `-SkipTests`          | Skip server tests, client unit tests and lint (the client still builds).                |
-| `-SkipInstall`        | Skip `npm ci` for the client. Needed while `npm run dev` is running (it locks esbuild). |
-| `-AllowDirty`         | Deploy with uncommitted changes. By default the tree must be clean.                     |
-| `-IncludeCleanService`| Also deploy `clean-recipe-service` (rarely changes; its trigger normally handles it).   |
-| `-Yes`                | Do not ask for confirmation.                                                            |
-| `-ProjectId`, `-FirebaseProject` | Override the gcloud project / the `FIREBASE_PROJECT` from `client/.env`.     |
+1. **Preflight:** `git`/`fnm`, shared-logic sync, clean git tree, `client/.env` loaded (values never printed), rejects a `VITE_API_URL` that is not public.
+2. **Checks the live backend** (read-only) has the routes this client calls (`/api/planner/settings`, `/api/meal-plan`, `/auth/refresh`). If your trigger has not finished, it tells you to wait instead of shipping a client that 404s.
+3. **Tests:** client unit tests and lint.
+4. **Build:** `npm ci`, production build, and checks that the bundle contains your API host and no `VITE_DEV_BYPASS`.
+5. **Deploy:** `firebase deploy --only hosting`, then confirms the live site serves the bundle it just built.
 
-Requirements: `git`, `fnm`, `gcloud` (logged in, `gcloud auth login`) and a `client/.env` with `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID` and `FIREBASE_PROJECT`. First time only, log in to Firebase: `cd client; fnm exec --using 24 npx.cmd firebase-tools login` (or set `FIREBASE_TOKEN`). `client/.env` is read into the script's own process; values are never printed.
+| Option             | Effect                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `-DryRun`          | Runs everything except `firebase deploy`.                                               |
+| `-SkipTests`       | Skip unit tests and lint (the build still runs).                                        |
+| `-SkipInstall`     | Skip `npm ci`. Needed while `npm run dev` is running (it locks esbuild).                |
+| `-SkipServerCheck` | Deploy even if the live backend lacks the new routes.                                   |
+| `-AllowDirty`      | Deploy with uncommitted changes. By default the tree must be clean.                     |
+| `-Yes`             | Do not ask for confirmation.                                                            |
+| `-FirebaseProject` | Override `FIREBASE_PROJECT` from `client/.env`.                                         |
 
-The script deploys **by hand**. Pushing to `main` also starts the Cloud Build triggers and the Firebase GitHub Action, so deploying and pushing the same commit deploys it twice; that is harmless but redundant. Deploy by script when you need the server-then-client order guaranteed.
+Requirements: `git`, `fnm`, and a `client/.env` with `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID` and `FIREBASE_PROJECT`. First time only, log in to Firebase: `cd client; fnm exec --using 24 npx.cmd firebase-tools login` (or set `FIREBASE_TOKEN`). Works in Windows PowerShell 5.1 and PowerShell 7.
 
-The rest of this document is the manual reference for each step.
+### Backend fallback
 
-Replace `<PROJECT_ID>`, `<FIREBASE_PROJECT>` and `<API_URL>` with your values in the commands below.
+Only if a trigger did not fire or failed and you cannot push again:
+
+```powershell
+.\scripts\deploy-server.ps1 -DryRun
+.\scripts\deploy-server.ps1 -SkipTests -Yes     # add -IncludeCleanService for clean-recipe-service too
+```
+
+It runs `gcloud builds submit server/cloudbuild.yaml`, verifies the live routes, prints why a build failed, and prints the rollback command. Check trigger builds with `gcloud builds list --limit 3`.
+
+Both scripts share `scripts/deploy-common.ps1`. The **GitHub Actions** "Firebase Deploy Client" workflow is a separate path and currently fails at "Validate deployment secrets" until the repository secrets `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` are set (see section 3); the script does not depend on it.
+
+The rest of this document is the manual reference for each step. Replace `<PROJECT_ID>`, `<FIREBASE_PROJECT>` and `<API_URL>` with your values in the commands below.
 
 > **Remember**
 >
-> - **Server (`souschef-api`) and `clean-recipe-service` deploy automatically from Cloud Build triggers** when you push. The manual `gcloud builds submit` commands below are a fallback, not the normal path.
-> - **The Firebase client deploys through GitHub Actions** on pushes to `main` (`firebase-deploy-client.yml`). It runs independently of the Cloud Build server triggers, so the two deployments can overlap.
-> - For changes that require the server first, monitor both builds and use the manual client deploy in section 3 only after the server build is green.
+> - **Server (`souschef-api`) and `clean-recipe-service` deploy automatically from Cloud Build triggers** when you push.
+> - **The Firebase client is deployed by `deploy-client.ps1`.** The GitHub Actions workflow (`firebase-deploy-client.yml`) also tries on pushes to `main`, independently of the Cloud Build triggers, so it can run before the backend is ready.
 
 ## What needs deploying for the current work
 
-| Part                        | Redeploy?      | How                                                           | Why                                                                                                                                                      |
-| --------------------------- | -------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server` (`souschef-api`)   | **Yes, first** | `.\scripts\deploy.ps1`, or trigger on push                    | Meal planner API (meal plan, leftovers, cooking history, auto-favorites), staples fixes, session renewal (refresh grace window, auth rate limits), URL import fixes |
-| `client` (Firebase Hosting) | **Yes**        | `.\scripts\deploy.ps1`, or GitHub Actions on push to `main`   | Meal planner page and Settings tab, edit-from-URL, staples UI, background session renewal                                                                |
-| `clean-recipe-service`      | No             | Trigger on push (or `-IncludeCleanService`)                   | No changes; its trigger may rebuild it anyway, which is harmless                                                                                         |
-| Database schema             | **Automatic**  | Applied when the server starts                               | New tables/columns (`recipe_completions`, `meal_plan` leftovers, `users` planner settings, `refresh_tokens.revoked_at`) are created idempotently on boot; no manual migration |
-| Secrets / env vars          | No             | -                                                             | No new `process.env` or `import.meta.env` names                                                                                                          |
+| Part                        | Redeploy?      | How                                         | Why                                                                                                                                                                |
+| --------------------------- | -------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `server` (`souschef-api`)   | **Yes, first** | Trigger on push (fallback `deploy-server.ps1`) | Meal planner API (meal plan, leftovers, cooking history, auto-favorites), staples fixes, session renewal (refresh grace window, auth rate limits), URL import fixes |
+| `client` (Firebase Hosting) | **Yes**        | `.\scripts\deploy-client.ps1`               | Meal planner page and Settings tab, edit-from-URL, staples UI, background session renewal                                                                          |
+| `clean-recipe-service`      | No             | Trigger on push                             | No changes; its trigger may rebuild it anyway, which is harmless                                                                                                   |
+| Database schema             | **Automatic**  | Applied when the server starts              | New tables/columns (`recipe_completions`, `meal_plan` leftovers, `users` planner settings, `refresh_tokens.revoked_at`) are created idempotently on boot             |
+| Secrets / env vars          | No             | -                                           | No new `process.env` or `import.meta.env` names                                                                                                                    |
 
-**Order matters, but the automatic workflows do not enforce it.** A new client against an old server breaks the planner and session renewal (404s on `/api/meal-plan` and `/api/planner/settings`). The client GitHub Action can deploy before the server build finishes, which is the main reason to deploy with the script: it always does the server first and verifies it before touching the client.
-
+**Order matters:** a new client against an old server 404s on `/api/meal-plan` and `/api/planner/settings`. `deploy-client.ps1` checks for exactly that before it deploys.
 ## 1. Before you deploy
 
 ```powershell
@@ -98,7 +112,7 @@ curl.exe -s "$api/debug/routes" | Select-String "/api/oauth/google/token"
 gcloud run revisions list --service souschef-api --region us-central1 --limit 3
 ```
 
-To redeploy both services together by hand, use `.\scripts\deploy-cloudrun.ps1 -ProjectId <PROJECT_ID>`.
+To redeploy by hand use `.\scripts\deploy-server.ps1` (above), or `.\scripts\deploy-cloudrun.ps1 -ProjectId <PROJECT_ID>` to rebuild both the server and clean-recipe-service.
 
 ## 3. Deploy the client (Firebase Hosting): automatic and manual fallback
 
