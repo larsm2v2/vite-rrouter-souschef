@@ -229,7 +229,20 @@ function Invoke-Tests {
 
 function Invoke-ServerDeploy {
     Mutate "submit Cloud Build for $ServerService (server/cloudbuild.yaml)" {
-        Run "gcloud" @("builds", "submit", "--config=server/cloudbuild.yaml", "server", "--project", $ProjectId)
+        try {
+            Run "gcloud" @("builds", "submit", "--config=server/cloudbuild.yaml", "server", "--project", $ProjectId)
+        }
+        catch {
+            # The submit output only says which step number failed; show the step's own log.
+            $buildId = Capture "gcloud" @("builds", "list", "--project", $ProjectId, "--limit", "1", "--format", "value(id)") -AllowFailure
+            if ($buildId) {
+                $log = Capture "gcloud" @("builds", "log", $buildId, "--project", $ProjectId) -AllowFailure
+                $tail = ($log -split "`r?`n" | Where-Object { $_ -match 'ERROR|Error|failed|Finished Step' } | Select-Object -Last 8) -join "`n"
+                Write-Host "`nWhy build $buildId failed (full log: gcloud builds log $buildId):" -ForegroundColor Yellow
+                Write-Host $tail
+            }
+            throw
+        }
     }
 
     $info.ApiUrl = Capture "gcloud" @("run", "services", "describe", $ServerService, "--region", $Region,
