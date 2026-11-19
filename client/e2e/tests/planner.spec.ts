@@ -237,7 +237,7 @@ async function mouseDrag(
   await page.mouse.move(a.x + a.width / 2 + 12, a.y + a.height / 2 + 12, {
     steps: 4,
   });
-  await expect(page.locator(".planner-drag-overlay")).toBeVisible();
+  await expect(from).toHaveAttribute("aria-pressed", "true");
   // Phone layouts stack days below the palette, outside the initial viewport.
   await to.evaluate((element) =>
     element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }),

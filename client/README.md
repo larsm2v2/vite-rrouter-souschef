@@ -81,7 +81,9 @@ locked Playwright release does not support Ubuntu 26.04.
 The same suite runs against Firebase when `PLAYWRIGHT_BASE_URL` is set. Tests
 must use the built UI (not browser imports from `/src`) and keep mocked OAuth
 redirects on the tested site's origin. Drag helpers must scroll source and
-target elements into the viewport on phone layouts.
+target elements into the viewport on phone layouts. Check the source's
+`aria-pressed` state for drag activation; drop-animation overlays can overlap
+between consecutive drags.
 
 ### Development bypass for authentication (optional)
 
