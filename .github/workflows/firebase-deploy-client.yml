@@ -51,6 +51,58 @@ jobs:
           project_id: ${{ secrets.FIREBASE_PROJECT }}
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Check Firebase project access
+        working-directory: client
+        env:
+          FIREBASE_PROJECT: ${{ secrets.FIREBASE_PROJECT }}
+        run: |
+          node <<'NODE'
+          const { createRequire } = require("node:module");
+          const firebaseRequire = createRequire(require.resolve("firebase-tools/package.json"));
+          const { GoogleAuth } = firebaseRequire("google-auth-library");
+
+          async function checkProject() {
+            const project = process.env.FIREBASE_PROJECT;
+            if (!project || project !== project.trim() || !/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(project)) {
+              console.error("FIREBASE_PROJECT must be a project ID without quotes, whitespace, or a URL.");
+              process.exitCode = 1;
+              return;
+            }
+            const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+            const client = await auth.getClient();
+            await client.request({
+              url: `https://firebase.googleapis.com/v1beta1/projects/${project}`,
+              timeout: 30000,
+              retry: false,
+            });
+            console.log("Firebase project access verified.");
+          }
+
+          checkProject().catch((error) => {
+            const data = error.response?.data;
+            const apiError = data?.error;
+            console.error(`Firebase project check failed (HTTP ${error.response?.status ?? "no response"}).`);
+            // Only report Google's error fields, never request headers or credential objects.
+            if (apiError && typeof apiError === "object") {
+              console.error(JSON.stringify({ status: apiError.status, message: apiError.message }));
+              for (const detail of Array.isArray(apiError.details) ? apiError.details : []) {
+                console.error(JSON.stringify({
+                  reason: detail.reason,
+                  permission: detail.metadata?.permission,
+                  service: detail.metadata?.service,
+                  consumer: detail.metadata?.consumer,
+                }));
+              }
+            } else if (typeof apiError === "string") {
+              console.error(`OAuth error: ${apiError}`);
+              if (typeof data.error_description === "string") console.error(data.error_description);
+            } else {
+              console.error(`Credential/transport error code: ${error.code ?? error.name ?? "unknown"}`);
+            }
+            process.exitCode = 1;
+          });
+          NODE
+
       - name: Deploy to Firebase Hosting
         run: npx firebase-tools deploy --project "$FIREBASE_PROJECT" --only hosting --non-interactive
         working-directory: client

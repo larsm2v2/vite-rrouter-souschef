@@ -146,6 +146,12 @@ If organization policy blocks key creation, do not disable the policy; use
 Workload Identity Federation instead. JSON keys are long-lived credentials;
 keyless federation is the preferred longer-term option.
 
+If deployment fails with "Failed to get Firebase project", open the workflow's
+**Check Firebase project access** step. It makes a read-only Firebase API request
+using the same credentials and reports Google's HTTP status, error message, and
+permission/service reason when available. It does not print credentials, tokens,
+request headers, or the full error object. A failed check stops deployment.
+
 ### Manual fallback
 
 The steps below use interactive Firebase login; use them after the server build
