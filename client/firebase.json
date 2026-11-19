@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "souschef4me",
     "public": "dist",
     "ignore": [
       "firebase.json",

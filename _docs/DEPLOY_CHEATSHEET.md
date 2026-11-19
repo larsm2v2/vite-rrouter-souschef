@@ -42,7 +42,12 @@ Only if a trigger did not fire or failed and you cannot push again:
 
 It runs `gcloud builds submit server/cloudbuild.yaml`, verifies the live routes, prints why a build failed, and prints the rollback command. Check trigger builds with `gcloud builds list --limit 3`.
 
-Both scripts share `scripts/deploy-common.ps1`. The **GitHub Actions** "Firebase Deploy Client" workflow is a separate path and currently fails at "Validate deployment secrets" until the repository secrets `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` are set (see section 3); the script does not depend on it.
+Both scripts share `scripts/deploy-common.ps1`. The **GitHub Actions** "Firebase Deploy Client" workflow is a separate path and requires the repository secrets `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` (see section 3); the script does not depend on it.
+
+`client/firebase.json` explicitly selects the Hosting site `souschef4me` so CI
+does not depend on default-site discovery or an untracked local `.firebaserc`.
+When deploying to another project, also update `hosting.site` to that project's
+site ID; `--project` alone does not override the configured site.
 
 The rest of this document is the manual reference for each step. Replace `<PROJECT_ID>`, `<FIREBASE_PROJECT>` and `<API_URL>` with your values in the commands below.
 
