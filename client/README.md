@@ -52,6 +52,10 @@ export default tseslint.config({
 
 ## End-to-end tests
 
+Install client dependencies with `npm ci` from this directory. This includes
+Vitest for `npm run test:unit` and build-time checking of test files; CI installs
+the client independently and does not use the repository root's dependencies.
+
 This project includes a small Playwright E2E test that verifies the PKCE tokens are stored in sessionStorage before the OAuth redirect.
 
 Install Playwright and browsers locally:
