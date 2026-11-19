@@ -23,11 +23,11 @@ jobs:
       - name: Validate deployment secrets
         env:
           FIREBASE_PROJECT: ${{ secrets.FIREBASE_PROJECT }}
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: |
-          for name in FIREBASE_PROJECT FIREBASE_TOKEN VITE_API_URL VITE_GOOGLE_CLIENT_ID; do
+          for name in FIREBASE_PROJECT FIREBASE_SERVICE_ACCOUNT VITE_API_URL VITE_GOOGLE_CLIENT_ID; do
             if [ -z "${!name}" ]; then
               echo "::error::Required Actions secret $name is not configured."
               exit 1
@@ -45,9 +45,17 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ secrets.FIREBASE_PROJECT }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
       - name: Deploy to Firebase Hosting
-        run: npx firebase-tools deploy --project "${{ secrets.FIREBASE_PROJECT }}" --token "${{ secrets.FIREBASE_TOKEN }}" --only hosting
+        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT" --only hosting --non-interactive
         working-directory: client
+        env:
+          FIREBASE_PROJECT: ${{ secrets.FIREBASE_PROJECT }}
 
       - name: Report deployment URL
         if: success()

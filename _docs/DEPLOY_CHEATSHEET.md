@@ -121,7 +121,35 @@ To redeploy by hand use `.\scripts\deploy-server.ps1` (above), or `.\scripts\dep
 
 ## 3. Deploy the client (Firebase Hosting): automatic and manual fallback
 
-The normal path is the GitHub Actions workflow `.github/workflows/firebase-deploy-client.yml`, which builds, deploys, and runs Playwright after each push to `main`. It requires the Actions secrets `FIREBASE_PROJECT`, `FIREBASE_TOKEN`, `VITE_API_URL`, and `VITE_GOOGLE_CLIENT_ID`. This workflow is independent of Cloud Build and does not wait for the server deployment. The steps below are a manual fallback; use them after the server build is `SUCCESS` when deployment order matters.
+The normal path is the GitHub Actions workflow `.github/workflows/firebase-deploy-client.yml`, which builds, deploys, and runs Playwright after each push to `main`. It requires the Actions secrets `FIREBASE_PROJECT`, `FIREBASE_SERVICE_ACCOUNT`, `VITE_API_URL`, and `VITE_GOOGLE_CLIENT_ID`. This workflow is independent of Cloud Build and does not wait for the server deployment.
+
+### One-time GitHub Actions service account setup
+
+1. In [Google Cloud Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts?project=souschef4me),
+   create `souschef-hosting-deployer` in project `souschef4me`.
+2. Grant it **Firebase Hosting Admin** (`roles/firebasehosting.admin`) on this
+   project, not Owner or Editor. It does not need Cloud Run permissions.
+3. Open the account, then **Keys > Add key > Create new key > JSON**. Treat the
+   downloaded file like a password; keep it outside this repository.
+4. In [repository Actions secrets](https://github.com/larsm2v2/vite-rrouter-souschef/settings/secrets/actions),
+   create `FIREBASE_SERVICE_ACCOUNT` containing the entire JSON file, not its
+   filename or just its private key. Keep `FIREBASE_PROJECT` set to `souschef4me`.
+5. Commit and push the updated workflow. It uses `google-github-actions/auth@v3`
+   to write a temporary credential file and export `GOOGLE_APPLICATION_CREDENTIALS`.
+   The action deletes that file when the job ends. No `--token` is used.
+6. After a successful deployment, delete the obsolete `FIREBASE_TOKEN` repository
+   secret and remove the downloaded local key file once it is securely stored
+   in the secret. Removing the local file does not revoke the key in Google Cloud;
+   rotate or revoke the cloud key when needed.
+
+If organization policy blocks key creation, do not disable the policy; use
+Workload Identity Federation instead. JSON keys are long-lived credentials;
+keyless federation is the preferred longer-term option.
+
+### Manual fallback
+
+The steps below use interactive Firebase login; use them after the server build
+is `SUCCESS` when deployment order matters.
 
 Firebase Hosting has no environment settings. The variables are read when the client is **built** and baked into the bundle, so "adding the vars" means loading them before the build. They come from your `client/.env`; no values live in this doc. Run these in order (the loaded values last for this terminal window only), **all in the same terminal window**:
 

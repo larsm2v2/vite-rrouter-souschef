@@ -3,6 +3,7 @@
 **/.env.*
 !**/.env.example
 server/env/
+gha-creds-*.json
 
 # Dependencies and generated build output
 **/node_modules/
