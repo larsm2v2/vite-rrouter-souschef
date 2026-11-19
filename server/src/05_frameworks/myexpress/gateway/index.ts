@@ -34,6 +34,7 @@ export { corsMiddleware } from "./cors";
 export {
   apiLimiter,
   authLimiter,
+  sessionLimiter,
   ocrLimiter,
   shareTokenLimiter,
   recipeImportLimiter,

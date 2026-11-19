@@ -33,7 +33,8 @@ export async function migrateAddRefreshTokens() {
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         created_at TIMESTAMP DEFAULT NOW(),
         expires_at TIMESTAMP,
-        revoked BOOLEAN DEFAULT FALSE
+        revoked BOOLEAN DEFAULT FALSE,
+        revoked_at TIMESTAMP
       );
     `);
 

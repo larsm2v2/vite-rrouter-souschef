@@ -5,6 +5,8 @@ import db from "../05_frameworks/database/connection";
 const JWT_SECRET: string = process.env.JWT_SECRET || "fallback-secret-change-me";
 const ACCESS_EXPIRATION: string = process.env.JWT_ACCESS_EXPIRATION || "15m";
 const REFRESH_EXPIRATION: string = process.env.JWT_REFRESH_EXPIRATION || "7d";
+// How long a just-rotated refresh token keeps working (see isRefreshTokenValid).
+export const REFRESH_REUSE_GRACE_SECONDS = 60;
 
 export interface TokenPayload {
   sub: string; // User ID
@@ -81,29 +83,29 @@ export const isRefreshTokenValid = async (token: string): Promise<{ valid: boole
   const payload = verifyToken(token);
   if (!payload || payload.type !== "refresh" || !payload.jti) {
     console.warn("isRefreshTokenValid: token failed basic verification or missing jti/type");
-    // Attempt to decode for additional diagnostics (do not trust decoded data)
-    const decodedAny = jwt.decode(token) as any;
-    console.log("isRefreshTokenValid: decoded (unverified) token summary:", {
-      jti: decodedAny?.jti || null,
-      exp: decodedAny?.exp ? new Date(decodedAny.exp * 1000).toISOString() : null,
-    });
     return { valid: false };
   }
 
   try {
+    // A token that was rotated moments ago is still accepted for a short grace
+    // window. Without it, a lost response or two tabs refreshing at once would
+    // present an already-rotated token and sign the user out.
     const res = await db.query(
-      `SELECT 1 FROM refresh_tokens WHERE jti = $1 AND token = $2 AND revoked = false AND expires_at > NOW() LIMIT 1`,
-      [payload.jti, token]
+      `SELECT 1 FROM refresh_tokens
+        WHERE jti = $1 AND token = $2 AND expires_at > NOW()
+          AND (revoked = false
+               OR (revoked_at IS NOT NULL
+                   AND revoked_at > NOW() - ($3 * INTERVAL '1 second')))
+        LIMIT 1`,
+      [payload.jti, token, REFRESH_REUSE_GRACE_SECONDS]
     );
 
     if (res.rows.length > 0) {
-      console.log(`isRefreshTokenValid: refresh token jti=${payload.jti} valid`);
       return { valid: true, payload };
     }
 
-    // Not valid — gather more info: check whether token record exists and its state
     const lookup = await db.query(
-      `SELECT revoked, expires_at FROM refresh_tokens WHERE jti = $1 LIMIT 1`,
+      `SELECT revoked, revoked_at, expires_at FROM refresh_tokens WHERE jti = $1 LIMIT 1`,
       [payload.jti]
     );
 
@@ -114,6 +116,7 @@ export const isRefreshTokenValid = async (token: string): Promise<{ valid: boole
       console.warn("isRefreshTokenValid: refresh token record state:", {
         jti: payload.jti,
         revoked: row.revoked,
+        revoked_at: row.revoked_at,
         expires_at: row.expires_at,
       });
     }
@@ -125,9 +128,22 @@ export const isRefreshTokenValid = async (token: string): Promise<{ valid: boole
   }
 };
 
-export const revokeRefreshTokenByJti = async (jti: string) => {
+/**
+ * Revoke a refresh token. Rotation leaves the short reuse grace window open;
+ * pass allowGrace: false (logout) to make the revocation immediate and final.
+ */
+export const revokeRefreshTokenByJti = async (
+  jti: string,
+  options: { allowGrace?: boolean } = {}
+) => {
+  const allowGrace = options.allowGrace ?? true;
   try {
-    await db.query(`UPDATE refresh_tokens SET revoked = true WHERE jti = $1`, [jti]);
+    await db.query(
+      `UPDATE refresh_tokens
+          SET revoked = true, revoked_at = CASE WHEN $2 THEN NOW() ELSE NULL END
+        WHERE jti = $1`,
+      [jti, allowGrace]
+    );
   } catch (err) {
     console.error("Failed to revoke refresh token:", err);
   }

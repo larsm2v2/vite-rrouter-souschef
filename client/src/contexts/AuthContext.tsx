@@ -10,6 +10,13 @@ import apiClient, {
   setInMemoryAccessToken,
   abortAllInFlightRequests,
 } from "../components/pages/Client";
+import {
+  onSessionExpired,
+  refreshSession,
+  restoreSession,
+  startSessionKeepAlive,
+  subscribeToken,
+} from "../utils/authSession";
 import { clearAllUserData } from "../utils/userStorage";
 
 interface User {
@@ -53,24 +60,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .catch(console.error);
   }, []);
 
+  // Returns true when a fresh token was obtained. Only a server "no" (the refresh
+  // token is rejected) ends the session; being offline or hitting a cold server does not.
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
-    try {
-      const response = await apiClient.post<{ accessToken: string }>(
-        "/auth/refresh",
-      );
-      const { accessToken: newAccessToken } = response.data;
-      setAccessToken(newAccessToken);
-      // Keep the token in memory only -- never persist it to localStorage.
-      setInMemoryAccessToken(newAccessToken);
+    const outcome = await refreshSession();
+    if (outcome.status === "ok") {
+      setAccessToken(outcome.accessToken);
       return true;
-    } catch (error) {
-      console.error(
-        "Token refresh failed:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
-      logout();
-      return false;
     }
+    if (outcome.status === "expired") logout();
+    return false;
   }, [logout]);
 
   // Load user and (re)establish an access token on mount. The access token
@@ -83,9 +82,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-      refreshAccessToken();
+      restoreSession();
     }
-  }, [refreshAccessToken]);
+  }, []);
+
+  // Keep the session alive while the app is open: mirror token changes made by
+  // the background refresh, renew after sleep or reconnect, and sign out only
+  // when the server reports the session is really over.
+  useEffect(() => {
+    const stopKeepAlive = startSessionKeepAlive();
+    const unsubscribe = subscribeToken(setAccessToken);
+    const stopExpiry = onSessionExpired(() => {
+      logout();
+      if (!window.location.pathname.includes("/login")) {
+        window.location.assign("/login");
+      }
+    });
+    return () => {
+      stopKeepAlive();
+      unsubscribe();
+      stopExpiry();
+    };
+  }, [logout]);
 
   const formatDisplayName = (user?: User | null) => {
     if (!user) return null;

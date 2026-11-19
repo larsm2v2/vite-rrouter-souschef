@@ -9,13 +9,24 @@ export const apiLimiter = rateLimit({
   message: "Too many requests from this IP, please try again later",
 });
 
-// Stricter rate limiter for auth endpoints
+// Stricter rate limiter for credential endpoints (login/register): guards against password guessing
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 requests per window
   standardHeaders: true,
   legacyHeaders: false,
   message: "Too many login attempts, please try again later",
+});
+
+// Session upkeep (refresh/check/logout). These need a valid token or cookie, and the client
+// renews about every 14 minutes, so reloads and several devices on one network must not
+// exhaust the budget and look like a lost session.
+export const sessionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many session requests, please try again shortly",
 });
 
 // Rate limiter for OCR endpoints (can be CPU-intensive)

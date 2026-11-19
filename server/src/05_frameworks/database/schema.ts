@@ -143,6 +143,12 @@ async function createTables() {
       ADD COLUMN IF NOT EXISTS household_size INTEGER NOT NULL DEFAULT 2;
     `);
 
+    // Rotated refresh tokens stay valid briefly (revoked_at); existing databases
+    // get the column here, new ones from the refresh_tokens migration.
+    await client.query(`
+      ALTER TABLE IF EXISTS refresh_tokens ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP;
+    `);
+
     // Cooking history rollups used to rank favorites. favorite_locked is set
     // when the user manually unfavorites, so auto-favoriting never overrides it.
     await client.query(`

@@ -13,13 +13,15 @@ import {
   revokeRefreshTokenByJti,
 } from "../../../utils/jwt";
 import { authenticateJWT } from "../jwtAuth";
-import { authLimiter } from "../gateway";
+import { authLimiter, sessionLimiter } from "../gateway";
 
 console.log("📥 Importing auth.routes");
 const router = Router();
 
-// Apply auth rate limiter to all auth routes
-router.use(authLimiter);
+// Every auth route gets the generous session limiter; only the credential
+// endpoints (register/login) also get the strict one, so renewing a session
+// can never be starved by the password-guessing cap.
+router.use(sessionLimiter);
 
 // Simple test endpoint to verify request body parsing
 router.post("/test-body", (req: Request, res: Response) => {
@@ -49,7 +51,7 @@ router.post("/logout", async (req, res) => {
   if (cookieToken) {
     const payload = verifyToken(cookieToken);
     if (payload && payload.jti) {
-      await revokeRefreshTokenByJti(payload.jti);
+      await revokeRefreshTokenByJti(payload.jti, { allowGrace: false });
     }
   }
 
@@ -66,18 +68,13 @@ router.post("/logout", async (req, res) => {
 
 // Token refresh endpoint: read refresh token from HttpOnly cookie, rotate, and return new access token
 router.post("/refresh", async (req: Request, res: Response) => {
-  // Diagnostic logging to help debug refresh token behavior
-  console.log("/auth/refresh called. req.cookies:", req.cookies);
-  console.log("/auth/refresh headers:", {
-    origin: req.get("Origin"),
-    referer: req.get("Referer"),
-    cookieHeader: req.get("Cookie"),
-  });
-
   const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
-    console.warn("/auth/refresh: no refreshToken cookie present on request");
+    console.warn("/auth/refresh: no refreshToken cookie present on request", {
+      origin: req.get("Origin"),
+      hasCookieHeader: Boolean(req.get("Cookie")),
+    });
     return res.status(401).json({ error: "Refresh token required" });
   }
 
@@ -146,7 +143,7 @@ router.get("/debug/cookies", (req: Request, res: Response) => {
 });
 
 // Registration route
-router.post("/register", async (req: Request, res: Response) => {
+router.post("/register", authLimiter, async (req: Request, res: Response) => {
   try {
     // Extract fields
     const { email, password, display_name } = req.body;
@@ -234,7 +231,7 @@ router.post("/register", async (req: Request, res: Response) => {
 });
 
 // Login route
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", authLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
