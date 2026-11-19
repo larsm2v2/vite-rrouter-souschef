@@ -72,14 +72,14 @@ test.describe("serving scaler and check-off", () => {
     await page.evaluate(() => {
       localStorage.setItem("selectedRecipeIds", '["7"]');
     });
-    // Same code path as logout: the app wipes every key it owns.
-    const leftovers = await page.evaluate(async () => {
-      const mod = await import("/src/utils/userStorage.ts");
-      mod.clearAllUserData();
-      return Object.keys(localStorage).filter(
+    await page.getByRole("link", { name: "My Profile", exact: true }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    const leftovers = await page.evaluate(() =>
+      Object.keys(localStorage).filter(
         (k) => k.startsWith("souschef:v1:") || k === "selectedRecipeIds",
-      );
-    });
+      ),
+    );
     expect(leftovers).toEqual([]);
   });
 });

@@ -226,16 +226,25 @@ async function mouseDrag(
 ) {
   await expect(from).toBeVisible();
   await expect(to).toBeVisible();
+  // Center controls clear of the fixed header and phone dock before pointer input.
+  await from.evaluate((element) =>
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }),
+  );
+  await from.hover();
   const a = (await from.boundingBox())!;
-  const b = (await to.boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down();
   await page.mouse.move(a.x + a.width / 2 + 12, a.y + a.height / 2 + 12, {
     steps: 4,
   });
+  await expect(page.locator(".planner-drag-overlay")).toBeVisible();
+  // Phone layouts stack days below the palette, outside the initial viewport.
+  await to.evaluate((element) =>
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }),
+  );
+  const b = (await to.boundingBox())!;
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 12 });
-  // Let dnd-kit resolve the drop target for the final pointer position before releasing.
-  await page.waitForTimeout(150);
+  await expect(to).toHaveClass(/\bover\b/);
   await page.mouse.up();
 }
 
@@ -322,13 +331,15 @@ test.describe("meal planner", () => {
     await expect(friLunch.getByText("Imported Soup")).toBeVisible();
     expect(api.calls.filter((c) => c.method === "DELETE")).toHaveLength(0);
 
-    // Without undoing, the delete is sent once the toast closes (pointer away so it is not held open)
+    // Closing without Undo commits the deletion once.
     await friLunch.getByRole("button", { name: /Remove Imported Soup/ }).click();
-    await page.mouse.move(0, 0);
+    await page
+      .getByRole("status")
+      .filter({ hasText: "Removed Imported Soup" })
+      .getByRole("button", { name: "Dismiss notification" })
+      .click();
     await expect
-      .poll(() => api.calls.filter((c) => c.method === "DELETE").length, {
-        timeout: 25_000,
-      })
+      .poll(() => api.calls.filter((c) => c.method === "DELETE").length)
       .toBe(1);
   });
 

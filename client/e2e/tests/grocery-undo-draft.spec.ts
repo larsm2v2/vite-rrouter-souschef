@@ -339,13 +339,14 @@ test.describe("import draft", () => {
         Object.keys(localStorage).some((k) => k.includes(":import-draft:")),
       ),
     ).toBe(true);
-    const left = await page.evaluate(async () => {
-      const mod = await import("/src/utils/userStorage.ts");
-      mod.clearAllUserData();
-      return Object.keys(localStorage).filter((k) =>
+    await page.getByRole("link", { name: "My Profile", exact: true }).click();
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    const left = await page.evaluate(() =>
+      Object.keys(localStorage).filter((k) =>
         k.includes(":import-draft:"),
-      );
-    });
+      ),
+    );
     expect(left).toEqual([]);
   });
 });

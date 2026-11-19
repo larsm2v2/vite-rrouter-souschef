@@ -20,6 +20,8 @@ test("uses a same-origin frontend callback URI for PKCE", () => {
 });
 
 test("writes PKCE params before redirect", async ({ page }) => {
+  await page.goto("/login");
+  const returnUrl = new URL("/login?pkce_test=1", page.url()).href;
   // Intercept the Google OAuth navigation and redirect back to /login.
   // storePKCEParams() writes to localStorage BEFORE window.location.href fires,
   // so localStorage survives the cross-origin round-trip and is readable on return.
@@ -27,22 +29,13 @@ test("writes PKCE params before redirect", async ({ page }) => {
     await route.fulfill({
       status: 200,
       contentType: "text/html",
-      body: '<!doctype html><script>window.location.replace("http://127.0.0.1:5173/login?pkce_test=1")</script>',
+      body: `<!doctype html><script>window.location.replace(${JSON.stringify(returnUrl)})</script>`,
     });
   });
-
-  await page.goto("/login");
-
-  page.on("console", (m) =>
-    console.log("PLAYWRIGHT_CLIENT_LOG:", m.type(), m.text()),
-  );
 
   const button = page.getByRole("button", { name: /Sign in with Google/i });
   await expect(button).toBeVisible({ timeout: 2000 });
   await expect(button).toBeEnabled();
-
-  const html = await button.evaluate((b) => b.outerHTML);
-  console.log("BUTTON HTML:", html);
 
   await button.click();
 

@@ -78,6 +78,11 @@ Playwright without this config does not select the application's E2E suite.
 The browser and Firebase deployment workflows use Ubuntu 24.04 because the
 locked Playwright release does not support Ubuntu 26.04.
 
+The same suite runs against Firebase when `PLAYWRIGHT_BASE_URL` is set. Tests
+must use the built UI (not browser imports from `/src`) and keep mocked OAuth
+redirects on the tested site's origin. Drag helpers must scroll source and
+target elements into the viewport on phone layouts.
+
 ### Development bypass for authentication (optional)
 
 If you are seeing PKCE/sessionStorage persistence issues in development, you can enable a safe development-only bypass that simulates a logged-in user without going through Google OAuth.
