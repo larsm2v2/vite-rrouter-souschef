@@ -56,10 +56,13 @@ export const allRecipes: Record<string, unknown> = {
 export async function prepareRecipePage(
   page: Page,
   recipes: Record<string, unknown> = allRecipes,
+  { seedUser = true }: { seedUser?: boolean } = {},
 ) {
-  await page.addInitScript((u) => {
-    localStorage.setItem("user", JSON.stringify(u));
-  }, TEST_USER);
+  if (seedUser) {
+    await page.addInitScript((u) => {
+      localStorage.setItem("user", JSON.stringify(u));
+    }, TEST_USER);
+  }
   await page.route(
     (url) => url.pathname.includes("/api/") || url.pathname.includes("/auth/"),
     (route) => {

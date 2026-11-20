@@ -51,7 +51,7 @@ export function removeStored(key: string): void {
   }
 }
 
-/** Remove every key this app owns for any user. Called on logout. */
+/** Remove every key this app owns for any user. Called on deliberate sign-out, not expiry. */
 export function clearAllUserData(): void {
   try {
     const doomed: string[] = [];

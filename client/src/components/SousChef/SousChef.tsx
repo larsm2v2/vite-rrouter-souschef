@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import "./SousChef.css";
 import { RecipeModel } from "../../types";
 import { surpriseOptions, preprompt } from "../Models/Prompts";
+import { API_BASE_URL } from "../../utils/apiBaseUrl";
 
 interface SousChefProps {
   willTryAgain: boolean;
@@ -93,7 +94,7 @@ const SousChef: React.FC<SousChefProps> = ({
         },
       };
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/gemini`,
+        `${API_BASE_URL}/gemini`,
         options,
       );
       const data = await response.text();

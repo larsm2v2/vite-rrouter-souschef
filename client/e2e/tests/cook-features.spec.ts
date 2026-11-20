@@ -59,6 +59,8 @@ test.describe("serving scaler and check-off", () => {
   test("logging out clears saved cooking state", async ({ page }) => {
     await page.goto("/recipes/7");
     await page.getByRole("checkbox", { name: "1 ½ cups flour" }).check();
+    await page.getByRole("button", { name: "Start 10 minutes timer" }).click();
+    await expect(page.getByRole("region", { name: "Timers" })).toBeVisible();
     await expect
       .poll(() =>
         page.evaluate(

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE_URL } from "../../utils/apiBaseUrl";
 import {
   getInMemoryAccessToken,
   notifySessionExpired,
@@ -11,9 +12,6 @@ export interface ApiResponse<T> {
   status: number;
   statusText: string;
 }
-
-// Get the API URL from environment variables or use default
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 // The access token lives in memory only (never localStorage) to limit what an XSS
 // bug can steal; utils/authSession.ts owns it and keeps it fresh. These names are
@@ -38,7 +36,7 @@ interface RequestConfigWithController {
 
 // Create a typed wrapper around Axios
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true, // Use cookies for refresh token (HttpOnly)
   headers: {
     "Content-Type": "application/json",

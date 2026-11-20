@@ -6,6 +6,7 @@ import {
 import { generateAccessToken, generateRefreshToken } from "../../../utils/jwt";
 import db from "../../database/connection";
 import { encryptToken } from "../../../utils/crypto";
+import { setRefreshCookie } from "../refreshCookie";
 
 console.log("📥 Importing auth-google-pkce.routes");
 const router = Router();
@@ -112,19 +113,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
       user.display_name
     );
 
-    // Set refresh token as secure HTTP-only cookie
-    const decoded: any = require("jsonwebtoken").decode(refreshToken);
-    const expiresMs = decoded?.exp
-      ? decoded.exp * 1000 - Date.now()
-      : undefined;
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      ...(expiresMs ? { maxAge: expiresMs } : {}),
-      path: "/",
-    });
+    setRefreshCookie(res, refreshToken);
 
     // Redirect to client with access token
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";

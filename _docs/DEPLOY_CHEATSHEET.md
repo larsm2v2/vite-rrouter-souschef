@@ -16,7 +16,7 @@ What it does, stopping on the first failure:
 1. **Preflight:** `git`/`fnm`, shared-logic sync, clean git tree, `client/.env` loaded (values never printed), rejects a `VITE_API_URL` that is not public.
 2. **Checks the live backend** (read-only) has the routes this client calls (`/api/planner/settings`, `/api/meal-plan`, `/auth/refresh`). If your trigger has not finished, it tells you to wait instead of shipping a client that 404s.
 3. **Tests:** client unit tests and lint.
-4. **Build:** `npm ci`, production build, and checks that the bundle contains your API host and no `VITE_DEV_BYPASS`.
+4. **Build:** `npm ci`, production build, and checks that the bundle contains neither the direct API host nor `VITE_DEV_BYPASS`.
 5. **Deploy:** `firebase deploy --only hosting`, then confirms the live site serves the bundle it just built.
 
 | Option             | Effect                                                                                  |
@@ -42,12 +42,34 @@ Only if a trigger did not fire or failed and you cannot push again:
 
 It runs `gcloud builds submit server/cloudbuild.yaml`, verifies the live routes, prints why a build failed, and prints the rollback command. Check trigger builds with `gcloud builds list --limit 3`.
 
-Both scripts share `scripts/deploy-common.ps1`. The **GitHub Actions** "Firebase Deploy Client" workflow is a separate path and requires the repository secrets `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` (see section 3); the script does not depend on it.
+Both scripts share `scripts/deploy-common.ps1`. The **GitHub Actions** "Firebase Deploy Client" workflow is a separate path and requires the repository secret `VITE_GOOGLE_CLIENT_ID` (plus Firebase credentials; see section 3). The script still uses local `VITE_API_URL` for its read-only backend preflight, not browser requests.
 
 `client/firebase.json` explicitly selects the Hosting site `souschef4me` so CI
 does not depend on default-site discovery or an untracked local `.firebaserc`.
 When deploying to another project, also update `hosting.site` to that project's
 site ID; `--project` alone does not override the configured site.
+
+### Same-origin authentication
+
+Production builds always use relative API URLs. Hosting forwards `/api/**`,
+the login/register/refresh/logout/check/profile auth endpoints, and `/gemini`
+to `souschef-api` in `us-central1`. `/auth/callback` remains a frontend SPA
+route so Google PKCE can finish in the browser. `VITE_API_URL` is only a
+development/preflight setting and is no longer an Actions requirement.
+
+Firebase Hosting strips incoming cookies except `__session`. The server now
+sets and accepts `__session`, while also setting/accepting the old
+`refreshToken` name for clients still calling Cloud Run directly. Both names
+are HttpOnly and cleared on explicit logout. Auth responses that set cookies
+are marked `private, no-store`.
+
+Deploy the backend cookie support **before** the Hosting/client update.
+The independent push workflows may finish in either order; if Hosting finishes
+first, rerun its workflow after Cloud Build succeeds. After the change, sign
+in once on the Hosting origin: a cookie on the Cloud Run domain cannot be
+transferred to the Hosting domain. Verify refresh requests use the site's
+origin and include `__session`. This does not require changing Google redirect
+URIs or granting the Hosting deployer Cloud Run administration rights.
 
 The rest of this document is the manual reference for each step. Replace `<PROJECT_ID>`, `<FIREBASE_PROJECT>` and `<API_URL>` with your values in the commands below.
 
@@ -121,7 +143,7 @@ To redeploy by hand use `.\scripts\deploy-server.ps1` (above), or `.\scripts\dep
 
 ## 3. Deploy the client (Firebase Hosting): automatic and manual fallback
 
-The normal path is the GitHub Actions workflow `.github/workflows/firebase-deploy-client.yml`, which builds, deploys, and runs Playwright after each push to `main`. It requires the Actions secrets `FIREBASE_PROJECT`, `FIREBASE_SERVICE_ACCOUNT`, `VITE_API_URL`, and `VITE_GOOGLE_CLIENT_ID`. This workflow is independent of Cloud Build and does not wait for the server deployment.
+The normal path is the GitHub Actions workflow `.github/workflows/firebase-deploy-client.yml`, which builds, deploys, and runs Playwright after each push to `main`. It requires the Actions secrets `FIREBASE_PROJECT`, `FIREBASE_SERVICE_ACCOUNT`, and `VITE_GOOGLE_CLIENT_ID`. This workflow is independent of Cloud Build and does not wait for the server deployment.
 
 ### One-time GitHub Actions service account setup
 
@@ -179,7 +201,7 @@ foreach ($v in "VITE_API_URL", "VITE_GOOGLE_CLIENT_ID", "FIREBASE_PROJECT") {
 fnm exec --using 24 npm.cmd ci
 fnm exec --using 24 npm.cmd run build
 
-# 3. Check the bundle: the first command prints a match, the second prints nothing
+# 3. Check the bundle: both commands should print nothing (requests stay same-origin)
 $apiHost = ([uri]$env:VITE_API_URL).Host
 Select-String -Path dist\assets\*.js -Pattern $apiHost -SimpleMatch -List | Select-Object -First 1
 Select-String -Path dist\assets\*.js -Pattern "VITE_DEV_BYPASS" -List
@@ -195,7 +217,7 @@ Then open your hosting URL and hard-refresh.
 
 Notes: `client/.env` needs `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID` and a `FIREBASE_PROJECT=` line (the Firebase project id). Loading `.env` into the shell also overrides any stale value Vite would otherwise pick up. `client/.env.development` sets `VITE_DEV_BYPASS=true`, but only `npm run dev` reads it, not `npm run build`.
 
-The workflow builds with `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`, deploys to the project in `FIREBASE_PROJECT`, then runs Playwright against `https://${FIREBASE_PROJECT}.web.app`. A Playwright failure happens after deployment and does not roll back Hosting.
+The workflow builds with `VITE_GOOGLE_CLIENT_ID` and same-origin API URLs, deploys to the project in `FIREBASE_PROJECT`, then runs Playwright against `https://${FIREBASE_PROJECT}.web.app`. A Playwright failure happens after deployment and does not roll back Hosting.
 
 ## 4. Smoke test the live site
 

@@ -6,7 +6,7 @@
   1. Preflight  tools, shared-logic sync, clean git tree, client/.env, dev-server check
   2. Backend    read-only check that the live API has the routes this client needs
   3. Tests      client unit tests and lint (skip with -SkipTests)
-  4. Build      npm ci, production build, bundle checks (API host baked in, no dev bypass)
+  4. Build      npm ci, production build, bundle checks (no direct API host or dev bypass)
   5. Deploy     firebase deploy --only hosting, then confirm the live site serves this build
 
   Values from client/.env are loaded into this process only and are never printed.
@@ -117,15 +117,15 @@ function Invoke-Build {
     if (-not $SkipInstall) { InNode "client" @("npm.cmd", "ci") }
     InNode "client" @("npm.cmd", "run", "build")
 
-    # The bundle must point at the real API and must not contain the dev-login bypass.
+    # Production calls use Hosting rewrites, never the cross-site Cloud Run host.
     $bundle = Join-Path $root "client\dist\assets\*.js"
-    if (-not (Select-String -Path $bundle -Pattern $info.ApiHost -SimpleMatch -List)) {
-        throw "The built bundle does not contain $($info.ApiHost). VITE_API_URL was not baked in."
+    if (Select-String -Path $bundle -Pattern $info.ApiHost -SimpleMatch -List) {
+        throw "The built bundle contains the direct API host $($info.ApiHost). Production requests must use same-origin Hosting rewrites."
     }
     if (Select-String -Path $bundle -Pattern "VITE_DEV_BYPASS" -SimpleMatch -List) {
         throw "The built bundle contains VITE_DEV_BYPASS. Never ship the dev-login bypass."
     }
-    Ok "bundle points at $($info.ApiHost) and has no dev bypass"
+    Ok "bundle has no direct API host or dev bypass"
 
     $index = Get-Content (Join-Path $root "client\dist\index.html") -Raw
     $info.Asset = [regex]::Match($index, '/assets/(index-[^"]+\.js)').Groups[1].Value

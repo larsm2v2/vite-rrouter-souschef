@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { setRefreshCookie } from "../refreshCookie";
 import { generateAccessToken, generateRefreshToken } from "../../../utils/jwt";
 import db from "../../database/connection";
 import { encryptToken } from "../../../utils/crypto";
@@ -185,24 +186,7 @@ router.post("/google/token", async (req: Request, res: Response) => {
       user.display_name,
     );
 
-    // Set refresh token as HTTP-only cookie
-    const decoded: any = require("jsonwebtoken").decode(refreshToken);
-    const expiresMs = decoded?.exp
-      ? decoded.exp * 1000 - Date.now()
-      : 7 * 24 * 60 * 60 * 1000; // Default 7 days
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: expiresMs,
-      path: "/",
-    } as const;
-
-    // Log cookie attributes for debugging (do not log token value)
-    console.log("Setting refreshToken cookie with options:", cookieOptions);
-
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+    setRefreshCookie(res, refreshToken);
 
     // Return access token to client
     res.json({

@@ -12,6 +12,27 @@
     ],
     "rewrites": [
       {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "souschef-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/auth/@(login|register|refresh|logout|check|profile)",
+        "run": {
+          "serviceId": "souschef-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/gemini",
+        "run": {
+          "serviceId": "souschef-api",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

@@ -6,6 +6,7 @@ import {
 } from "../../utils/pkce";
 import { useAuth } from "../../contexts/AuthContext";
 import { setInMemoryAccessToken } from "../pages/Client";
+import { API_BASE_URL } from "../../utils/apiBaseUrl";
 
 /**
  * Google OAuth Callback Handler
@@ -76,18 +77,11 @@ export default function GoogleCallback() {
         }
 
         // Exchange code + verifier for tokens via backend
-        // Match server default (client/.env uses 8000 locally) and other client code
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
         const redirectUri = getGoogleRedirectUri(
           window.location.origin,
           import.meta.env.VITE_GOOGLE_PKCE_REDIRECT_URI,
         );
-        // console.log(
-        //   "Exchanging code with server at:",
-        //   `${apiUrl}/api/oauth/google/token`
-        // );
-
-        const response = await fetch(`${apiUrl}/api/oauth/google/token`, {
+        const response = await fetch(`${API_BASE_URL}/api/oauth/google/token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

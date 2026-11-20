@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  const logout = useCallback(() => {
+  const clearSession = useCallback(() => {
     setAccessToken(null);
     setInMemoryAccessToken(null);
     setUser(null);
@@ -52,13 +52,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // One-time cleanup in case an older build persisted a token here.
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
-    // Drafts, cook state and other per-user data must not outlive the session.
+    localStorage.removeItem("selectedRecipeIds");
+  }, []);
+
+  const logout = useCallback(() => {
+    clearSession();
+    // Deliberate sign-out clears saved data; automatic expiry leaves it resumable.
     clearAllUserData();
     // Notify server (optional, for token allowlist cleanup)
     apiClient
       .post("/auth/logout", {}, { withCredentials: true })
       .catch(console.error);
-  }, []);
+  }, [clearSession]);
 
   // Returns true when a fresh token was obtained. Only a server "no" (the refresh
   // token is rejected) ends the session; being offline or hitting a cold server does not.
@@ -68,9 +73,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setAccessToken(outcome.accessToken);
       return true;
     }
-    if (outcome.status === "expired") logout();
+    if (outcome.status === "expired") clearSession();
     return false;
-  }, [logout]);
+  }, [clearSession]);
 
   // Load user and (re)establish an access token on mount. The access token
   // itself is never persisted, so on every fresh page load we must obtain a
@@ -93,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const stopKeepAlive = startSessionKeepAlive();
     const unsubscribe = subscribeToken(setAccessToken);
     const stopExpiry = onSessionExpired(() => {
-      logout();
+      clearSession();
       if (!window.location.pathname.includes("/login")) {
         window.location.assign("/login");
       }
@@ -103,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       unsubscribe();
       stopExpiry();
     };
-  }, [logout]);
+  }, [clearSession]);
 
   const formatDisplayName = (user?: User | null) => {
     if (!user) return null;

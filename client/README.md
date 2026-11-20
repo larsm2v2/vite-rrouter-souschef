@@ -85,6 +85,27 @@ target elements into the viewport on phone layouts. Check the source's
 `aria-pressed` state for drag activation; drop-animation overlays can overlap
 between consecutive drags.
 
+### Saved cooking state
+
+Automatic session expiry removes authentication but preserves per-user saved
+state. Signing back into the same account restores ingredient checkmarks,
+serving scale, cooking step and timers; running timers keep their original
+deadline. Another account does not load that saved state. Existing retention
+limits still apply: 12 hours for cooking progress and 24 hours for timers.
+Deliberately choosing **Sign out** still clears all app-owned saved user data.
+
+### API origin and refresh cookies
+
+Production builds use the page's origin for every API/auth request, regardless
+of `VITE_API_URL`. Firebase Hosting rewrites those requests to Cloud Run while
+leaving `/auth/callback` on the SPA. This also works on custom Hosting domains.
+The backend uses the HttpOnly `__session` cookie required by Hosting's cookie
+forwarding; the legacy `refreshToken` cookie remains supported for older clients.
+Deploy backend support first, then Hosting, and sign in once on the Hosting site.
+
+Development can still set `VITE_API_URL`; without it, calls use the Vite proxy.
+Playwright's local server sets it to the tested origin for first-party cookies.
+
 ### Development bypass for authentication (optional)
 
 If you are seeing PKCE/sessionStorage persistence issues in development, you can enable a safe development-only bypass that simulates a logged-in user without going through Google OAuth.

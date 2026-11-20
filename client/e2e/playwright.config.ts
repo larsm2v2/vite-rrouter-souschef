@@ -34,6 +34,11 @@ export default defineConfig({
           command: "npm run dev --silent",
           url: BASE_URL,
           cwd: path.resolve(__dirname, ".."),
+          env: {
+            VITE_API_URL: BASE_URL,
+            VITE_GOOGLE_CLIENT_ID: "browser-test-client",
+            VITE_GOOGLE_PKCE_REDIRECT_URI: `${BASE_URL}/auth/callback`,
+          },
           reuseExistingServer: !process.env.CI,
         },
       }

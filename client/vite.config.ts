@@ -14,12 +14,18 @@ export default defineConfig({
     // refresh rotation. This keeps local development close to production.
     proxy: {
       // API endpoints, including /auth/refresh and other auth routes
-      "/auth": {
+      // The OAuth callback is a frontend route, not a backend auth endpoint.
+      "^/auth/(?!callback(?:[/?]|$))": {
         target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
       },
       "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/gemini": {
         target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,

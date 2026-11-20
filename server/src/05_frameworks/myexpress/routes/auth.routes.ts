@@ -2,7 +2,6 @@ import { Router } from "express";
 import crypto from "crypto";
 import { Request, Response } from "express";
 import express from "express";
-import jwt from "jsonwebtoken";
 import { hashPassword, comparePassword } from "../../auth/password";
 import db from "../../database/connection";
 import {
@@ -14,6 +13,11 @@ import {
 } from "../../../utils/jwt";
 import { authenticateJWT } from "../jwtAuth";
 import { authLimiter, sessionLimiter } from "../gateway";
+import {
+  clearRefreshCookie,
+  readRefreshCookie,
+  setRefreshCookie,
+} from "../refreshCookie";
 
 console.log("📥 Importing auth.routes");
 const router = Router();
@@ -47,7 +51,7 @@ router.get("/profile", (req, res) => {
 
 // Logout: revoke refresh token from cookie and clear it
 router.post("/logout", async (req, res) => {
-  const cookieToken = req.cookies?.refreshToken;
+  const cookieToken = readRefreshCookie(req);
   if (cookieToken) {
     const payload = verifyToken(cookieToken);
     if (payload && payload.jti) {
@@ -56,22 +60,17 @@ router.post("/logout", async (req, res) => {
   }
 
   // Clear cookie on logout
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-  });
+  clearRefreshCookie(res);
 
   res.json({ message: "Logged out successfully" });
 });
 
 // Token refresh endpoint: read refresh token from HttpOnly cookie, rotate, and return new access token
 router.post("/refresh", async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.refreshToken;
+  const refreshToken = readRefreshCookie(req);
 
   if (!refreshToken) {
-    console.warn("/auth/refresh: no refreshToken cookie present on request", {
+    console.warn("/auth/refresh: no refresh cookie present on request", {
       origin: req.get("Origin"),
       hasCookieHeader: Boolean(req.get("Cookie")),
     });
@@ -106,19 +105,10 @@ router.post("/refresh", async (req: Request, res: Response) => {
 
   // Set new refresh token cookie
   try {
-    const decoded: any = jwt.decode(newRefreshToken);
-    const expiresMs = decoded?.exp
-      ? decoded.exp * 1000 - Date.now()
-      : undefined;
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      ...(expiresMs ? { maxAge: expiresMs } : {}),
-      path: "/",
-    });
+    setRefreshCookie(res, newRefreshToken);
   } catch (err) {
     console.error("Failed to set refresh cookie:", err);
+    return res.status(500).json({ error: "Could not establish session" });
   }
 
   res.json({ accessToken: newAccessToken });
@@ -203,17 +193,10 @@ router.post("/register", authLimiter, async (req: Request, res: Response) => {
 
     // Set refresh token as HttpOnly cookie for rotation flow
     try {
-      const decoded: any = jwt.decode(refreshToken);
-      const expiresMs = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        ...(expiresMs ? { maxAge: expiresMs } : {}),
-        path: "/",
-      });
+      setRefreshCookie(res, refreshToken);
     } catch (err) {
       console.error("Failed to set refresh cookie on register:", err);
+      return res.status(500).json({ error: "Could not establish session" });
     }
 
     res.status(201).json({
@@ -282,17 +265,10 @@ router.post("/login", authLimiter, async (req: Request, res: Response) => {
 
     // Set refresh token as HttpOnly cookie to support refresh flow
     try {
-      const decoded: any = jwt.decode(refreshToken);
-      const expiresMs = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        ...(expiresMs ? { maxAge: expiresMs } : {}),
-        path: "/",
-      });
+      setRefreshCookie(res, refreshToken);
     } catch (err) {
       console.error("Failed to set refresh cookie on login:", err);
+      return res.status(500).json({ error: "Could not establish session" });
     }
 
     res.json({

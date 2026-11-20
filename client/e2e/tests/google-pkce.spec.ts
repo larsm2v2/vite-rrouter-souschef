@@ -1,5 +1,53 @@
 import { test, expect } from "@playwright/test";
 import { getGoogleRedirectUri } from "../../src/utils/pkce";
+import { prepareRecipePage, TEST_USER } from "../helpers/recipes";
+
+test("Google callback exchanges its code on the app origin", async ({ page }) => {
+  await prepareRecipePage(page, undefined, { seedUser: false });
+  let exchanges = 0;
+  await page.route("https://accounts.google.com/**", async (route) => {
+    const state = new URL(route.request().url()).searchParams.get("state");
+    const callback = new URL("/auth/callback", page.url());
+    callback.searchParams.set("code", "browser-test-code");
+    callback.searchParams.set("state", state ?? "");
+    await route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><script>window.location.replace(${JSON.stringify(callback.href)})</script>`,
+    });
+  });
+  await page.route(
+    (url) => url.pathname === "/api/oauth/google/token",
+    async (route) => {
+      expect(new URL(route.request().url()).origin).toBe(
+        new URL(page.url()).origin,
+      );
+      expect(route.request().postDataJSON()).toMatchObject({
+        code: "browser-test-code",
+        redirect_uri: new URL("/auth/callback", page.url()).href,
+      });
+      exchanges += 1;
+      await route.fulfill({
+        headers: {
+          "Set-Cookie": "__session=google-session; Path=/; HttpOnly; SameSite=Lax",
+        },
+        json: { access_token: "google-test-access", user: TEST_USER },
+      });
+    },
+  );
+  await page.goto("/login");
+  await page.getByRole("button", { name: /Sign in with Google/i }).click();
+  await expect(page).toHaveURL(/\/profile$/);
+  expect(exchanges).toBe(1);
+  expect(await page.context().cookies()).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: "__session",
+        value: "google-session",
+        httpOnly: true,
+      }),
+    ]),
+  );
+});
 
 test("uses a same-origin frontend callback URI for PKCE", () => {
   expect(getGoogleRedirectUri("https://recipes.example.org")).toBe(

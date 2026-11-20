@@ -35,9 +35,14 @@ describe("POST /auth/refresh", () => {
       ? setCookieHeader
       : [setCookieHeader].filter(Boolean);
     const cookieHeader = setCookieArray.find((c: string) =>
-      c.startsWith("refreshToken="),
+      c.startsWith("__session="),
     );
     expect(cookieHeader).toBeDefined();
+    expect(cookieHeader).toContain("HttpOnly");
+    const legacyCookie = setCookieArray.find((c: string) =>
+      c.startsWith("refreshToken="),
+    );
+    expect(legacyCookie).toBeDefined();
     // Send refresh with cookie
     const refreshRes = await request(app)
       .post("/auth/refresh")
@@ -46,6 +51,42 @@ describe("POST /auth/refresh", () => {
 
     expect(refreshRes.status).toBe(200);
     expect(refreshRes.body.accessToken).toBeDefined();
+    expect(refreshRes.header["cache-control"]).toContain("no-store");
+    const rotatedHeader = refreshRes.header["set-cookie"];
+    const rotated = Array.isArray(rotatedHeader)
+      ? rotatedHeader
+      : [rotatedHeader].filter(Boolean);
+    expect(rotated).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^__session=/)]),
+    );
+
+    // An older deployed client can still renew and receives the Hosting-compatible cookie.
+    const legacyRefresh = await request(app)
+      .post("/auth/refresh")
+      .set("Cookie", legacyCookie)
+      .send({});
+    expect(legacyRefresh.status).toBe(200);
+    expect(legacyRefresh.header["set-cookie"]).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^__session=/)]),
+    );
+
+    const currentCookie = rotated.find((c: string) => c.startsWith("__session="));
+    const logoutRes = await request(app)
+      .post("/auth/logout")
+      .set("Cookie", currentCookie)
+      .send({});
+    expect(logoutRes.status).toBe(200);
+    expect(logoutRes.header["set-cookie"]).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/^__session=;/),
+        expect.stringMatching(/^refreshToken=;/),
+      ]),
+    );
+    const afterLogout = await request(app)
+      .post("/auth/refresh")
+      .set("Cookie", currentCookie)
+      .send({});
+    expect(afterLogout.status).toBe(401);
   });
 
   describe("rate limits", () => {

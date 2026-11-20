@@ -1,12 +1,11 @@
 import axios from "axios";
+import { API_BASE_URL } from "./apiBaseUrl";
 
 // Owns the in-memory access token and keeps it fresh. Everything that needs a
 // new token (the 401 interceptor, the page-load restore, the expiry timer, tab
 // wake-ups) goes through refreshSession(), so only one refresh is ever in flight.
 // The refresh token is rotated on every refresh, which makes concurrent refreshes
 // the main way to accidentally lose a session.
-
-const API_URL = import.meta.env?.VITE_API_URL ?? "http://localhost:8000";
 
 /** Renew this long before the access token expires. */
 export const REFRESH_AHEAD_MS = 60_000;
@@ -74,7 +73,7 @@ export function notifySessionExpired(): void {
 async function requestRefresh(): Promise<RefreshOutcome> {
   try {
     const response = await axios.post<{ accessToken?: string }>(
-      `${API_URL}/auth/refresh`,
+      `${API_BASE_URL}/auth/refresh`,
       {},
       { withCredentials: true, timeout: 15_000 },
     );
